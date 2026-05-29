@@ -17,7 +17,7 @@ async function claimAndRun() {
     .from('automation_runs')
     .select('id, job_id, run_status')
     .eq('run_status', 'queued')
-    .order('created_at', { ascending: true })
+    .order('started_at', { ascending: true })
     .limit(1)
 
   if (error) {
