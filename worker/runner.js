@@ -6,7 +6,7 @@ const ws = require('ws')
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
-  { global: { WebSocket: ws } }
+  { realtime: { transport: ws } }
 )
 
 async function executeRun(job, runId) {
