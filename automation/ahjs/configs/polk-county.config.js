@@ -121,6 +121,7 @@ module.exports = {
     { field: 'property_address', message: 'Property address is required' },
     { field: 'property_zip',     message: 'Property zip is required' },
     { field: 'valuation',        message: 'Contract value is required' },
-    { docType: 'notice_of_commencement', message: 'Recorded NOC must be uploaded before permit can be submitted' },
+    { field: 'company_id',       message: 'Company ID is required' },
+    { field: 'ahj_id',           message: 'AHJ must be selected for this job' },
   ],
 }
