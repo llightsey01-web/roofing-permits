@@ -85,4 +85,4 @@ export async function POST(request) {
     console.error('Job creation error:', err)
     return Response.json({ error: err.message }, { status: 500 })
   }
-}
+}// redeploy trigger
