@@ -4,12 +4,40 @@ const { Solver } = require('2captcha')
 const { logStep } = require('../shared/screenshot')
 const { handleRunError, handleRunSuccess } = require('../shared/errors')
 const config = require('./configs/polk-county.config')
+const { createClient } = require('@supabase/supabase-js')
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+}
+
+async function getCredentials(companyId, ahjId) {
+  const supabase = getSupabase()
+  const { data, error } = await supabase
+    .from('company_ahj_credentials')
+    .select('username, portal_password')
+    .eq('company_id', companyId)
+    .eq('ahj_id', ahjId)
+    .eq('is_active', true)
+    .single()
+
+  if (error || !data) {
+    throw Object.assign(
+      new Error('No credentials found for this company and AHJ. Please add credentials in the admin panel.'),
+      { errorCode: 'missing_credentials' }
+    )
+  }
+  return { username: data.username, password: data.portal_password }
+}
 
 async function runPolkCounty(jobData, runId) {
   console.log(`\nStarting Polk County automation`)
   console.log(`Job: ${jobData.owner_name} — ${jobData.property_address}`)
   console.log(`Run ID: ${runId}\n`)
 
+  // Preflight checks
   const failures = []
   for (const check of config.preflightChecks) {
     if (check.field && !jobData[check.field]) failures.push(check.message)
@@ -24,6 +52,12 @@ async function runPolkCounty(jobData, runId) {
   }
   console.log('✓ Preflight passed\n')
 
+  // Load credentials from DB
+  console.log('Loading AHJ credentials...')
+  const credentials = await getCredentials(jobData.company_id, jobData.ahj_id)
+  console.log(`✓ Credentials loaded for: ${credentials.username}\n`)
+
+  // Portal availability check
   console.log('Checking portal availability...')
   try {
     const res = await fetch(config.portalUrl, { method: 'HEAD', signal: AbortSignal.timeout(10000) })
@@ -40,7 +74,6 @@ async function runPolkCounty(jobData, runId) {
   const browser = await chromium.launch({ headless: true, slowMo: 300 })
   const page = await browser.newPage()
   page.setDefaultTimeout(45000)
-
   let stepNumber = 0
 
   async function removeOverlay() {
@@ -76,18 +109,16 @@ async function runPolkCounty(jobData, runId) {
   }
 
   try {
+    // Step 1 — Login
     stepNumber++
     await logStep(page, runId, stepNumber, 'login', async () => {
       await page.goto(config.portalUrl, { waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(3000)
-
       const frameHandle = await page.$('iframe:not(.mask_iframe)')
       const frame = await frameHandle.contentFrame()
-      await (await frame.waitForSelector(config.selectors.loginUsername)).fill(jobData.credentials.username)
-      await (await frame.waitForSelector(config.selectors.loginPassword)).fill(jobData.credentials.password)
-
+      await (await frame.waitForSelector(config.selectors.loginUsername)).fill(credentials.username)
+      await (await frame.waitForSelector(config.selectors.loginPassword)).fill(credentials.password)
       const result = await solver.recaptcha(config.selectors.loginSiteKey, config.portalUrl)
-
       await frame.evaluate((token) => {
         document.querySelectorAll('[id="g-recaptcha-response"]').forEach(el => {
           el.style.display = 'block'
@@ -108,7 +139,6 @@ async function runPolkCounty(jobData, runId) {
         }
         if (window.___grecaptcha_cfg) tryCallback(window.___grecaptcha_cfg, token)
       }, result.data)
-
       await page.waitForTimeout(1500)
       await frame.evaluate(() => {
         document.querySelectorAll('button').forEach(b => {
@@ -119,12 +149,14 @@ async function runPolkCounty(jobData, runId) {
       await page.waitForTimeout(2000)
     })
 
+    // Step 2 — Navigate to disclaimer
     stepNumber++
     await logStep(page, runId, stepNumber, 'navigate_to_disclaimer', async () => {
       await page.goto(config.selectors.disclaimerUrl, { waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(2000)
     })
 
+    // Step 3 — Accept disclaimer
     stepNumber++
     await logStep(page, runId, stepNumber, 'accept_disclaimer', async () => {
       await (await page.waitForSelector(config.selectors.disclaimerCheckbox)).check()
@@ -134,6 +166,7 @@ async function runPolkCounty(jobData, runId) {
       await page.waitForTimeout(2000)
     })
 
+    // Step 4 — Select Re-Roof permit type
     stepNumber++
     await logStep(page, runId, stepNumber, 'select_reroof_permit', async () => {
       await page.click(config.selectors.permitTypeReRoof)
@@ -143,6 +176,7 @@ async function runPolkCounty(jobData, runId) {
       await page.waitForTimeout(2000)
     })
 
+    // Step 5 — Fill address search
     stepNumber++
     await logStep(page, runId, stepNumber, 'fill_address_search', async () => {
       const addressParts = jobData.property_address.trim().split(' ')
@@ -155,6 +189,8 @@ async function runPolkCounty(jobData, runId) {
       await page.waitForTimeout(4000)
     })
 
+    // Step 6 — Select address result
+    // Portal auto-fills parcel number and owner name after this step
     stepNumber++
     await logStep(page, runId, stepNumber, 'select_address_result', async () => {
       await removeOverlay()
@@ -174,125 +210,77 @@ async function runPolkCounty(jobData, runId) {
       await removeOverlay()
     })
 
+    // Step 7 — PHASE 1 STOP POINT
+    // Read parcel + owner from portal, save to DB, click Save & Resume Later, trigger NOC
     stepNumber++
-    await logStep(page, runId, stepNumber, 'continue_to_permit_detail', async () => {
-      await removeOverlay()
-      await safeClick(config.selectors.continueBtn)
-      await page.waitForTimeout(4000)
+    await logStep(page, runId, stepNumber, 'phase1_save_parcel_and_stop', async () => {
+      const supabase = getSupabase()
 
-      const errors = await page.evaluate(() => {
-        return Array.from(document.querySelectorAll('.ACA_Error, [class*="error"]'))
-          .map(el => el.textContent.trim())
-          .filter(t => t.length > 0 && t.length < 200)
-      })
-      if (errors.length > 0) {
-        throw Object.assign(
-          new Error(`Validation errors: ${errors.join(', ')}`),
-          { errorCode: 'validation_failed' }
-        )
+      // Read parcel number auto-filled by portal
+      const parcelNumber = await page.$eval(
+        config.selectors.parcelNo,
+        el => el.value || el.innerText || ''
+      ).catch(() => '')
+
+      // Read owner name auto-filled by portal
+      const portalOwnerName = await page.$eval(
+        config.selectors.ownerName,
+        el => el.value || el.innerText || ''
+      ).catch(() => '')
+
+      console.log(`  Parcel number: ${parcelNumber}`)
+      console.log(`  Owner name from portal: ${portalOwnerName}`)
+
+      // Save parcel number and owner to job record
+      const updateData = { parcel_number: parcelNumber || null }
+      if (portalOwnerName && !jobData.owner_name) {
+        updateData.owner_name = portalOwnerName
       }
 
+      await supabase.from('jobs')
+        .update(updateData)
+        .eq('id', jobData.id)
+
+      console.log('  ✓ Parcel number saved to job record')
+
+      // Click Save and Resume Later
       await removeOverlay()
-      await safeClick(config.selectors.continueBtn)
-      await page.waitForTimeout(4000)
+      await page.waitForSelector('a[onclick*="doSaveAndResume"]', { timeout: 10000 })
+      await page.click('a[onclick*="doSaveAndResume"]')
+      await page.waitForTimeout(3000)
+      console.log('  ✓ Application saved in portal — can be resumed after NOC is recorded')
+
+      // Update automation run status
+      await supabase.from('automation_runs')
+        .update({
+          run_status: 'waiting_for_noc',
+          completed_at: new Date().toISOString(),
+        })
+        .eq('id', runId)
+
+      // Update job status
+      await supabase.from('jobs')
+        .update({ job_status: 'waiting_for_noc' })
+        .eq('id', jobData.id)
+
+      console.log('  ✓ Job status updated to waiting_for_noc')
+
+      // Trigger NOC pipeline
+      console.log('  Starting NOC pipeline...')
+      try {
+        const { startNOCPipeline } = require('../../lib/noc/noc-pipeline.js')
+        startNOCPipeline(jobData.id)
+          .then(() => console.log('  ✓ NOC pipeline started'))
+          .catch(err => console.error('  NOC pipeline error:', err.message))
+      } catch (err) {
+        console.error('  Failed to start NOC pipeline:', err.message)
+      }
     })
 
-    stepNumber++
-    await logStep(page, runId, stepNumber, 'fill_permit_detail', async () => {
-      await removeOverlay()
-      await page.waitForTimeout(2000)
-      console.log(`  URL: ${page.url()}`)
-
-      // Wait for permit detail fields
-      await page.waitForSelector(config.selectors.gateAccessNo, { timeout: 15000 })
-        .catch(() => console.log('  Gate selector not found yet'))
-      await page.waitForTimeout(1000)
-      await removeOverlay()
-
-      // Gate access
-      if (jobData.job_specs && jobData.job_specs.gate_code) {
-        await safeClick(config.selectors.gateAccessYes)
-        await page.fill(config.selectors.gateCode, jobData.job_specs.gate_code)
-      } else {
-        await safeClick(config.selectors.gateAccessNo)
-      }
-
-      // Code violation — No
-      await safeClick(config.selectors.codeViolationNo)
-
-      // NOC — based on valuation
-      const nocLabel = (jobData.valuation && jobData.valuation < 2500)
-        ? 'NOC Exempt - Valuation Less Than $2,500'
-        : 'Needed'
-      await safeSelect(config.selectors.nocDropdown, nocLabel)
-
-      // Packet submission
-      await safeSelect(config.selectors.packetSubmission, 'Electronically')
-
-      // FS 119 Status
-      await safeSelect(config.selectors.fs119Status, 'Non-Exempt')
-
-      // Private provider — No
-      await safeClick(config.selectors.roofDeckNo)
-
-      // Work type from scope
-      const scope = (jobData.scope_of_work || '').toLowerCase()
-      const workType = scope.includes('repair') ? 'Repair' : 'Replacement'
-      await safeSelect(config.selectors.workType, workType)
-
-      // Property type from job data
-      await safeSelect(config.selectors.propertyType, jobData.property_type || 'Residential')
-
-      // Reroof permit type
-      await safeSelect(config.selectors.reroofPermitType, 'Reroof')
-
-      // Number of squares
-      if (jobData.roof_specs && jobData.roof_specs.squares) {
-        await page.fill(config.selectors.numberOfSquares, String(jobData.roof_specs.squares))
-      }
-
-      // Roof type with partial match
-      if (jobData.roof_type) {
-        await page.selectOption(config.selectors.roofType, { label: jobData.roof_type })
-          .catch(async () => {
-            await page.evaluate((sel, rt) => {
-              const el = document.querySelector(sel)
-              if (el) {
-                const opt = Array.from(el.options).find(o =>
-                  o.text.toLowerCase().includes(rt.toLowerCase())
-                )
-                if (opt) el.value = opt.value
-              }
-            }, config.selectors.roofType, jobData.roof_type)
-          })
-      }
-
-      // Cross street
-      if (jobData.job_specs && jobData.job_specs.cross_street) {
-        await page.fill(config.selectors.crossStreet, jobData.job_specs.cross_street)
-      }
-
-      await page.waitForTimeout(500)
-    })
-
-    stepNumber++
-    await logStep(page, runId, stepNumber, 'check_required_boxes', async () => {
-      await removeOverlay()
-      await page.check(config.selectors.reroofAffidavit)
-      await page.waitForTimeout(300)
-      await page.check(config.selectors.asbestosStatement)
-      await page.waitForTimeout(300)
-    })
-
-    stepNumber++
-    await logStep(page, runId, stepNumber, 'stop_before_submit', async () => {
-      console.log('\n========================================')
-      console.log('AUTOMATION COMPLETE — AWAITING REVIEW')
-      console.log('========================================\n')
-      await page.waitForTimeout(2000)
-    })
-
-    await handleRunSuccess(runId, jobData.id, `${config.id}@v${config.version}`)
+    console.log('\n========================================')
+    console.log('PHASE 1 COMPLETE — NOC PIPELINE STARTED')
+    console.log('Resume automation after NOC is recorded')
+    console.log('========================================\n')
 
   } catch (err) {
     await handleRunError(runId, jobData.id, err)
