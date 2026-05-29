@@ -12,7 +12,7 @@ const supabase = createClient(
 async function executeRun(job, runId) {
   try {
     console.log('[worker] Executing run:', runId, 'job:', job.property_address)
-    const { runPolkCounty } = require('../automation/ahjs/polk-county.runner')
+    const { runPolkCounty } = require('./automation/ahjs/polk-county.runner')
     await runPolkCounty(job, runId)
 
     await supabase.from('automation_runs').update({
