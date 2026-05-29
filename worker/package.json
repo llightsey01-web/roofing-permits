@@ -2,7 +2,8 @@
   "name": "ahj-iq-worker",
   "version": "1.0.0",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "postinstall": "npx playwright install chromium && npx playwright install-deps chromium"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
