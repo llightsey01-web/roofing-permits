@@ -24,6 +24,7 @@ export async function POST(request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Save job
     const { data: job, error: jobError } = await supabase
       .from('jobs')
       .insert({
@@ -42,13 +43,11 @@ export async function POST(request) {
         ahj_id: body.ahj_id || null,
         company_id: body.company_id,
         created_by: user.id,
-        job_status: 'draft',
+        job_status: 'automation_running',
         noc_status: 'not_started',
-        parcel_number: body.parcel_number || null,
-        legal_description: body.legal_description || null,
-        material_manufacturer: body.roof_specs?.primary_material?.manufacturer,
-        material_model: body.roof_specs?.primary_material?.product_name,
-        material_approval_num: body.roof_specs?.primary_material?.approval_number,
+        material_manufacturer: body.roof_specs?.primary_material?.manufacturer || null,
+        material_model: body.roof_specs?.primary_material?.product_name || null,
+        material_approval_num: body.roof_specs?.primary_material?.approval_number || null,
         roof_specs: body.roof_specs || {},
         job_specs: body.job_specs || {},
       })
@@ -60,7 +59,25 @@ export async function POST(request) {
       return Response.json({ error: jobError.message }, { status: 500 })
     }
 
-    console.log('Job saved: ' + job.id + ' — NOC starts after portal gets parcel number')
+    console.log('Job saved:', job.id)
+
+    // Auto-queue automation run — worker picks this up within 30 seconds
+    const { data: run, error: runError } = await supabase
+      .from('automation_runs')
+      .insert({
+        job_id: job.id,
+        run_status: 'queued',
+        started_at: new Date().toISOString(),
+      })
+      .select()
+      .single()
+
+    if (runError) {
+      console.error('Failed to queue automation run:', runError.message)
+      // Job was saved — don't fail the whole request, just log it
+    } else {
+      console.log('Automation queued — run ID:', run.id)
+    }
 
     return Response.json({ success: true, job })
 
