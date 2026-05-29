@@ -1,10 +1,12 @@
 // worker/index.js
 require('dotenv').config({ path: '.env.local' })
 const { createClient } = require('@supabase/supabase-js')
+const ws = require('ws')
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { global: { WebSocket: ws } }
 )
 
 const POLL_INTERVAL_MS = 30000
@@ -12,7 +14,6 @@ const POLL_INTERVAL_MS = 30000
 async function claimAndRun() {
   console.log('[worker] Polling for queued runs...')
 
-  // Simple query — no join, just get the run
   const { data: runs, error } = await supabase
     .from('automation_runs')
     .select('id, job_id, run_status')
@@ -33,7 +34,6 @@ async function claimAndRun() {
   const run = runs[0]
   console.log('[worker] Found queued run:', run.id, 'job:', run.job_id)
 
-  // Claim it
   const { error: claimError } = await supabase
     .from('automation_runs')
     .update({ run_status: 'running', started_at: new Date().toISOString() })
@@ -47,7 +47,6 @@ async function claimAndRun() {
 
   console.log('[worker] Claimed run:', run.id)
 
-  // Load job with documents
   const { data: job, error: jobError } = await supabase
     .from('jobs').select('*').eq('id', run.job_id).single()
 
