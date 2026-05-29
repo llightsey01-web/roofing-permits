@@ -55,13 +55,14 @@ export async function POST(request) {
       .single()
 
     if (jobError) {
-      console.error('Job save error:', jobError)
+      console.error('Job save error:', jobError.message, jobError.code, jobError.details)
       return Response.json({ error: jobError.message }, { status: 500 })
     }
 
     console.log('Job saved:', job.id)
 
-    // Auto-queue automation run — worker picks this up within 30 seconds
+    // Auto-queue automation run
+    console.log('Queueing automation run for job:', job.id)
     const { data: run, error: runError } = await supabase
       .from('automation_runs')
       .insert({
@@ -73,8 +74,7 @@ export async function POST(request) {
       .single()
 
     if (runError) {
-      console.error('Failed to queue automation run:', runError.message)
-      // Job was saved — don't fail the whole request, just log it
+      console.error('AUTOMATION QUEUE FAILED:', runError.message, runError.code, runError.details, runError.hint)
     } else {
       console.log('Automation queued — run ID:', run.id)
     }
@@ -82,7 +82,7 @@ export async function POST(request) {
     return Response.json({ success: true, job })
 
   } catch (err) {
-    console.error('Job creation error:', err)
+    console.error('Job creation error:', err.message)
     return Response.json({ error: err.message }, { status: 500 })
   }
-}// redeploy trigger
+}
