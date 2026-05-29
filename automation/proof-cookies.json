@@ -1,0 +1,31 @@
+[
+    {
+      "name": "notarize-apiauth-v2-default",
+      "value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJleHAiOjE3Nzk5OTExNTksImlhdCI6MTc3OTk4Nzk2NCwiZGV4cCI6MTgwMCwiZ2lkIjoidXN6cDN4ODNvIiwianRpIjoiZDkxNTY3ODktYTA0MS00OTE1LTliZjAtNWNiNzM1YzQ2MWZiIiwic2NvcGUiOiIqLyoiLCJjbGllbnRfaXAiOiI0Ny4yMDEuNzQuNTgiLCJtZmFfdHlwZSI6bnVsbH0.dQFmAXKGbpzS1z4NqWgI3pTbgIuN7Xqcxbntwik1m1AbTfeA7h_HiNR3vb8qsflP_Ywzk41zaeLvMo3k1-5SSQ",
+      "domain": "api.proof.com",
+      "path": "/",
+      "httpOnly": true,
+      "secure": true
+    },
+    {
+      "name": "notarize-device-id",
+      "value": "cd86e960-5ab4-11f1-b9c9-c1f219cf5286",
+      "domain": ".proof.com",
+      "path": "/",
+      "secure": true
+    },
+    {
+      "name": "ntrssid",
+      "value": "cd86e961-5ab4-11f1-b9c9-c1f219cf5286",
+      "domain": ".proof.com",
+      "path": "/",
+      "secure": true
+    },
+    {
+      "name": "proof-mflow",
+      "value": "business",
+      "domain": ".proof.com",
+      "path": "/",
+      "secure": true
+    }
+  ]
