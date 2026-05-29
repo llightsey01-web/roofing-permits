@@ -33,6 +33,7 @@ export default function NewJobPage() {
     job_specs: {
       gate_code: '',
       cross_street: '',
+      squares: '',
     },
   })
 
@@ -42,30 +43,15 @@ export default function NewJobPage() {
 
   useEffect(() => {
     const supabase = createClient()
-
-    // Get logged in user's company_id dynamically
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push('/login'); return }
-
       const { data: userData } = await supabase
-        .from('users')
-        .select('company_id')
-        .eq('id', user.id)
-        .single()
-
-      if (userData?.company_id) {
-        setCompanyId(userData.company_id)
-      }
+        .from('users').select('company_id').eq('id', user.id).single()
+      if (userData?.company_id) setCompanyId(userData.company_id)
     })
-
-    supabase.from('product_approvals')
-      .select('*')
-      .eq('is_active', true)
+    supabase.from('product_approvals').select('*').eq('is_active', true)
       .then(({ data }) => setProducts(data || []))
-
-    supabase.from('ahj_portals')
-      .select('id, name, county_or_city')
-      .eq('is_active', true)
+    supabase.from('ahj_portals').select('id, name, county_or_city').eq('is_active', true)
       .then(({ data }) => setAllAHJs(data || []))
   }, [])
 
@@ -112,8 +98,8 @@ export default function NewJobPage() {
     } else if (field === 'product_name') {
       const match = products.find(
         p => p.layer_type === layerType &&
-             p.manufacturer === currentState.manufacturer &&
-             p.product_name === value
+          p.manufacturer === currentState.manufacturer &&
+          p.product_name === value
       )
       setter({ ...currentState, product_name: value, approval_number: match ? match.approval_number : '' })
     } else {
@@ -162,7 +148,6 @@ export default function NewJobPage() {
     })
 
     const result = await response.json()
-
     if (!response.ok) {
       setError(result.error || 'Failed to save job')
       setLoading(false)
@@ -216,11 +201,8 @@ export default function NewJobPage() {
         <div style={gridStyle}>
           <div>
             <label style={labelStyle}>Manufacturer</label>
-            <select
-              style={inputStyle}
-              value={values.manufacturer}
-              onChange={e => handleMaterialChange(setter, 'manufacturer', e.target.value, layerType, values)}
-            >
+            <select style={inputStyle} value={values.manufacturer}
+              onChange={e => handleMaterialChange(setter, 'manufacturer', e.target.value, layerType, values)}>
               <option value="">Select manufacturer</option>
               {manufacturers.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
@@ -231,8 +213,7 @@ export default function NewJobPage() {
               style={{ ...inputStyle, backgroundColor: values.manufacturer ? 'white' : '#f9fafb' }}
               value={values.product_name}
               onChange={e => handleMaterialChange(setter, 'product_name', e.target.value, layerType, values)}
-              disabled={!values.manufacturer}
-            >
+              disabled={!values.manufacturer}>
               <option value="">{values.manufacturer ? 'Select product' : 'Select manufacturer first'}</option>
               {productList.map(p => <option key={p.id} value={p.product_name}>{p.product_name}</option>)}
             </select>
@@ -262,17 +243,12 @@ export default function NewJobPage() {
         backgroundColor: '#0f172a', padding: '0 32px',
         display: 'flex', alignItems: 'center', gap: '16px', height: '60px',
       }}>
-        <button
-          onClick={() => router.push('/dashboard')}
-          style={{ fontSize: '14px', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}
-        >
+        <button onClick={() => router.push('/dashboard')}
+          style={{ fontSize: '14px', color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer' }}>
           ← Back
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{
-            width: '24px', height: '24px', backgroundColor: '#3b82f6',
-            borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
+          <div style={{ width: '24px', height: '24px', backgroundColor: '#3b82f6', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ color: 'white', fontSize: '12px', fontWeight: '700' }}>A</span>
           </div>
           <span style={{ color: 'white', fontSize: '15px', fontWeight: '600' }}>AHJ-iQ</span>
@@ -299,7 +275,7 @@ export default function NewJobPage() {
             </div>
           </div>
           <p style={{ fontSize: '12px', color: '#64748b', margin: '12px 0 0 0' }}>
-            NOC will be automatically sent to the homeowner via text and email when this job is saved.
+            Automation will start after job is saved to retrieve parcel number and begin the permit process.
           </p>
         </div>
 
@@ -320,14 +296,14 @@ export default function NewJobPage() {
             </div>
           </div>
 
-          <div style={{ marginTop: '16px' }}>
+          <div style={{ marginTop: '12px' }}>
             {ahjLoading && (
               <div style={{ fontSize: '13px', color: '#64748b', padding: '10px 14px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 Detecting AHJ...
               </div>
             )}
             {detectedAHJ && !ahjLoading && (
-              <div style={{ fontSize: '13px', padding: '10px 14px', backgroundColor: '#f0fdf4', borderRadius: '8px', border: '1px solid #86efac', color: '#15803d' }}>
+              <div style={{ fontSize: '13px', padding: '10px 14px', backgroundColor: '#eff6ff', borderRadius: '8px', border: '1px solid #93c5fd', color: '#1d4ed8' }}>
                 AHJ detected: <strong>{detectedAHJ.name}</strong>
               </div>
             )}
@@ -335,11 +311,8 @@ export default function NewJobPage() {
               <div style={{ fontSize: '13px', color: '#64748b' }}>
                 AHJ not auto-detected.{' '}
                 <span style={{ color: '#374151', fontWeight: '500' }}>Select manually:</span>
-                <select
-                  style={{ ...inputStyle, marginTop: '8px' }}
-                  value={form.ahj_id}
-                  onChange={e => setForm(prev => ({ ...prev, ahj_id: e.target.value }))}
-                >
+                <select style={{ ...inputStyle, marginTop: '8px' }} value={form.ahj_id}
+                  onChange={e => setForm(prev => ({ ...prev, ahj_id: e.target.value }))}>
                   <option value="">Select AHJ</option>
                   {allAHJs.map(ahj => <option key={ahj.id} value={ahj.id}>{ahj.name}</option>)}
                 </select>
@@ -372,10 +345,8 @@ export default function NewJobPage() {
           <h2 style={sectionTitleStyle}>Job scope</h2>
           <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Scope of work</label>
-            <textarea
-              style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
-              name="scope_of_work" value={form.scope_of_work} onChange={handleChange}
-            />
+            <textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
+              name="scope_of_work" value={form.scope_of_work} onChange={handleChange} />
           </div>
           <div style={gridStyle}>
             <div>
@@ -391,7 +362,7 @@ export default function NewJobPage() {
             </div>
             <div>
               <label style={labelStyle}>Number of squares</label>
-              <input style={inputStyle} type="number" name="job_specs.squares" value={form.job_specs.squares || ''} onChange={handleChange} placeholder="e.g. 24" />
+              <input style={inputStyle} type="number" name="job_specs.squares" value={form.job_specs.squares} onChange={handleChange} placeholder="e.g. 24" />
             </div>
             <div>
               <label style={labelStyle}>Contract value ($)</label>
@@ -407,20 +378,14 @@ export default function NewJobPage() {
           {showVentilation ? (
             <div>
               <MaterialLayer title="Ventilation" layerType="ventilation" values={ventilation} setter={setVentilation} />
-              <button
-                type="button"
-                onClick={() => { setShowVentilation(false); setVentilation({ ...emptyMaterial }) }}
-                style={{ fontSize: '13px', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '0', marginBottom: '16px', display: 'block' }}
-              >
+              <button type="button" onClick={() => { setShowVentilation(false); setVentilation({ ...emptyMaterial }) }}
+                style={{ fontSize: '13px', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '0', marginBottom: '16px', display: 'block' }}>
                 Remove ventilation
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => setShowVentilation(true)}
-              style={{ fontSize: '13px', color: '#2563eb', background: 'none', border: '1px dashed #93c5fd', borderRadius: '8px', cursor: 'pointer', padding: '10px 16px', width: '100%', textAlign: 'center' }}
-            >
+            <button type="button" onClick={() => setShowVentilation(true)}
+              style={{ fontSize: '13px', color: '#2563eb', background: 'none', border: '1px dashed #93c5fd', borderRadius: '8px', cursor: 'pointer', padding: '10px 16px', width: '100%', textAlign: 'center' }}>
               + Add ventilation product
             </button>
           )}
@@ -428,34 +393,24 @@ export default function NewJobPage() {
 
         <div style={sectionStyle}>
           <h2 style={sectionTitleStyle}>Internal notes</h2>
-          <textarea
-            style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
+          <textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
             name="internal_notes" value={form.internal_notes} onChange={handleChange}
-            placeholder="Any internal notes about this job..."
-          />
+            placeholder="Any internal notes about this job..." />
         </div>
 
-        {error && (
-          <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px' }}>{error}</p>
-        )}
+        {error && <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px' }}>{error}</p>}
 
         <div style={{ display: 'flex', gap: '12px', marginBottom: '48px' }}>
-          <button
-            type="button"
-            onClick={() => router.push('/dashboard')}
-            style={{ padding: '12px 24px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: 'white', fontSize: '14px', cursor: 'pointer', color: '#475569' }}
-          >
+          <button type="button" onClick={() => router.push('/dashboard')}
+            style={{ padding: '12px 24px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: 'white', fontSize: '14px', cursor: 'pointer', color: '#475569' }}>
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled={loading}
+          <button type="submit" disabled={loading}
             style={{
               padding: '12px 24px', backgroundColor: loading ? '#94a3b8' : '#2563eb',
               color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px',
               cursor: loading ? 'not-allowed' : 'pointer', fontWeight: '500',
-            }}
-          >
+            }}>
             {loading ? 'Saving...' : 'Save job'}
           </button>
         </div>
