@@ -226,7 +226,9 @@ async function runPolkCounty(jobData, runId) {
                 if (opt) el.value = opt.value
               }
             }, { sel: config.selectors.streetType, suffix: parsed.suffix })
-
+          })
+        console.log('  Suffix filled: ' + parsed.suffix)
+      }
       if (jobData.property_city && config.selectors.city) {
         await page.fill(config.selectors.city, jobData.property_city)
       }
