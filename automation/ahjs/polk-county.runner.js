@@ -217,18 +217,15 @@ async function runPolkCounty(jobData, runId) {
       if (parsed.suffix && config.selectors.streetType) {
         await page.selectOption(config.selectors.streetType, { label: parsed.suffix })
           .catch(async function() {
-            await page.evaluate(function(sel, suffix) {
-              var el = document.querySelector(sel)
+            await page.evaluate(function(args) {
+              var el = document.querySelector(args.sel)
               if (el) {
                 var opt = Array.from(el.options).find(function(o) {
-                  return o.text.toLowerCase().includes(suffix.toLowerCase())
+                  return o.text.toLowerCase().includes(args.suffix.toLowerCase())
                 })
                 if (opt) el.value = opt.value
               }
-            }, config.selectors.streetType, parsed.suffix)
-          })
-        console.log('  Suffix filled: ' + parsed.suffix)
-      }
+            }, { sel: config.selectors.streetType, suffix: parsed.suffix })
 
       if (jobData.property_city && config.selectors.city) {
         await page.fill(config.selectors.city, jobData.property_city)
