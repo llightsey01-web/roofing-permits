@@ -2,7 +2,7 @@ require('dotenv').config({ path: '.env.local' })
 const { chromium } = require('playwright')
 const { Solver } = require('2captcha')
 const { logStep } = require('../shared/screenshot')
-const { handleRunError, handleRunSuccess } = require('../shared/errors')
+const { handleRunError } = require('../shared/errors')
 const config = require('./configs/polk-county.config')
 const { createClient } = require('@supabase/supabase-js')
 
@@ -44,7 +44,7 @@ var suffixMap = {
   'court': 'Ct', 'ct': 'Ct',
   'place': 'Pl', 'pl': 'Pl',
   'way': 'Way', 'trail': 'Trl', 'trl': 'Trl',
-  'terrace': 'Ter', 'ter': 'Ter', 'loop': 'Loop',
+  'terrace': 'Ter', 'ter': 'Ter', 'loop': 'Loop'
 }
 
 function parseAddress(fullAddress) {
@@ -52,9 +52,7 @@ function parseAddress(fullAddress) {
   var streetNo = parts[0]
   var lastWord = parts[parts.length - 1].toLowerCase()
   var normalizedSuffix = suffixMap[lastWord] || null
-  var streetName = normalizedSuffix
-    ? parts.slice(1, -1).join(' ')
-    : parts.slice(1).join(' ')
+  var streetName = normalizedSuffix ? parts.slice(1, -1).join(' ') : parts.slice(1).join(' ')
   return { streetNo: streetNo, streetName: streetName, suffix: normalizedSuffix }
 }
 
@@ -67,7 +65,9 @@ async function runPolkCounty(jobData, runId) {
   for (const check of config.preflightChecks) {
     if (check.field && !jobData[check.field]) failures.push(check.message)
     if (check.docType) {
-      const found = jobData.documents && jobData.documents.some(function(d) { return d.document_type === check.docType })
+      const found = jobData.documents && jobData.documents.some(function(d) {
+        return d.document_type === check.docType
+      })
       if (!found) failures.push(check.message)
     }
   }
@@ -200,19 +200,18 @@ async function runPolkCounty(jobData, runId) {
       await page.waitForTimeout(2000)
     })
 
-    // Step 5 — Fill address search with normalized components
+    // Step 5 — Fill address search with parsed components
     stepNumber++
     await logStep(page, runId, stepNumber, 'fill_address_search', async function() {
       var parsed = parseAddress(jobData.property_address)
       console.log('  Street number: ' + parsed.streetNo)
       console.log('  Street name: ' + parsed.streetName)
       console.log('  Suffix: ' + (parsed.suffix || 'none'))
-      console.log('  City: ' + jobData.property_city)
-      console.log('  Zip: ' + jobData.property_zip)
 
       await page.fill(config.selectors.streetNo, parsed.streetNo)
+      await page.waitForTimeout(200)
       await page.fill(config.selectors.streetName, parsed.streetName)
-      await page.waitForTimeout(300)
+      await page.waitForTimeout(200)
 
       if (parsed.suffix && config.selectors.streetType) {
         await page.selectOption(config.selectors.streetType, { label: parsed.suffix })
@@ -229,12 +228,6 @@ async function runPolkCounty(jobData, runId) {
           })
         console.log('  Suffix filled: ' + parsed.suffix)
       }
-      if (jobData.property_city && config.selectors.city) {
-        await page.fill(config.selectors.city, jobData.property_city)
-      }
-      if (jobData.property_zip && config.selectors.zip) {
-        await page.fill(config.selectors.zip, jobData.property_zip)
-      }
 
       await page.waitForTimeout(500)
       await page.click(config.selectors.addressSearchBtn)
@@ -247,14 +240,12 @@ async function runPolkCounty(jobData, runId) {
       await removeOverlay()
       await page.waitForTimeout(500)
 
-      // Log ALL visible address results
       var allResults = await page.$$eval(config.selectors.addressResult, function(els) {
         return els.map(function(el) { return el.innerText.trim() })
       }).catch(function() { return [] })
       console.log('  Address results found: ' + allResults.length)
       allResults.forEach(function(r, i) { console.log('    [' + i + '] "' + r + '"') })
 
-      // Filter out navigation buttons — look for results that contain street numbers
       var validResults = await page.$$eval(config.selectors.addressResult, function(els) {
         return els.map(function(el, i) { return { index: i, text: el.innerText.trim() } })
           .filter(function(r) { return /^\d+/.test(r.text) })
@@ -264,15 +255,12 @@ async function runPolkCounty(jobData, runId) {
       validResults.forEach(function(r) { console.log('    [' + r.index + '] "' + r.text + '"') })
 
       if (validResults.length === 0) {
-        // Retry with suffix only — no city/zip
-        console.log('  No valid results — address not found in portal')
         throw Object.assign(
           new Error('Address not found in portal: ' + jobData.property_address),
           { errorCode: 'validation_failed' }
         )
       }
 
-      // Click the first valid address result
       var resultEls = await page.$$(config.selectors.addressResult)
       var targetEl = resultEls[validResults[0].index]
       var selectedText = await targetEl.innerText().catch(function() { return 'unknown' })
@@ -293,7 +281,6 @@ async function runPolkCounty(jobData, runId) {
       var supabase = getSupabase()
       await page.waitForTimeout(2000)
 
-      // Log ALL populated inputs for debugging
       var allInputs = await page.$$eval('input[type="text"], input:not([type])', function(els) {
         return els.map(function(el) {
           return { id: el.id, name: el.name, value: el.value }
