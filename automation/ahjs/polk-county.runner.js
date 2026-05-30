@@ -33,6 +33,31 @@ async function getCredentials(companyId, ahjId) {
   return { username: data.username, password: data.portal_password }
 }
 
+var suffixMap = {
+  'circle': 'Cir', 'cir': 'Cir',
+  'street': 'St', 'st': 'St',
+  'avenue': 'Ave', 'ave': 'Ave',
+  'drive': 'Dr', 'dr': 'Dr',
+  'boulevard': 'Blvd', 'blvd': 'Blvd',
+  'lane': 'Ln', 'ln': 'Ln',
+  'road': 'Rd', 'rd': 'Rd',
+  'court': 'Ct', 'ct': 'Ct',
+  'place': 'Pl', 'pl': 'Pl',
+  'way': 'Way', 'trail': 'Trl', 'trl': 'Trl',
+  'terrace': 'Ter', 'ter': 'Ter', 'loop': 'Loop',
+}
+
+function parseAddress(fullAddress) {
+  var parts = fullAddress.trim().split(' ')
+  var streetNo = parts[0]
+  var lastWord = parts[parts.length - 1].toLowerCase()
+  var normalizedSuffix = suffixMap[lastWord] || null
+  var streetName = normalizedSuffix
+    ? parts.slice(1, -1).join(' ')
+    : parts.slice(1).join(' ')
+  return { streetNo: streetNo, streetName: streetName, suffix: normalizedSuffix }
+}
+
 async function runPolkCounty(jobData, runId) {
   console.log('\nStarting Polk County automation')
   console.log('Job: ' + jobData.owner_name + ' — ' + jobData.property_address)
@@ -175,23 +200,49 @@ async function runPolkCounty(jobData, runId) {
       await page.waitForTimeout(2000)
     })
 
-    // Step 5 — Fill address search
+    // Step 5 — Fill address search with normalized components
     stepNumber++
     await logStep(page, runId, stepNumber, 'fill_address_search', async function() {
-      var addressParts = jobData.property_address.trim().split(' ')
-      var streetNo = addressParts[0]
-      var streetName = addressParts.slice(1).join(' ')
-      console.log('  Street number: ' + streetNo)
-      console.log('  Street name: ' + streetName)
-      await page.fill(config.selectors.streetNo, streetNo)
-      await page.fill(config.selectors.streetName, streetName)
+      var parsed = parseAddress(jobData.property_address)
+      console.log('  Street number: ' + parsed.streetNo)
+      console.log('  Street name: ' + parsed.streetName)
+      console.log('  Suffix: ' + (parsed.suffix || 'none'))
+      console.log('  City: ' + jobData.property_city)
+      console.log('  Zip: ' + jobData.property_zip)
+
+      await page.fill(config.selectors.streetNo, parsed.streetNo)
+      await page.fill(config.selectors.streetName, parsed.streetName)
+      await page.waitForTimeout(300)
+
+      if (parsed.suffix && config.selectors.streetType) {
+        await page.selectOption(config.selectors.streetType, { label: parsed.suffix })
+          .catch(async function() {
+            await page.evaluate(function(sel, suffix) {
+              var el = document.querySelector(sel)
+              if (el) {
+                var opt = Array.from(el.options).find(function(o) {
+                  return o.text.toLowerCase().includes(suffix.toLowerCase())
+                })
+                if (opt) el.value = opt.value
+              }
+            }, config.selectors.streetType, parsed.suffix)
+          })
+        console.log('  Suffix filled: ' + parsed.suffix)
+      }
+
+      if (jobData.property_city && config.selectors.city) {
+        await page.fill(config.selectors.city, jobData.property_city)
+      }
+      if (jobData.property_zip && config.selectors.zip) {
+        await page.fill(config.selectors.zip, jobData.property_zip)
+      }
+
       await page.waitForTimeout(500)
       await page.click(config.selectors.addressSearchBtn)
       await page.waitForTimeout(4000)
     })
 
     // Step 6 — Select address result
-    // Portal auto-fills parcel number and owner name after this step
     stepNumber++
     await logStep(page, runId, stepNumber, 'select_address_result', async function() {
       await removeOverlay()
@@ -204,104 +255,100 @@ async function runPolkCounty(jobData, runId) {
       console.log('  Address results found: ' + allResults.length)
       allResults.forEach(function(r, i) { console.log('    [' + i + '] "' + r + '"') })
 
-      var resultEl = await page.$(config.selectors.addressResult)
-      if (!resultEl) {
+      // Filter out navigation buttons — look for results that contain street numbers
+      var validResults = await page.$$eval(config.selectors.addressResult, function(els) {
+        return els.map(function(el, i) { return { index: i, text: el.innerText.trim() } })
+          .filter(function(r) { return /^\d+/.test(r.text) })
+      }).catch(function() { return [] })
+
+      console.log('  Valid address results: ' + validResults.length)
+      validResults.forEach(function(r) { console.log('    [' + r.index + '] "' + r.text + '"') })
+
+      if (validResults.length === 0) {
+        // Retry with suffix only — no city/zip
+        console.log('  No valid results — address not found in portal')
         throw Object.assign(
           new Error('Address not found in portal: ' + jobData.property_address),
           { errorCode: 'validation_failed' }
         )
       }
 
-      var selectedText = await resultEl.innerText().catch(function() { return 'unknown' })
-      console.log('  Selecting result: "' + selectedText + '"')
+      // Click the first valid address result
+      var resultEls = await page.$$(config.selectors.addressResult)
+      var targetEl = resultEls[validResults[0].index]
+      var selectedText = await targetEl.innerText().catch(function() { return 'unknown' })
+      console.log('  Selecting: "' + selectedText + '"')
 
-      await page.evaluate(function(sel) {
-        var el = document.querySelector(sel)
-        if (el) el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
-      }, config.selectors.addressResult)
+      await targetEl.evaluate(function(el) {
+        el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      })
 
-      // Wait for portal to populate parcel + owner fields
       await page.waitForTimeout(5000)
       await removeOverlay()
       console.log('  Address selected — portal populating fields...')
     })
 
     // Step 7 — Phase 1 stop point
-    // Read parcel + owner, save to DB, click Save and Resume Later, trigger NOC
     stepNumber++
     await logStep(page, runId, stepNumber, 'phase1_save_parcel_and_stop', async function() {
       var supabase = getSupabase()
-
-      // Extra wait for portal to finish populating
       await page.waitForTimeout(2000)
 
-      // Log ALL populated input fields for debugging
+      // Log ALL populated inputs for debugging
       var allInputs = await page.$$eval('input[type="text"], input:not([type])', function(els) {
         return els.map(function(el) {
           return { id: el.id, name: el.name, value: el.value }
         }).filter(function(el) { return el.value && el.value.trim().length > 0 })
       }).catch(function() { return [] })
-      console.log('  Populated input fields on page (' + allInputs.length + '):')
+      console.log('  Populated fields (' + allInputs.length + '):')
       allInputs.forEach(function(el) {
-        console.log('    #' + el.id + ' name="' + el.name + '" value="' + el.value + '"')
+        console.log('    #' + el.id + ' value="' + el.value + '"')
       })
 
-      // Read parcel number
       var parcelNumber = await page.$eval(
         config.selectors.parcelNo,
         function(el) { return el.value || el.innerText || '' }
       ).catch(function() { return '' })
 
-      // Read owner name
       var portalOwnerName = await page.$eval(
         config.selectors.ownerName,
         function(el) { return el.value || el.innerText || '' }
       ).catch(function() { return '' })
 
-      console.log('  Parcel selector: ' + config.selectors.parcelNo)
       console.log('  Parcel raw value: "' + parcelNumber + '"')
       console.log('  Owner raw value: "' + portalOwnerName + '"')
 
-      // STOP if parcel missing — do not trigger NOC
       if (!parcelNumber || parcelNumber.trim() === '') {
-        console.log('  Parcel number not found — marking needs_review for manual inspection')
+        console.log('  Parcel not found — marking needs_review')
         await supabase.from('automation_runs').update({
           run_status: 'needs_review',
-          error_message: 'Parcel number not populated by portal. Check address format and dropdown selection.',
+          error_message: 'Parcel number not populated. Check address format and dropdown selection.',
           completed_at: new Date().toISOString(),
         }).eq('id', runId)
-        await supabase.from('jobs').update({
-          job_status: 'needs_review',
-        }).eq('id', jobData.id)
+        await supabase.from('jobs').update({ job_status: 'needs_review' }).eq('id', jobData.id)
         return
       }
 
-      // Save parcel to job
       var updateData = { parcel_number: parcelNumber.trim() }
       if (portalOwnerName && !jobData.owner_name) {
         updateData.owner_name = portalOwnerName.trim()
       }
       await supabase.from('jobs').update(updateData).eq('id', jobData.id)
-      console.log('  ✓ Parcel number saved: ' + parcelNumber)
+      console.log('  ✓ Parcel saved: ' + parcelNumber)
 
-      // Click Save and Resume Later
       await removeOverlay()
       await page.waitForSelector('a[onclick*="doSaveAndResume"]', { timeout: 10000 })
       await page.click('a[onclick*="doSaveAndResume"]')
       await page.waitForTimeout(3000)
       console.log('  ✓ Application saved in portal')
 
-      // Update statuses
       await supabase.from('automation_runs').update({
         run_status: 'waiting_for_noc',
         completed_at: new Date().toISOString(),
       }).eq('id', runId)
-      await supabase.from('jobs').update({
-        job_status: 'waiting_for_noc',
-      }).eq('id', jobData.id)
+      await supabase.from('jobs').update({ job_status: 'waiting_for_noc' }).eq('id', jobData.id)
       console.log('  ✓ Status: waiting_for_noc')
 
-      // Trigger NOC pipeline via web app API
       var webAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://roofing-permits-production.up.railway.app'
       fetch(webAppUrl + '/api/noc/start', {
         method: 'POST',
@@ -314,7 +361,6 @@ async function runPolkCounty(jobData, runId) {
 
     console.log('\n========================================')
     console.log('PHASE 1 COMPLETE — NOC PIPELINE STARTED')
-    console.log('Resume after NOC is recorded')
     console.log('========================================\n')
 
   } catch (err) {
