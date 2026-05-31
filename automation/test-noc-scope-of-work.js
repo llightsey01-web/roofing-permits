@@ -8,9 +8,11 @@ const DEFAULT_JOB_ID = '766b067e-f776-47d7-883e-ded938b66ddf'
 
 async function main() {
   const jobId = process.argv[2] || DEFAULT_JOB_ID
+  const ws = require('ws')
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { realtime: { transport: ws } }
   )
 
   console.log('Updating job scope_of_work...')

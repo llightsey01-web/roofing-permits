@@ -9,9 +9,11 @@ const { validateProofCredentials } = require('../lib/proof/send-noc-to-proof')
 const { captureProofTransactionId } = require('../lib/proof/transaction-id')
 
 function getSupabase() {
+  const ws = require('ws')
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { realtime: { transport: ws } }
   )
 }
 

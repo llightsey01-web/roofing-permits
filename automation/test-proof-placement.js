@@ -14,9 +14,11 @@ async function loadPdfBytes(jobId, pdfPath) {
 
   if (!jobId) throw new Error('Provide jobId or --pdf <path>')
 
+  var ws = require('ws')
   var supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { realtime: { transport: ws } }
   )
   var { data: job, error } = await supabase
     .from('jobs')

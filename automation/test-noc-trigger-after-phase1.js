@@ -10,9 +10,11 @@ const { getAppBaseUrl } = require('../lib/app-base-url')
 const DEFAULT_JOB_ID = '488bda23-95e3-469c-9c94-0bd4260afbf0'
 
 function getSupabase() {
+  const ws = require('ws')
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { realtime: { transport: ws } }
   )
 }
 

@@ -15,9 +15,11 @@ const { buildProofIdentity, buildProofMatchMeta } = require('../lib/proof/job-id
 const { fillSignerMessage } = require('../lib/proof/transaction-setup')
 
 function getSupabase() {
+  const ws = require('ws')
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { realtime: { transport: ws } }
   )
 }
 

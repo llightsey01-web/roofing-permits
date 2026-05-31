@@ -14,9 +14,11 @@ const { SendPackageSafetyError } = require('../lib/epn/submit-safety')
 var VISUAL_OPTS = { headless: false, slowMo: 250, waitForProofCompletion: true }
 
 function getSupabase() {
+  const ws = require('ws')
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { realtime: { transport: ws } }
   )
 }
 
