@@ -1,8 +1,0 @@
-{
-  "outputDir": "automation/logs/epn-inspect-1780208748984",
-  "pagesInspected": 8,
-  "selectorsFile": "automation/logs/epn-inspect-1780208748984/epn-selectors.json",
-  "navigationMapFile": "automation/logs/epn-inspect-1780208748984/epn-navigation-map.json",
-  "buildPlanFile": "automation/logs/epn-inspect-1780208748984/epn-build-plan.json",
-  "safetyNote": "Inspect only — no packages submitted, no recordings finalized"
-}
