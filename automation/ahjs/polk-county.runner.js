@@ -1,4 +1,6 @@
 require('dotenv').config({ path: '.env.local' })
+const fs = require('fs')
+const path = require('path')
 const { chromium } = require('playwright')
 const { Solver } = require('2captcha')
 const { logStep } = require('../shared/screenshot')
@@ -131,6 +133,15 @@ async function runPolkCounty(jobData, runId) {
     await page.waitForTimeout(300)
   }
 
+  async function saveStep6FailureArtifacts(runId) {
+    var dir = path.join('automation', 'logs')
+    fs.mkdirSync(dir, { recursive: true })
+    var base = path.join(dir, 'step6-failure-' + runId + '-' + Date.now())
+    await page.screenshot({ path: base + '.png', fullPage: true })
+    fs.writeFileSync(base + '.html', await page.content())
+    console.log('[results] failure artifacts saved: ' + base)
+  }
+
   try {
     // Step 1 — Login
     stepNumber++
@@ -231,44 +242,154 @@ async function runPolkCounty(jobData, runId) {
 
       await page.waitForTimeout(500)
       await page.click(config.selectors.addressSearchBtn)
-      await page.waitForTimeout(4000)
+
+      var searchWaitStart = Date.now()
+      var searchWaitReason = 'timeout'
+      var sawLoadingOrModal = false
+      console.log('  Waiting up to 15s for portal response after search...')
+
+      while (Date.now() - searchWaitStart < 15000) {
+        var searchState = await page.evaluate(function(sels) {
+          var parcelEl = document.querySelector(sels.parcelNo)
+          var cityEl = document.querySelector(sels.city)
+          var zipEl = document.querySelector(sels.zip)
+          var parcelVal = parcelEl ? (parcelEl.value || '').trim() : ''
+          var cityVal = cityEl ? (cityEl.value || '').trim() : ''
+          var zipVal = zipEl ? (zipEl.value || '').trim() : ''
+
+          var loading = document.getElementById('divLoadingTemplate')
+          var loadingVisible = false
+          if (loading) {
+            var loadingStyle = window.getComputedStyle(loading)
+            loadingVisible = loadingStyle.display !== 'none' &&
+              loadingStyle.visibility !== 'hidden' &&
+              loading.offsetParent !== null
+          }
+
+          var dialog = document.getElementById('dvACADialogLayer')
+          var mask = document.getElementById('dvACADialogLayerMask')
+          var modalVisible = false
+          if (dialog) {
+            var dialogStyle = window.getComputedStyle(dialog)
+            modalVisible = dialogStyle.display !== 'none' &&
+              !dialog.classList.contains('ACA_Hide') &&
+              dialog.offsetHeight > 20
+          }
+          if (mask && mask.offsetParent !== null) modalVisible = true
+
+          return {
+            parcelVal: parcelVal,
+            cityVal: cityVal,
+            zipVal: zipVal,
+            loadingVisible: loadingVisible,
+            modalVisible: modalVisible
+          }
+        }, {
+          parcelNo: config.selectors.parcelNo,
+          city: config.selectors.city,
+          zip: config.selectors.zip
+        }).catch(function() { return {} })
+
+        if (searchState.parcelVal) {
+          searchWaitReason = 'parcel populated'
+          break
+        }
+        if (searchState.cityVal && searchState.zipVal) {
+          searchWaitReason = 'city and zip populated'
+          break
+        }
+        if (searchState.loadingVisible || searchState.modalVisible) {
+          sawLoadingOrModal = true
+        }
+        if (sawLoadingOrModal && !searchState.loadingVisible && !searchState.modalVisible) {
+          searchWaitReason = 'loading spinner and modal disappeared'
+          break
+        }
+
+        await page.waitForTimeout(500)
+      }
+
+      var searchWaitMs = Date.now() - searchWaitStart
+      console.log('  Wait finished in ' + searchWaitMs + 'ms — condition: ' + searchWaitReason)
     })
 
     // Step 6 — Select address result
     stepNumber++
     await logStep(page, runId, stepNumber, 'select_address_result', async function() {
       await removeOverlay()
-      await page.waitForTimeout(500)
 
-      var allResults = await page.$$eval(config.selectors.addressResult, function(els) {
-        return els.map(function(el) { return el.innerText.trim() })
+      var parcelNumber = await page.$eval(
+        config.selectors.parcelNo,
+        function(el) { return (el.value || '').trim() }
+      ).catch(function() { return '' })
+      var city = await page.$eval(
+        config.selectors.city,
+        function(el) { return (el.value || '').trim() }
+      ).catch(function() { return '' })
+      var zip = await page.$eval(
+        config.selectors.zip,
+        function(el) { return (el.value || '').trim() }
+      ).catch(function() { return '' })
+
+      var autoFilled = !!(parcelNumber || (city && zip))
+      console.log('[results] auto-fill detected: ' + autoFilled)
+      if (autoFilled) {
+        console.log('[results] parcel: ' + (parcelNumber || 'n/a') + ', city: ' + city + ', zip: ' + zip)
+        console.log('  Address selected — portal populating fields...')
+        return
+      }
+
+      var rowSelector = config.selectors.addressResult
+      console.log('[results] auto-fill not detected — attempting grid selection')
+      console.log('[results] selector used: ' + rowSelector)
+
+      try {
+        await page.waitForSelector(rowSelector, { timeout: 10000 })
+      } catch (waitErr) {
+        await saveStep6FailureArtifacts(runId)
+        throw Object.assign(
+          new Error('Address results grid did not appear: ' + jobData.property_address),
+          { errorCode: 'validation_failed' }
+        )
+      }
+
+      var rawRows = await page.$$eval(rowSelector, function(rows) {
+        return rows.map(function(row) { return row.innerText.trim() })
       }).catch(function() { return [] })
-      console.log('  Address results found: ' + allResults.length)
-      allResults.forEach(function(r, i) { console.log('    [' + i + '] "' + r + '"') })
+      rawRows.forEach(function(text, i) {
+        console.log('[results] raw row text [' + i + ']: "' + text + '"')
+      })
 
-      var validResults = await page.$$eval(config.selectors.addressResult, function(els) {
-        return els.map(function(el, i) { return { index: i, text: el.innerText.trim() } })
-          .filter(function(r) { return /^\d+/.test(r.text) })
+      var matchedRows = await page.$$eval(rowSelector, function(rows) {
+        return rows.map(function(row, i) {
+          return { index: i, text: row.innerText.trim() }
+        }).filter(function(r) {
+          if (!r.text) return false
+          if (/continue application/i.test(r.text)) return false
+          return /^\d+/.test(r.text)
+        })
       }).catch(function() { return [] })
 
-      console.log('  Valid address results: ' + validResults.length)
-      validResults.forEach(function(r) { console.log('    [' + r.index + '] "' + r.text + '"') })
-
-      if (validResults.length === 0) {
+      if (matchedRows.length === 0) {
+        await saveStep6FailureArtifacts(runId)
         throw Object.assign(
           new Error('Address not found in portal: ' + jobData.property_address),
           { errorCode: 'validation_failed' }
         )
       }
 
-      var resultEls = await page.$$(config.selectors.addressResult)
-      var targetEl = resultEls[validResults[0].index]
-      var selectedText = await targetEl.innerText().catch(function() { return 'unknown' })
-      console.log('  Selecting: "' + selectedText + '"')
+      var matched = matchedRows[0]
+      console.log('[results] matched row [' + matched.index + ']: "' + matched.text + '"')
 
-      await targetEl.evaluate(function(el) {
-        el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      var resultRows = await page.$$(rowSelector)
+      var targetRow = resultRows[matched.index]
+      await targetRow.evaluate(function(row) {
+        var link = row.querySelector('a')
+        var target = link || row
+        target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
       })
+
+      console.log('[results] clicked row [' + matched.index + ']: "' + matched.text + '"')
 
       await page.waitForTimeout(5000)
       await removeOverlay()

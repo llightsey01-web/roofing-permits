@@ -31,7 +31,7 @@ module.exports = {
     state:              '#ctl00_PlaceHolderMain_WorkLocationEdit_txtState_State1',
     zip:                '#ctl00_PlaceHolderMain_WorkLocationEdit_txtZip',
     addressSearchBtn:   '#ctl00_PlaceHolderMain_WorkLocationEdit_btnSearch',
-    addressResult:      '.ACA_Grid_Row a',
+    addressResult:      '#ctl00_PlaceHolderMain_WorkLocationEdit .ACA_Grid_Row',
 
     // Parcel (auto-fills from address search)
     parcelNo:           '#ctl00_PlaceHolderMain_ParcelEdit_txtParcelNo',
