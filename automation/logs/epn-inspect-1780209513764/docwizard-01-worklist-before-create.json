@@ -1,0 +1,498 @@
+{
+  "url": "https://ep.erecording.com/Worklist",
+  "title": "Worklist - ePrepare",
+  "headings": [],
+  "links": [
+    {
+      "type": "link",
+      "text": "CSC ePrepare",
+      "href": "/Worklist",
+      "selector": "#navileaf0",
+      "tags": [
+        "status_history"
+      ]
+    },
+    {
+      "type": "link",
+      "text": "Upload Worklist",
+      "href": "/Worklist",
+      "selector": "#navileaf1",
+      "tags": [
+        "document_upload",
+        "status_history"
+      ]
+    },
+    {
+      "type": "link",
+      "text": "2Announcements",
+      "href": "#",
+      "selector": "#HyperLink6",
+      "tags": []
+    },
+    {
+      "type": "link",
+      "text": "Send Us Feedback",
+      "href": "javascript:void(0);",
+      "selector": "a",
+      "tags": [
+        "fees_summary"
+      ]
+    },
+    {
+      "type": "link",
+      "text": "Logan Lightsey",
+      "href": "javascript:void(0);",
+      "selector": "a",
+      "tags": []
+    },
+    {
+      "type": "link",
+      "text": "Worklist",
+      "href": "/Worklist",
+      "selector": "a",
+      "tags": [
+        "status_history"
+      ]
+    },
+    {
+      "type": "link",
+      "text": "Reports",
+      "href": "/ReportHub",
+      "selector": "a",
+      "tags": []
+    },
+    {
+      "type": "link",
+      "text": "County Knowledge",
+      "href": "/L2/CountyKnowledge",
+      "selector": "a",
+      "tags": [
+        "county_jurisdiction"
+      ]
+    },
+    {
+      "type": "link",
+      "text": "",
+      "href": "/Secure/Help/Overview.aspx",
+      "selector": "a",
+      "tags": []
+    },
+    {
+      "type": "link",
+      "text": "",
+      "href": "/Secure/Admin/Settings.aspx",
+      "selector": "a",
+      "tags": []
+    },
+    {
+      "type": "link",
+      "text": "Worklist User Guide",
+      "href": "https://apps.erecording.com/Quickstart/SubmitterGuides/ePrepareGuides/Advanced%20Worklist.pdf",
+      "selector": "a",
+      "tags": [
+        "new_submission_entry",
+        "status_history",
+        "submit_button_candidate"
+      ]
+    },
+    {
+      "type": "link",
+      "text": "AHJ-IQ TEST DO NOT SUBMIT 1780209466095",
+      "href": "../../Secure/Packages/PackageView.aspx?packId=50319686&isArchived=false",
+      "selector": "a",
+      "tags": [
+        "submit_button_candidate"
+      ]
+    },
+    {
+      "type": "link",
+      "text": "Polk County, FL",
+      "href": "../L2/CountyKnowledge#/?jurisId=0",
+      "selector": "a",
+      "tags": [
+        "county_jurisdiction"
+      ]
+    },
+    {
+      "type": "link",
+      "text": "idk",
+      "href": "../../Secure/Packages/PackageView.aspx?packId=50254044&isArchived=false",
+      "selector": "a",
+      "tags": []
+    },
+    {
+      "type": "link",
+      "text": "Polk County, FL",
+      "href": "../L2/CountyKnowledge#/?jurisId=0",
+      "selector": "a",
+      "tags": [
+        "county_jurisdiction"
+      ]
+    }
+  ],
+  "buttons": [
+    {
+      "type": "button",
+      "text": "Add Package",
+      "selector": "#AddPackage-button",
+      "inputType": null,
+      "tags": []
+    },
+    {
+      "type": "button",
+      "text": "All States",
+      "selector": "button",
+      "inputType": "button",
+      "tags": [
+        "county_jurisdiction"
+      ]
+    },
+    {
+      "type": "button",
+      "text": "All Counties",
+      "selector": "button",
+      "inputType": "button",
+      "tags": []
+    },
+    {
+      "type": "button",
+      "text": "Columns",
+      "selector": "button",
+      "inputType": "button",
+      "tags": []
+    }
+  ],
+  "inputs": [
+    {
+      "tag": "input",
+      "type": "text",
+      "name": null,
+      "id": "package-name",
+      "placeholder": null,
+      "label": null,
+      "selector": "#package-name",
+      "tags": []
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": null,
+      "id": null,
+      "placeholder": null,
+      "label": null,
+      "selector": "input",
+      "tags": []
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": null,
+      "id": "stateCounty-search",
+      "placeholder": "Enter state or county",
+      "label": null,
+      "selector": "#stateCounty-search",
+      "tags": [
+        "county_jurisdiction",
+        "status_history"
+      ]
+    },
+    {
+      "tag": "select",
+      "type": "select",
+      "name": "options",
+      "id": null,
+      "placeholder": null,
+      "label": null,
+      "selector": "select[name=\"options\"]",
+      "tags": []
+    },
+    {
+      "tag": "input",
+      "type": "text",
+      "name": null,
+      "id": "TextSearchAng",
+      "placeholder": "Search",
+      "label": null,
+      "selector": "#TextSearchAng",
+      "tags": [
+        "status_history"
+      ]
+    },
+    {
+      "tag": "input",
+      "type": "checkbox",
+      "name": null,
+      "id": "ag-47-input",
+      "placeholder": null,
+      "label": null,
+      "selector": "#ag-47-input",
+      "tags": []
+    },
+    {
+      "tag": "input",
+      "type": "checkbox",
+      "name": null,
+      "id": "ag-96-input",
+      "placeholder": null,
+      "label": "Press Space to toggle row selection (unchecked)",
+      "selector": "#ag-96-input",
+      "tags": []
+    },
+    {
+      "tag": "input",
+      "type": "checkbox",
+      "name": null,
+      "id": "ag-109-input",
+      "placeholder": null,
+      "label": "Press Space to toggle row selection (unchecked)",
+      "selector": "#ag-109-input",
+      "tags": []
+    }
+  ],
+  "bodyTextSample": "CSC ePrepare Upload Worklist 2 Announcements Send Us Feedback Logan Lightsey WORKLIST REPORTS COUNTY KNOWLEDGE WORKLIST USER GUIDE 2 All 0 Preparing 0 Ready 0 Pending 0 Rejected 0 Recorded 0 Flagged Package Name Jurisdiction ADD PACKAGE ALL STATES ALL COUNTIES Package Name Document Name PACKAGE DOCS JURISDICTION MODIFIED DATE STATUS ACTIONS AHJ-IQ TEST DO NOT SUBMIT 1780209466095 0 Polk County, FL 5/31/2026 2:38 AM Empty idk 0 Polk County, FL 5/27/2026 12:53 AM Empty COLUMNS Packages: 2 Copyright © Corporation Service Company. All Rights Reserved. Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel)",
+  "fileInputs": [],
+  "dropzones": [
+    {
+      "selector": "#HyperLink6",
+      "className": "c-animate dropdown-toggle",
+      "text": "2Announcements",
+      "ariaLabel": null
+    },
+    {
+      "selector": "li",
+      "className": "uh-dropdown",
+      "text": "Logan Lightsey Settings OfficesCustomer RefUser InfoReport SubJurisdictionsPaymentsFlags Help Premium Features & Enhance",
+      "ariaLabel": null
+    },
+    {
+      "selector": "a",
+      "className": "uh-dropdownbtn c-animate nudge",
+      "text": "Logan Lightsey",
+      "ariaLabel": null
+    },
+    {
+      "selector": "button",
+      "className": "btn btn-default btn-sm dropdown-toggle bs-tooltip",
+      "text": "All States",
+      "ariaLabel": null
+    },
+    {
+      "selector": "button",
+      "className": "btn btn-default btn-sm dropdown-toggle bs-tooltip disabled",
+      "text": "All Counties",
+      "ariaLabel": null
+    }
+  ],
+  "selects": [
+    {
+      "selector": "select[name=\"options\"]",
+      "name": "options",
+      "id": null,
+      "label": null,
+      "options": [
+        {
+          "value": "0: Package Name",
+          "text": "Package Name"
+        },
+        {
+          "value": "1: Document Name",
+          "text": "Document Name"
+        }
+      ]
+    }
+  ],
+  "labeledFields": [
+    {
+      "selector": "#package-name",
+      "tag": "input",
+      "type": "text",
+      "name": null,
+      "id": "package-name",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "value": "Enter package name"
+    },
+    {
+      "selector": "input",
+      "tag": "input",
+      "type": "text",
+      "name": null,
+      "id": null,
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "value": null
+    },
+    {
+      "selector": "#stateCounty-search",
+      "tag": "input",
+      "type": "text",
+      "name": null,
+      "id": "stateCounty-search",
+      "placeholder": "Enter state or county",
+      "label": "Jurisdiction",
+      "ariaLabel": null,
+      "value": null
+    },
+    {
+      "selector": "select[name=\"options\"]",
+      "tag": "select",
+      "type": "select",
+      "name": "options",
+      "id": null,
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "value": "0: Package Name"
+    },
+    {
+      "selector": "#TextSearchAng",
+      "tag": "input",
+      "type": "text",
+      "name": null,
+      "id": "TextSearchAng",
+      "placeholder": "Search",
+      "label": null,
+      "ariaLabel": null,
+      "value": null
+    },
+    {
+      "selector": "#ag-47-input",
+      "tag": "input",
+      "type": "checkbox",
+      "name": null,
+      "id": "ag-47-input",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "value": "on"
+    },
+    {
+      "selector": "#ag-96-input",
+      "tag": "input",
+      "type": "checkbox",
+      "name": null,
+      "id": "ag-96-input",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": "Press Space to toggle row selection (unchecked)",
+      "value": "on"
+    },
+    {
+      "selector": "#ag-109-input",
+      "tag": "input",
+      "type": "checkbox",
+      "name": null,
+      "id": "ag-109-input",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": "Press Space to toggle row selection (unchecked)",
+      "value": "on"
+    }
+  ],
+  "allButtons": [
+    {
+      "selector": "#navileaf0",
+      "text": "CSC ePrepare",
+      "tag": "a",
+      "href": "/Worklist"
+    },
+    {
+      "selector": "#navileaf1",
+      "text": "Upload Worklist",
+      "tag": "a",
+      "href": "/Worklist"
+    },
+    {
+      "selector": "#HyperLink6",
+      "text": "2Announcements",
+      "tag": "a",
+      "href": "#"
+    },
+    {
+      "selector": "a",
+      "text": "Send Us Feedback",
+      "tag": "a",
+      "href": "javascript:void(0);"
+    },
+    {
+      "selector": "a",
+      "text": "Logan Lightsey",
+      "tag": "a",
+      "href": "javascript:void(0);"
+    },
+    {
+      "selector": "a",
+      "text": "Worklist",
+      "tag": "a",
+      "href": "/Worklist"
+    },
+    {
+      "selector": "a",
+      "text": "Reports",
+      "tag": "a",
+      "href": "/ReportHub"
+    },
+    {
+      "selector": "a",
+      "text": "County Knowledge",
+      "tag": "a",
+      "href": "/L2/CountyKnowledge"
+    },
+    {
+      "selector": "a",
+      "text": "Worklist User Guide",
+      "tag": "a",
+      "href": "https://apps.erecording.com/Quickstart/SubmitterGuides/ePrepareGuides/Advanced%20Worklist.pdf"
+    },
+    {
+      "selector": "#AddPackage-button",
+      "text": "Add Package",
+      "tag": "button",
+      "href": null
+    },
+    {
+      "selector": "button",
+      "text": "All States",
+      "tag": "button",
+      "href": null
+    },
+    {
+      "selector": "button",
+      "text": "All Counties",
+      "tag": "button",
+      "href": null
+    },
+    {
+      "selector": "a",
+      "text": "AHJ-IQ TEST DO NOT SUBMIT 1780209466095",
+      "tag": "a",
+      "href": "../../Secure/Packages/PackageView.aspx?packId=50319686&isArchived=false"
+    },
+    {
+      "selector": "a",
+      "text": "Polk County, FL",
+      "tag": "a",
+      "href": "../L2/CountyKnowledge#/?jurisId=0"
+    },
+    {
+      "selector": "a",
+      "text": "idk",
+      "tag": "a",
+      "href": "../../Secure/Packages/PackageView.aspx?packId=50254044&isArchived=false"
+    },
+    {
+      "selector": "a",
+      "text": "Polk County, FL",
+      "tag": "a",
+      "href": "../L2/CountyKnowledge#/?jurisId=0"
+    },
+    {
+      "selector": "button",
+      "text": "Columns",
+      "tag": "button",
+      "href": null
+    }
+  ]
+}

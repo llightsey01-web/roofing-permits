@@ -1,0 +1,230 @@
+{
+  "transactionId": "otprk9kw3",
+  "transaction_id_source": "records_row_href",
+  "href": "/transaction/records/otprk9kw3/summary?configId=notarization",
+  "recipient": "test test",
+  "transactionName": "AHJ-iQ NOC - 766b067e-f776-47d7-883e-ded938b66ddf - 603 clayton circle",
+  "status": "Sent",
+  "rowText": "AHJ-iQ NOC - 766b067e-f776-47d7-883e-ded938b66ddf - 603 clayton circleNotarizeSentLogan Lightsey (ord4qewxy)test testLogan Lightsey05/31/2026Transaction menu",
+  "matchResult": {
+    "score": 90,
+    "confidence": "strong",
+    "reasons": [
+      "jobId",
+      "expected_transaction_title",
+      "sent_at_window"
+    ],
+    "proof_match_method": "jobId+expected_transaction_title+sent_at_window",
+    "proof_match_confidence": "strong",
+    "expected_document_name": "noc-766b067e-f776-47d7-883e-ded938b66ddf.pdf",
+    "expected_transaction_title": "AHJ-iQ NOC - 766b067e-f776-47d7-883e-ded938b66ddf - 603 clayton circle",
+    "acceptedForPostSendCapture": true,
+    "acceptedForScannerApply": true,
+    "acceptedForNotarization": true,
+    "manualOverride": false
+  },
+  "matchedRows": [
+    {
+      "rowIndex": 1,
+      "text": "AHJ-iQ NOC - 766b067e-f776-47d7-883e-ded938b66ddf - 603 clayton circleNotarizeSentLogan Lightsey (ord4qewxy)test testLogan Lightsey05/31/2026Transaction menu",
+      "href": "/transaction/records/otprk9kw3/summary?configId=notarization",
+      "transactionId": "otprk9kw3",
+      "transactionName": "AHJ-iQ NOC - 766b067e-f776-47d7-883e-ded938b66ddf - 603 clayton circle",
+      "recipient": "test test",
+      "status": "Sent",
+      "dateCreated": "05/31/2026",
+      "matchResult": {
+        "score": 90,
+        "confidence": "strong",
+        "reasons": [
+          "jobId",
+          "expected_transaction_title",
+          "sent_at_window"
+        ],
+        "proof_match_method": "jobId+expected_transaction_title+sent_at_window",
+        "proof_match_confidence": "strong",
+        "expected_document_name": "noc-766b067e-f776-47d7-883e-ded938b66ddf.pdf",
+        "expected_transaction_title": "AHJ-iQ NOC - 766b067e-f776-47d7-883e-ded938b66ddf - 603 clayton circle",
+        "acceptedForPostSendCapture": true,
+        "acceptedForScannerApply": true,
+        "acceptedForNotarization": true,
+        "manualOverride": false
+      }
+    },
+    {
+      "rowIndex": 2,
+      "text": "Untitled TransactionNotarizeSentLogan Lightsey (ord4qewxy)test testLogan Lightsey05/31/2026Transaction menu",
+      "href": "/transaction/records/otrkq3qbw/summary?configId=notarization",
+      "transactionId": "otrkq3qbw",
+      "transactionName": "test test",
+      "recipient": "Untitled Transaction",
+      "status": "Sent",
+      "dateCreated": "05/31/2026",
+      "matchResult": {
+        "score": 10,
+        "confidence": "weak",
+        "reasons": [
+          "sent_at_window"
+        ],
+        "proof_match_method": "sent_at_window",
+        "proof_match_confidence": "weak",
+        "expected_document_name": "noc-766b067e-f776-47d7-883e-ded938b66ddf.pdf",
+        "expected_transaction_title": "AHJ-iQ NOC - 766b067e-f776-47d7-883e-ded938b66ddf - 603 clayton circle",
+        "acceptedForPostSendCapture": false,
+        "acceptedForScannerApply": false,
+        "acceptedForNotarization": false,
+        "manualOverride": false
+      }
+    },
+    {
+      "rowIndex": 14,
+      "text": "Untitled TransactionNotarizeSentLogan Lightsey (ord4qewxy)test testLogan Lightsey05/31/2026Transaction menu",
+      "href": "/transaction/records/otge8k8bk/summary?configId=notarization",
+      "transactionId": "otge8k8bk",
+      "transactionName": "test test",
+      "recipient": "Untitled Transaction",
+      "status": "Sent",
+      "dateCreated": "05/31/2026",
+      "matchResult": {
+        "score": 10,
+        "confidence": "weak",
+        "reasons": [
+          "sent_at_window"
+        ],
+        "proof_match_method": "sent_at_window",
+        "proof_match_confidence": "weak",
+        "expected_document_name": "noc-766b067e-f776-47d7-883e-ded938b66ddf.pdf",
+        "expected_transaction_title": "AHJ-iQ NOC - 766b067e-f776-47d7-883e-ded938b66ddf - 603 clayton circle",
+        "acceptedForPostSendCapture": false,
+        "acceptedForScannerApply": false,
+        "acceptedForNotarization": false,
+        "manualOverride": false
+      }
+    },
+    {
+      "rowIndex": 20,
+      "text": "Untitled TransactionNotarizeSentLogan Lightsey (ord4qewxy)logan lightseyLogan Lightsey05/28/2026Transaction menu",
+      "href": "/transaction/records/otq76r6wo/summary?configId=notarization",
+      "transactionId": "otq76r6wo",
+      "transactionName": "logan lightsey",
+      "recipient": "Untitled Transaction",
+      "status": "Sent",
+      "dateCreated": "05/28/2026",
+      "matchResult": {
+        "score": 10,
+        "confidence": "weak",
+        "reasons": [
+          "sent_at_window"
+        ],
+        "proof_match_method": "sent_at_window",
+        "proof_match_confidence": "weak",
+        "expected_document_name": "noc-766b067e-f776-47d7-883e-ded938b66ddf.pdf",
+        "expected_transaction_title": "AHJ-iQ NOC - 766b067e-f776-47d7-883e-ded938b66ddf - 603 clayton circle",
+        "acceptedForPostSendCapture": false,
+        "acceptedForScannerApply": false,
+        "acceptedForNotarization": false,
+        "manualOverride": false
+      }
+    },
+    {
+      "rowIndex": 23,
+      "text": "Untitled TransactionNotarizeSentLogan Lightsey (ord4qewxy)logan lightseyLogan Lightsey05/28/2026Transaction menu",
+      "href": "/transaction/records/otge8z86m/summary?configId=notarization",
+      "transactionId": "otge8z86m",
+      "transactionName": "logan lightsey",
+      "recipient": "Untitled Transaction",
+      "status": "Sent",
+      "dateCreated": "05/28/2026",
+      "matchResult": {
+        "score": 10,
+        "confidence": "weak",
+        "reasons": [
+          "sent_at_window"
+        ],
+        "proof_match_method": "sent_at_window",
+        "proof_match_confidence": "weak",
+        "expected_document_name": "noc-766b067e-f776-47d7-883e-ded938b66ddf.pdf",
+        "expected_transaction_title": "AHJ-iQ NOC - 766b067e-f776-47d7-883e-ded938b66ddf - 603 clayton circle",
+        "acceptedForPostSendCapture": false,
+        "acceptedForScannerApply": false,
+        "acceptedForNotarization": false,
+        "manualOverride": false
+      }
+    },
+    {
+      "rowIndex": 24,
+      "text": "Untitled TransactionNotarizeSentLogan Lightsey (ord4qewxy)logan lightseyLogan Lightsey05/28/2026Transaction menu",
+      "href": "/transaction/records/ot44kykj3/summary?configId=notarization",
+      "transactionId": "ot44kykj3",
+      "transactionName": "logan lightsey",
+      "recipient": "Untitled Transaction",
+      "status": "Sent",
+      "dateCreated": "05/28/2026",
+      "matchResult": {
+        "score": 10,
+        "confidence": "weak",
+        "reasons": [
+          "sent_at_window"
+        ],
+        "proof_match_method": "sent_at_window",
+        "proof_match_confidence": "weak",
+        "expected_document_name": "noc-766b067e-f776-47d7-883e-ded938b66ddf.pdf",
+        "expected_transaction_title": "AHJ-iQ NOC - 766b067e-f776-47d7-883e-ded938b66ddf - 603 clayton circle",
+        "acceptedForPostSendCapture": false,
+        "acceptedForScannerApply": false,
+        "acceptedForNotarization": false,
+        "manualOverride": false
+      }
+    },
+    {
+      "rowIndex": 25,
+      "text": "Untitled TransactionNotarizeSentLogan Lightsey (ord4qewxy)logan lightseyLogan Lightsey05/28/2026Transaction menu",
+      "href": "/transaction/records/otge8z8gw/summary?configId=notarization",
+      "transactionId": "otge8z8gw",
+      "transactionName": "logan lightsey",
+      "recipient": "Untitled Transaction",
+      "status": "Sent",
+      "dateCreated": "05/28/2026",
+      "matchResult": {
+        "score": 10,
+        "confidence": "weak",
+        "reasons": [
+          "sent_at_window"
+        ],
+        "proof_match_method": "sent_at_window",
+        "proof_match_confidence": "weak",
+        "expected_document_name": "noc-766b067e-f776-47d7-883e-ded938b66ddf.pdf",
+        "expected_transaction_title": "AHJ-iQ NOC - 766b067e-f776-47d7-883e-ded938b66ddf - 603 clayton circle",
+        "acceptedForPostSendCapture": false,
+        "acceptedForScannerApply": false,
+        "acceptedForNotarization": false,
+        "manualOverride": false
+      }
+    },
+    {
+      "rowIndex": 27,
+      "text": "Untitled TransactionNotarizeSentLogan Lightsey (ord4qewxy)logan lightseyLogan Lightsey05/28/2026Transaction menu",
+      "href": "/transaction/records/otzqkxkyj/summary?configId=notarization",
+      "transactionId": "otzqkxkyj",
+      "transactionName": "logan lightsey",
+      "recipient": "Untitled Transaction",
+      "status": "Sent",
+      "dateCreated": "05/28/2026",
+      "matchResult": {
+        "score": 10,
+        "confidence": "weak",
+        "reasons": [
+          "sent_at_window"
+        ],
+        "proof_match_method": "sent_at_window",
+        "proof_match_confidence": "weak",
+        "expected_document_name": "noc-766b067e-f776-47d7-883e-ded938b66ddf.pdf",
+        "expected_transaction_title": "AHJ-iQ NOC - 766b067e-f776-47d7-883e-ded938b66ddf - 603 clayton circle",
+        "acceptedForPostSendCapture": false,
+        "acceptedForScannerApply": false,
+        "acceptedForNotarization": false,
+        "manualOverride": false
+      }
+    }
+  ]
+}

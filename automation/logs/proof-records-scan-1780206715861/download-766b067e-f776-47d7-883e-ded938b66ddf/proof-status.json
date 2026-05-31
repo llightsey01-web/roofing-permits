@@ -1,0 +1,20 @@
+{
+  "transactionId": "otge8zgp4",
+  "summaryUrl": "https://business.proof.com/transaction/records/otge8zgp4/summary?configId=notarization",
+  "documentUrl": "https://business.proof.com/transaction/records/otge8zgp4/document?configId=notarization",
+  "headerText": "Untitled Transaction logan lightsey Complete Notarize Transaction actions Summary Document Recipients Identity Risk Meeting Notes History Activity Log 1 of 2 Notice of Commencement Page 1 of 2 Florida Statutes 713.13 NOTICE OF COMMENCEMENT Permit No.:___________________",
+  "statuses": [
+    "Complete"
+  ],
+  "summaryStatus": "Complete",
+  "documentStatus": "Complete",
+  "primaryStatus": "Complete",
+  "downloadCandidates": [
+    {
+      "tag": "BUTTON",
+      "text": "Download all",
+      "href": null
+    }
+  ],
+  "isComplete": true
+}

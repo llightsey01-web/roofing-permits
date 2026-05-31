@@ -11,8 +11,24 @@ export default function JobDetailPage({ params }) {
   const [uploading, setUploading] = useState(false)
   const [runningAutomation, setRunningAutomation] = useState(false)
   const [automationMessage, setAutomationMessage] = useState('')
-  const [documents, setDocuments] = useState([])
+  const [recordingNumber, setRecordingNumber] = useState('')
+  const [recordingNumberOnly, setRecordingNumberOnly] = useState(false)
+  const [recordingFile, setRecordingFile] = useState(null)
+  const [recordingMessage, setRecordingMessage] = useState('')
+  const [recordingSubmitting, setRecordingSubmitting] = useState(false)
+  const [notarizedDownloadUrl, setNotarizedDownloadUrl] = useState(null)
+  const [recordedDownloadUrl, setRecordedDownloadUrl] = useState(null)
   const [jobId, setJobId] = useState(null)
+  const [documents, setDocuments] = useState([])
+  const [recordingProvider, setRecordingProvider] = useState('manual')
+  const [providerSaving, setProviderSaving] = useState(false)
+
+  const ERECORD_PROVIDER_OPTIONS = [
+    { id: 'manual', label: 'Manual' },
+    { id: 'epn', label: 'ePN' },
+    { id: 'simplifile', label: 'Simplifile' },
+    { id: 'csc', label: 'CSC' },
+  ]
 
   useEffect(() => {
     async function init() {
@@ -37,7 +53,23 @@ export default function JobDetailPage({ params }) {
 
     setJob(job)
     setDocuments(docs || [])
+    setRecordingProvider(job?.job_specs?.erecord?.provider || 'manual')
     setLoading(false)
+
+    const notarizedPath = job?.job_specs?.proof?.notarized_file_path
+    const recordedPath = job?.job_specs?.erecord?.recorded_file_path
+    if (notarizedPath) {
+      const { data: signed } = await supabase.storage.from('job-documents').createSignedUrl(notarizedPath, 3600)
+      setNotarizedDownloadUrl(signed?.signedUrl || null)
+    } else {
+      setNotarizedDownloadUrl(null)
+    }
+    if (recordedPath) {
+      const { data: signedRecorded } = await supabase.storage.from('job-documents').createSignedUrl(recordedPath, 3600)
+      setRecordedDownloadUrl(signedRecorded?.signedUrl || null)
+    } else {
+      setRecordedDownloadUrl(null)
+    }
   }
 
   async function handleFileUpload(e, documentType) {
@@ -93,6 +125,85 @@ export default function JobDetailPage({ params }) {
     setRunningAutomation(false)
   }
 
+  async function handleMarkNocRecorded(e) {
+    e.preventDefault()
+    setRecordingSubmitting(true)
+    setRecordingMessage('')
+
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      setRecordingMessage('Error: not authenticated')
+      setRecordingSubmitting(false)
+      return
+    }
+
+    if (!recordingNumber.trim()) {
+      setRecordingMessage('Error: recording number is required')
+      setRecordingSubmitting(false)
+      return
+    }
+
+    if (!recordingNumberOnly && !recordingFile) {
+      setRecordingMessage('Error: upload recorded/stamped NOC or check "Recording number only"')
+      setRecordingSubmitting(false)
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('recording_number', recordingNumber.trim())
+    formData.append('recording_number_only', recordingNumberOnly ? 'true' : 'false')
+    if (recordingFile) formData.append('recorded_noc_file', recordingFile)
+
+    const response = await fetch('/api/jobs/' + jobId + '/record-noc', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + session.access_token },
+      body: formData,
+    })
+
+    const result = await response.json()
+    if (response.ok) {
+      setRecordingMessage('NOC marked as recorded.')
+      setRecordingFile(null)
+      await loadJob(jobId)
+    } else {
+      setRecordingMessage('Error: ' + (result.error || 'Failed to record NOC'))
+    }
+    setRecordingSubmitting(false)
+  }
+
+  async function handleRecordingProviderChange(nextProvider) {
+    if (!jobId || nextProvider === recordingProvider) return
+    setProviderSaving(true)
+    setRecordingMessage('')
+
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      setRecordingMessage('Error: not authenticated')
+      setProviderSaving(false)
+      return
+    }
+
+    const response = await fetch('/api/jobs/' + jobId + '/erecord-provider', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + session.access_token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ provider: nextProvider }),
+    })
+
+    const result = await response.json()
+    if (response.ok) {
+      setRecordingProvider(nextProvider)
+      await loadJob(jobId)
+    } else {
+      setRecordingMessage('Error: ' + (result.error || 'Failed to update provider'))
+    }
+    setProviderSaving(false)
+  }
+
   const statusColors = {
     draft:              { bg: '#f1f5f9', text: '#475569' },
     ready:              { bg: '#dbeafe', text: '#1d4ed8' },
@@ -120,10 +231,13 @@ export default function JobDetailPage({ params }) {
   const nocStages = [
     { key: 'not_started',             label: 'Not started' },
     { key: 'generated',               label: 'NOC generated' },
-    { key: 'queued_for_notarization', label: 'Sent to homeowner' },
+    { key: 'queued_for_notarization', label: 'Queued for Proof' },
+    { key: 'sent_to_homeowner',       label: 'Sent to homeowner' },
     { key: 'sent_for_notarization',   label: 'Awaiting signature' },
     { key: 'signed',                  label: 'Signed' },
     { key: 'notarized',               label: 'Notarized' },
+    { key: 'queued_for_erecord',      label: 'Queued for eRecord' },
+    { key: 'ready_for_erecord_review', label: 'Ready for eRecord review' },
     { key: 'submitted_to_erecord',    label: 'Submitted to eRecord' },
     { key: 'recorded',                label: 'Recorded' },
   ]
@@ -362,6 +476,198 @@ export default function JobDetailPage({ params }) {
               {job.noc_signed_at && <div><p style={{ fontSize: '11px', color: '#94a3b8', margin: '0 0 2px 0' }}>Signed</p><p style={{ fontSize: '13px', color: '#374151', margin: 0 }}>{new Date(job.noc_signed_at).toLocaleString()}</p></div>}
               {job.noc_recorded_at && <div><p style={{ fontSize: '11px', color: '#94a3b8', margin: '0 0 2px 0' }}>Recorded</p><p style={{ fontSize: '13px', color: '#374151', margin: 0 }}>{new Date(job.noc_recorded_at).toLocaleString()}</p></div>}
               {job.noc_recording_number && <div><p style={{ fontSize: '11px', color: '#94a3b8', margin: '0 0 2px 0' }}>Recording #</p><p style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', margin: 0 }}>{job.noc_recording_number}</p></div>}
+            </div>
+          )}
+
+          {(nocStatus === 'notarized' || nocStatus === 'queued_for_erecord' || nocStatus === 'ready_for_erecord_review' || nocStatus === 'recorded') && (
+            <div style={{
+              marginTop: '24px', padding: '20px', borderRadius: '10px',
+              border: '1px solid #c7d2fe', backgroundColor: '#eef2ff',
+            }}>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#312e81', margin: '0 0 6px 0' }}>
+                eRecording
+              </p>
+              <p style={{ fontSize: '13px', color: '#4338ca', margin: '0 0 16px 0' }}>
+                Current NOC status: <strong>{nocStatus.replace(/_/g, ' ')}</strong>
+              </p>
+
+              {nocStatus === 'ready_for_erecord_review' && recordingProvider === 'epn' && (
+                <div style={{
+                  marginBottom: '16px', padding: '14px 16px', borderRadius: '8px',
+                  backgroundColor: '#fef3c7', border: '1px solid #fcd34d',
+                }}>
+                  <p style={{ fontSize: '14px', fontWeight: '600', color: '#92400e', margin: '0 0 8px 0' }}>
+                    Ready for eRecording Review
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#78350f', margin: '0 0 10px 0', lineHeight: 1.5 }}>
+                    ePN package prepared in save-only mode. Document is Ready to Send — live submit is blocked pending admin review.
+                  </p>
+                  {job.job_specs?.erecord?.package_id && (
+                    <p style={{ fontSize: '13px', color: '#78350f', margin: '0 0 4px 0' }}>
+                      ePN package ID: <strong>{job.job_specs.erecord.package_id}</strong>
+                    </p>
+                  )}
+                  {job.job_specs?.erecord?.document_status && (
+                    <p style={{ fontSize: '13px', color: '#78350f', margin: '0 0 4px 0' }}>
+                      Document status: <strong>{job.job_specs.erecord.document_status}</strong>
+                    </p>
+                  )}
+                  {job.job_specs?.erecord?.estimated_fees && (
+                    <p style={{ fontSize: '13px', color: '#78350f', margin: '0 0 4px 0' }}>
+                      Estimated fees: <strong>{job.job_specs.erecord.estimated_fees}</strong>
+                    </p>
+                  )}
+                  {job.job_specs?.erecord?.ready_at && (
+                    <p style={{ fontSize: '13px', color: '#78350f', margin: '0 0 4px 0' }}>
+                      Prepared: {new Date(job.job_specs.erecord.ready_at).toLocaleString()}
+                    </p>
+                  )}
+                  {job.job_specs?.erecord?.package_url && (
+                    <a
+                      href={job.job_specs.erecord.package_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ display: 'inline-block', marginTop: '8px', fontSize: '13px', color: '#2563eb', fontWeight: '500' }}
+                    >
+                      Open ePN package →
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {nocStatus === 'queued_for_erecord' && recordingProvider === 'epn' && (
+                <div style={{ marginBottom: '16px', fontSize: '13px', color: '#4338ca', lineHeight: 1.6 }}>
+                  <p style={{ margin: 0 }}>
+                    eRecording queued — ePN package preparation pending or in progress.
+                  </p>
+                </div>
+              )}
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#4338ca', marginBottom: '6px' }}>
+                  Recording provider
+                </label>
+                <select
+                  value={recordingProvider}
+                  disabled={providerSaving || nocStatus === 'recorded'}
+                  onChange={e => handleRecordingProviderChange(e.target.value)}
+                  style={{
+                    padding: '8px 12px', border: '1px solid #c7d2fe', borderRadius: '8px',
+                    fontSize: '14px', backgroundColor: 'white', minWidth: '200px',
+                  }}
+                >
+                  {ERECORD_PROVIDER_OPTIONS.map(opt => (
+                    <option key={opt.id} value={opt.id}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {notarizedDownloadUrl && (
+                <div style={{ marginBottom: '16px' }}>
+                  <a href={notarizedDownloadUrl} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#2563eb', fontWeight: '500' }}>
+                    Download notarized NOC →
+                  </a>
+                </div>
+              )}
+
+              {recordedDownloadUrl && (
+                <div style={{ marginBottom: '16px' }}>
+                  <a href={recordedDownloadUrl} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#2563eb', fontWeight: '500' }}>
+                    Download recorded/stamped NOC →
+                  </a>
+                </div>
+              )}
+
+              {nocStatus === 'notarized' && recordingProvider === 'manual' && (
+                <form onSubmit={handleMarkNocRecorded} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#4338ca', marginBottom: '6px' }}>
+                      Recording number *
+                    </label>
+                    <input
+                      type="text"
+                      value={recordingNumber}
+                      onChange={e => setRecordingNumber(e.target.value)}
+                      placeholder="e.g. 2026-123456"
+                      style={{
+                        width: '100%', maxWidth: '320px', padding: '10px 12px',
+                        border: '1px solid #c7d2fe', borderRadius: '8px', fontSize: '14px',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#4338ca', marginBottom: '6px' }}>
+                      Recorded / stamped NOC (PDF)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={e => setRecordingFile(e.target.files?.[0] || null)}
+                      style={{ fontSize: '13px' }}
+                    />
+                  </div>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#4338ca' }}>
+                    <input
+                      type="checkbox"
+                      checked={recordingNumberOnly}
+                      onChange={e => setRecordingNumberOnly(e.target.checked)}
+                    />
+                    Recording number only (skip file upload)
+                  </label>
+
+                  <button
+                    type="submit"
+                    disabled={recordingSubmitting}
+                    style={{
+                      alignSelf: 'flex-start', padding: '10px 18px',
+                      backgroundColor: recordingSubmitting ? '#94a3b8' : '#4338ca',
+                      color: 'white', border: 'none', borderRadius: '8px',
+                      fontSize: '13px', fontWeight: '600', cursor: recordingSubmitting ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {recordingSubmitting ? 'Saving...' : 'Mark NOC Recorded'}
+                  </button>
+                </form>
+              )}
+
+              {nocStatus === 'notarized' && recordingProvider === 'epn' && (
+                <div style={{ fontSize: '13px', color: '#4338ca', lineHeight: 1.6 }}>
+                  <p style={{ margin: '0 0 8px 0' }}>
+                    Notarized NOC ready. ePN package preparation runs automatically after Proof completion.
+                  </p>
+                  {job.job_specs?.erecord?.submission_id && (
+                    <p style={{ margin: 0 }}>
+                      Submission ID: <strong>{job.job_specs.erecord.submission_id}</strong>
+                      {job.job_specs.erecord.status ? ' · Status: ' + job.job_specs.erecord.status : ''}
+                    </p>
+                  )}
+                  <a
+                    href="https://ep.erecording.com/Login.aspx#/"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ display: 'inline-block', marginTop: '12px', fontSize: '13px', color: '#2563eb', fontWeight: '500' }}
+                  >
+                    Open ePN portal →
+                  </a>
+                </div>
+              )}
+
+              {nocStatus === 'notarized' && (recordingProvider === 'simplifile' || recordingProvider === 'csc') && (
+                <p style={{ fontSize: '13px', color: '#4338ca', margin: 0 }}>
+                  {recordingProvider === 'simplifile' ? 'Simplifile' : 'CSC'} automation is not configured yet. Switch to <strong>Manual</strong> to complete recording.
+                </p>
+              )}
+
+              {recordingMessage && (
+                <p style={{
+                  marginTop: '14px', fontSize: '13px',
+                  color: recordingMessage.startsWith('Error') ? '#b91c1c' : '#15803d',
+                }}>
+                  {recordingMessage}
+                </p>
+              )}
             </div>
           )}
         </div>

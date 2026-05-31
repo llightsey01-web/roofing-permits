@@ -1,0 +1,270 @@
+{
+  "safe": [
+    {
+      "selector": "a",
+      "text": "FL STATUTE 695.26 REQUIREMENTS (click here)",
+      "tag": "a",
+      "id": null,
+      "className": null,
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "a",
+      "text": "REVERSE MTG TAX CHANGE INFO (click here)",
+      "tag": "a",
+      "id": null,
+      "className": null,
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "div",
+      "text": "Open FileorScan Image",
+      "tag": "div",
+      "id": null,
+      "className": "btn-group-indented image-controls btn-group btn-group-justified btn-group-block",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "div",
+      "text": "Open File",
+      "tag": "div",
+      "id": null,
+      "className": "btn-group upload",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Open File",
+      "tag": "button",
+      "id": null,
+      "className": "file-open btn btn-default bs-tooltip",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "div",
+      "text": "orScan Image",
+      "tag": "div",
+      "id": null,
+      "className": "btn-group letter",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Scan Image",
+      "tag": "button",
+      "id": null,
+      "className": "scan-letter btn btn-default bs-tooltip",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "#doc-type",
+      "text": "Notice Of Commencement",
+      "tag": "div",
+      "id": "doc-type",
+      "className": "btn-group",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "id": null,
+      "className": "k-input-button k-button k-icon-button k-button-md k-button-solid k-button-solid-base",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "id": null,
+      "className": "k-input-button k-button k-icon-button k-button-md k-button-solid k-button-solid-base",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Add",
+      "tag": "button",
+      "id": null,
+      "className": "m5top clone add btn btn-info",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "id": null,
+      "className": "k-input-button k-button k-icon-button k-button-md k-button-solid k-button-solid-base",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Add",
+      "tag": "button",
+      "id": null,
+      "className": "m5top clone add btn btn-info",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "div",
+      "text": "Save Add Doc Cancel",
+      "tag": "div",
+      "id": null,
+      "className": "btn-group btn-group-indented btn-group-justified",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "#save-button",
+      "text": "Save",
+      "tag": "span",
+      "id": "save-button",
+      "className": "btn btn-primary",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "#NextButton",
+      "text": "Add Doc",
+      "tag": "span",
+      "id": "NextButton",
+      "className": "btn btn-warning",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "#cancel-l2",
+      "text": "Cancel",
+      "tag": "span",
+      "id": "cancel-l2",
+      "className": "btn btn-default",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "a",
+      "text": "Main Image",
+      "tag": "a",
+      "id": null,
+      "className": null,
+      "dangerous": false,
+      "readyLike": false
+    }
+  ],
+  "readyLike": [],
+  "dangerous_not_clicked": [
+    {
+      "selector": "a",
+      "text": "AHJ-IQ TEST DO NOT SUBMIT 1780213426449",
+      "tag": "a",
+      "id": null,
+      "className": null,
+      "dangerous": true,
+      "readyLike": false
+    }
+  ],
+  "hasSubmitButton": true,
+  "hasReadyButton": false,
+  "controlsFromMetadata": [
+    {
+      "selector": "a",
+      "text": "AHJ-IQ TEST DO NOT SUBMIT 1780213426449",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": true
+    },
+    {
+      "selector": "a",
+      "text": "FL STATUTE 695.26 REQUIREMENTS (click here)",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "a",
+      "text": "REVERSE MTG TAX CHANGE INFO (click here)",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Open File",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Scan Image",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Add",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Add",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "a",
+      "text": "Main Image",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    }
+  ]
+}

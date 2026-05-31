@@ -1,0 +1,159 @@
+{
+  "packId": "50319695",
+  "packageName": "AHJ-IQ TEST DO NOT SUBMIT 1780212458642",
+  "uploadResult": {
+    "success": true,
+    "pdfPath": "automation/logs/epn-inspect-1780212444443/fixtures/AHJ-IQ-TEST-DO-NOT-SUBMIT.pdf",
+    "uploadState": {
+      "bodySample": "AHJ-IQ TEST DO NOT SUBMIT 1780212458642 Polk County, FL County Knowledge FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Prepare Image Open Upload from computer or Scan Document Type Notice Of Commencement Indexing Grantor (Owner/Lessee) Person Company Add Grantee (Contractor) Person Company Add Estimated Fees: $18.50 Save Add Doc Cancel Main Image Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel)",
+      "hasCanvas": false,
+      "fileInputCount": 0
+    }
+  },
+  "fillResult": {
+    "success": true,
+    "grantorFilled": true,
+    "granteeFilled": true,
+    "grantorName": "Test Owner",
+    "granteeName": "GAETANO HOME SERVICES",
+    "values": {
+      "grantor": "Test Owner",
+      "grantee": "GAETANO HOME SERVICES"
+    }
+  },
+  "saveResult": {
+    "success": true,
+    "clickMethod": "locator_0",
+    "clickTarget": null,
+    "beforeText": "AHJ-IQ TEST DO NOT SUBMIT 1780212458642 Polk County, FL County Knowledge FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Prepare Image Open or Scan Document Type Notice Of Commencement Indexing Grantor (Owner/Lessee) Person Company Add Grantee (Contractor) Person Company Add Estimated Fees: $18.50 Save Add Doc Cancel Main Image Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel)",
+    "afterText": "Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel) CSC ePrepare Package 2 Announcements Send Us Feedback Logan Lightsey WORKLIST REPORTS COUNTY KNOWLEDGE WORKLIST USER GUIDE AHJ-IQ TEST DO NOT SUBMIT 1780212458642 edit name | email notifications | Polk County, FL change Preparing Average Turnaround Time: Same Day (Based on county operating hours and time of submission) Total Estimated Fees: $18.50 FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Send me an email notification when: Rejected Recorded Created: Logan Lightsey 05/31/2026 03:27 AM | Last Modified: Logan Lightsey 05/31/2026 03:28 AM NAME/NUMBER DOCUMENT TYPE LAST MODIFIED STATUS PAGES ESTIMATED FEES DELETE Document 1 Notice Of Commencement 5/31/2026 3:28 AM Data Entry Incomplete 2 $18.50 Apply to checked... Flag Unflag Delete GO DELETE PACKAGE Show Audit History Report Copyright © Corporation Service Company. All Rights Reserved.",
+    "changed": true
+  },
+  "postSaveStatus": {
+    "url": "https://ep.erecording.com/Secure/Packages/PackageView.aspx?packId=50319695&isArchived=false",
+    "title": "Packages | ePrepare - The New Standard for Document Preparation",
+    "feeSummary": "Estimated Fees: $18.50",
+    "statusGuess": "Preparing",
+    "bodySample": "Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel) CSC ePrepare Package 2 Announcements Send Us Feedback Logan Lightsey WORKLIST REPORTS COUNTY KNOWLEDGE WORKLIST USER GUIDE AHJ-IQ TEST DO NOT SUBMIT 1780212458642 edit name | email notifications | Polk County, FL change Preparing Average Turnaround Time: Same Day (Based on county operating hours and time of submission) Total Estimated Fees: $18.50 FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Send me an email notification when: Rejected Recorded Created: Logan Lightsey 05/31/2026 03:27 AM | Last Modified: Logan Lightsey 05/31/2026 03:28 AM NAME/NUMBER DOCUMENT TYPE LAST MODIFIED STATUS PAGES ESTIMATED FEES DELETE Document 1 Notice Of Commencement 5/31/2026 3:28 AM Data Entry Incomplete 2 $18.50 Apply to checked... Flag Unflag Delete GO DELETE PACKAGE Show Audit History Report Copyright © Corporation Service Company. All Rights Reserved."
+  },
+  "feeSummary": "Estimated Fees: $18.50",
+  "statusGuess": "Preparing",
+  "dataEntryUrl": "https://ep.erecording.com/Secure/Packages/PackageView.aspx?packId=50319695&isArchived=false",
+  "controls": {
+    "safe": [
+      {
+        "selector": "#navileaf0",
+        "text": "CSC ePrepare",
+        "tag": "a",
+        "type": null,
+        "id": "navileaf0",
+        "dangerous": false
+      },
+      {
+        "selector": "#navileaf2",
+        "text": "Package",
+        "tag": "a",
+        "type": null,
+        "id": "navileaf2",
+        "dangerous": false
+      },
+      {
+        "selector": "#HyperLink6",
+        "text": "2Announcements",
+        "tag": "a",
+        "type": null,
+        "id": "HyperLink6",
+        "dangerous": false
+      },
+      {
+        "selector": "a",
+        "text": "Send Us Feedback",
+        "tag": "a",
+        "type": null,
+        "id": null,
+        "dangerous": false
+      },
+      {
+        "selector": "a",
+        "text": "Logan Lightsey",
+        "tag": "a",
+        "type": null,
+        "id": null,
+        "dangerous": false
+      },
+      {
+        "selector": "a",
+        "text": "Worklist",
+        "tag": "a",
+        "type": null,
+        "id": null,
+        "dangerous": false
+      },
+      {
+        "selector": "a",
+        "text": "Reports",
+        "tag": "a",
+        "type": null,
+        "id": null,
+        "dangerous": false
+      },
+      {
+        "selector": "a",
+        "text": "County Knowledge",
+        "tag": "a",
+        "type": null,
+        "id": null,
+        "dangerous": false
+      },
+      {
+        "selector": "a",
+        "text": "Worklist User Guide",
+        "tag": "a",
+        "type": null,
+        "id": null,
+        "dangerous": false
+      },
+      {
+        "selector": "#lnkJurisdiction",
+        "text": "Polk County, FL",
+        "tag": "a",
+        "type": null,
+        "id": "lnkJurisdiction",
+        "dangerous": false
+      },
+      {
+        "selector": "#AddDocuments",
+        "text": "Add A Doc",
+        "tag": "input",
+        "type": "submit",
+        "id": "AddDocuments",
+        "dangerous": false
+      },
+      {
+        "selector": "a",
+        "text": "Document 1",
+        "tag": "a",
+        "type": null,
+        "id": null,
+        "dangerous": false
+      },
+      {
+        "selector": "#ActSelect",
+        "text": "Go",
+        "tag": "button",
+        "type": null,
+        "id": "ActSelect",
+        "dangerous": false
+      },
+      {
+        "selector": "#DeletePkgBtn",
+        "text": "Delete Package",
+        "tag": "button",
+        "type": null,
+        "id": "DeletePkgBtn",
+        "dangerous": false
+      }
+    ],
+    "dangerous_not_clicked": []
+  }
+}

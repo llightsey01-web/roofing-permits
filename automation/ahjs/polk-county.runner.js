@@ -7,6 +7,8 @@ const { logStep } = require('../shared/screenshot')
 const { handleRunError } = require('../shared/errors')
 const config = require('./configs/polk-county.config')
 const { createClient } = require('@supabase/supabase-js')
+const { resolvePolkLegalDescription } = require('../../lib/parcels/polk-legal-description')
+const { triggerNocAfterPhase1 } = require('../../lib/automation/noc-trigger')
 
 function getSupabase() {
   const ws = require('ws')
@@ -17,22 +19,199 @@ function getSupabase() {
   )
 }
 
-async function getCredentials(companyId, ahjId) {
-  const supabase = getSupabase()
-  const { data, error } = await supabase
-    .from('company_ahj_credentials')
-    .select('username, portal_password')
-    .eq('company_id', companyId)
-    .eq('ahj_id', ahjId)
-    .eq('is_active', true)
-    .single()
-  if (error || !data) {
+function assertSupabaseOk(result, label) {
+  if (result.error) {
     throw Object.assign(
-      new Error('No credentials found for this company and AHJ'),
-      { errorCode: 'missing_credentials' }
+      new Error(label + ' failed: ' + result.error.message),
+      { errorCode: 'database_error', supabaseError: result.error }
     )
   }
-  return { username: data.username, password: data.portal_password }
+}
+
+// Valid automation_runs.run_status values: queued, running, error, needs_review, cancelled
+var RUN_STATUS_PHASE1_SUCCESS = 'needs_review'
+var RUN_STATUS_PHASE1_FAILURE = 'error'
+
+async function waitForPortalPostbackQuiet(page, maxMs) {
+  var deadline = Date.now() + maxMs
+  while (Date.now() < deadline) {
+    var loading = await page.evaluate(function() {
+      function isElVisible(el) {
+        if (!el) return false
+        var style = window.getComputedStyle(el)
+        return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null
+      }
+      return isElVisible(document.getElementById('divGlobalLoadingImg')) ||
+        isElVisible(document.getElementById('divGlobalLoading')) ||
+        isElVisible(document.getElementById('divLoadingTemplate'))
+    }).catch(function() { return true })
+    if (!loading) return
+    await page.waitForTimeout(500)
+  }
+}
+
+async function clickSaveAndResumeLater(page) {
+  await page.evaluate(function() {
+    var mask = document.getElementById('dvACADialogLayerMask')
+    if (mask) mask.remove()
+    document.querySelectorAll('.mask_iframe, iframe.mask_iframe').forEach(function(el) { el.remove() })
+    document.querySelectorAll('[id*="Mask"], [class*="mask"]').forEach(function(el) {
+      el.style.display = 'none'
+      el.style.pointerEvents = 'none'
+    })
+  })
+  await page.waitForTimeout(500)
+  var saveSelector = config.selectors.saveAndResumeBtn + ', a[onclick*="doSaveAndResume"]'
+  await page.waitForSelector(saveSelector, { timeout: 10000 })
+  var urlBefore = page.url()
+  await page.click(saveSelector)
+  await waitForPortalPostbackQuiet(page, 45000)
+  await page.waitForTimeout(2000)
+  return urlBefore
+}
+
+async function confirmPortalDraftSaved(page, urlBefore) {
+  var state = await page.evaluate(function() {
+    function isElVisible(el) {
+      if (!el) return false
+      var style = window.getComputedStyle(el)
+      return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null
+    }
+
+    var errors = []
+    document.querySelectorAll(
+      '.ACA_Error, .ACA_ErrorMessageLabel, .validation-summary-errors, span[style*="color:Red"], span[style*="color:red"]'
+    ).forEach(function(el) {
+      var text = (el.innerText || el.textContent || '').trim()
+      if (text) errors.push(text.substring(0, 300))
+    })
+
+    var successHints = []
+    var bodyText = document.body ? document.body.innerText : ''
+    bodyText.split('\n').forEach(function(line) {
+      var trimmed = line.trim()
+      if (trimmed && /saved|success|resume later|my records|draft|record saved/i.test(trimmed)) {
+        successHints.push(trimmed.substring(0, 200))
+      }
+    })
+
+    var applicationId = ''
+    var params = new URLSearchParams(window.location.search)
+    ;['capID', 'CapID', 'recordID', 'RecordId', 'RecordID'].forEach(function(key) {
+      var val = params.get(key)
+      if (val && !applicationId) applicationId = val
+    })
+    document.querySelectorAll('input[type="hidden"]').forEach(function(el) {
+      var id = (el.id || '').toLowerCase()
+      var name = (el.name || '').toLowerCase()
+      if ((/capid|recordid|altid/.test(id) || /capid|recordid|altid/.test(name)) && el.value) {
+        if (!applicationId) applicationId = el.value
+      }
+    })
+
+    return {
+      url: window.location.href,
+      loading: isElVisible(document.getElementById('divGlobalLoadingImg')) ||
+        isElVisible(document.getElementById('divGlobalLoading')),
+      errors: errors,
+      successHints: successHints,
+      applicationId: applicationId,
+    }
+  }).catch(function() {
+    return { url: page.url(), loading: false, errors: [], successHints: [], applicationId: '' }
+  })
+
+  var urlAfter = state.url || page.url()
+  var navigatedAway = urlBefore !== urlAfter
+  var onSavedDestination = /MyRecordsCap|Dashboard\.aspx|CapHome\.aspx/i.test(urlAfter)
+  var stillOnCapEdit = /CapEdit\.aspx/i.test(urlAfter)
+  var hasBlockingErrors = state.errors.length > 0 && !navigatedAway && !onSavedDestination
+  var hasSuccessSignal = state.successHints.length > 0 || navigatedAway || onSavedDestination ||
+    (stillOnCapEdit && !state.loading && state.errors.length === 0)
+
+  if (hasBlockingErrors) {
+    return {
+      success: false,
+      reason: 'Portal validation errors after Save and Resume Later: ' + state.errors.join(' | '),
+      state: state,
+    }
+  }
+
+  if (!hasSuccessSignal) {
+    return {
+      success: false,
+      reason: 'Save and Resume Later did not redirect or show confirmation (url=' + urlAfter + ')',
+      state: state,
+    }
+  }
+
+  var savedAt = new Date().toISOString()
+  var confirmation = state.successHints[0] ||
+    (onSavedDestination ? 'Redirected after save to ' + urlAfter :
+      stillOnCapEdit ? 'Save and Resume Later postback completed on CapEdit without validation errors' :
+      'Save and Resume Later postback completed')
+
+  return {
+    success: true,
+    portalSavedUrl: urlAfter,
+    portalApplicationId: state.applicationId || null,
+    portalSessionSavedAt: savedAt,
+    portalConfirmation: confirmation,
+    state: state,
+  }
+}
+
+function buildPortalConfirmationPayload(saveResult) {
+  return JSON.stringify({
+    saved_at: saveResult.portalSessionSavedAt,
+    saved_url: saveResult.portalSavedUrl,
+    application_id: saveResult.portalApplicationId,
+    confirmation: saveResult.portalConfirmation,
+  })
+}
+
+async function markPhase1SaveFailure(supabase, runId, jobId, reason) {
+  console.error('  ✗ Save and Resume Later failed: ' + reason)
+  assertSupabaseOk(await supabase.from('automation_runs').update({
+    run_status: RUN_STATUS_PHASE1_FAILURE,
+    error_message: reason,
+    completed_at: new Date().toISOString(),
+  }).eq('id', runId), 'Mark automation run error after portal save failure')
+  assertSupabaseOk(await supabase.from('jobs').update({ job_status: 'needs_review' }).eq('id', jobId), 'Mark job needs_review after portal save failure')
+}
+
+async function getCredentials(companyId, ahjId) {
+  try {
+    var mod = await import('../../lib/credentials/secure-credential-service.js')
+    return await mod.getCredentials(companyId, ahjId)
+  } catch (serviceErr) {
+    var supabase = getSupabase()
+    var { data, error } = await supabase
+      .from('company_ahj_credentials')
+      .select('username, portal_password, password_encrypted')
+      .eq('company_id', companyId)
+      .eq('ahj_id', ahjId)
+      .eq('is_active', true)
+      .single()
+    if (error || !data) {
+      throw Object.assign(
+        new Error('No credentials found for this company and AHJ'),
+        { errorCode: 'missing_credentials', cause: serviceErr.message }
+      )
+    }
+    var password = data.portal_password
+    if (!password && data.password_encrypted) {
+      var crypto = await import('../../lib/crypto/credential-encryption.js')
+      password = crypto.decryptCredential(data.password_encrypted)
+    }
+    if (!password) {
+      throw Object.assign(
+        new Error('Credentials exist but password is missing or unreadable'),
+        { errorCode: 'missing_credentials' }
+      )
+    }
+    return { username: data.username, password: password }
+  }
 }
 
 var suffixMap = {
@@ -58,7 +237,8 @@ function parseAddress(fullAddress) {
   return { streetNo: streetNo, streetName: streetName, suffix: normalizedSuffix }
 }
 
-async function runPolkCounty(jobData, runId) {
+async function runPolkCounty(jobData, runId, runnerOptions) {
+  var browserOpts = runnerOptions || {}
   console.log('\nStarting Polk County automation')
   console.log('Job: ' + jobData.owner_name + ' — ' + jobData.property_address)
   console.log('Run ID: ' + runId + '\n')
@@ -96,7 +276,10 @@ async function runPolkCounty(jobData, runId) {
   }
 
   const solver = new Solver(process.env.TWOCAPTCHA_API_KEY)
-  const browser = await chromium.launch({ headless: true, slowMo: 300 })
+  const browser = await chromium.launch({
+    headless: browserOpts.headless !== undefined ? browserOpts.headless : true,
+    slowMo: browserOpts.slowMo || 300,
+  })
   const page = await browser.newPage()
   page.setDefaultTimeout(45000)
   let stepNumber = 0
@@ -780,51 +963,101 @@ async function runPolkCounty(jobData, runId) {
 
       if (!parcelNumber || parcelNumber.trim() === '') {
         console.log('  Parcel not found — marking needs_review')
-        await supabase.from('automation_runs').update({
+        assertSupabaseOk(await supabase.from('automation_runs').update({
           run_status: 'needs_review',
           error_message: 'Parcel number not populated. Check address format and dropdown selection.',
           completed_at: new Date().toISOString(),
-        }).eq('id', runId)
-        await supabase.from('jobs').update({ job_status: 'needs_review' }).eq('id', jobData.id)
+        }).eq('id', runId), 'Mark automation run needs_review')
+        assertSupabaseOk(await supabase.from('jobs').update({ job_status: 'needs_review' }).eq('id', jobData.id), 'Mark job needs_review')
         return
       }
 
+      console.log('  Resolving legal description...')
+      var legalSelectors = {
+        legalDescription: config.selectors.legalDescription,
+        lot: config.selectors.parcelLot,
+        block: config.selectors.parcelBlock,
+        tract: config.selectors.parcelTract,
+        subdivision: config.selectors.parcelSubdivision,
+        parcelSearchBtn: config.selectors.parcelSearchBtn,
+      }
+      var legalResult = await resolvePolkLegalDescription(
+        page,
+        parcelNumber.trim(),
+        legalSelectors
+      )
+      if (legalResult.legalDescription) {
+        console.log('  ✓ Legal description (' + legalResult.source + '): ' + legalResult.legalDescription)
+      } else {
+        console.log('  ⚠ Legal description not found — NOC will use address only')
+      }
+
       var updateData = { parcel_number: parcelNumber.trim() }
+      if (legalResult.legalDescription) {
+        updateData.legal_description = legalResult.legalDescription
+      }
       if (portalOwnerName && !jobData.owner_name) {
         updateData.owner_name = portalOwnerName.trim()
       }
-      await supabase.from('jobs').update(updateData).eq('id', jobData.id)
+      assertSupabaseOk(await supabase.from('jobs').update(updateData).eq('id', jobData.id), 'Save parcel and legal description on job')
       console.log('  ✓ Parcel saved: ' + parcelNumber)
 
-      await removeOverlay()
-      await page.waitForSelector('a[onclick*="doSaveAndResume"]', { timeout: 10000 })
-      await page.click('a[onclick*="doSaveAndResume"]')
-      await page.waitForTimeout(3000)
-      console.log('  ✓ Application saved in portal')
+      var urlBeforeSave = await clickSaveAndResumeLater(page)
+      console.log('  ✓ Save and Resume Later clicked')
 
-      await supabase.from('automation_runs').update({
-        run_status: 'waiting_for_noc',
+      var saveResult = await confirmPortalDraftSaved(page, urlBeforeSave)
+      if (!saveResult.success) {
+        await markPhase1SaveFailure(supabase, runId, jobData.id, saveResult.reason)
+        throw Object.assign(new Error(saveResult.reason), { phase1Handled: true })
+      }
+
+      console.log('  ✓ Portal draft saved: ' + saveResult.portalConfirmation)
+      console.log('  Portal saved URL: ' + saveResult.portalSavedUrl)
+      if (saveResult.portalApplicationId) {
+        console.log('  Portal application id: ' + saveResult.portalApplicationId)
+      }
+
+      assertSupabaseOk(await supabase.from('jobs').update({
+        portal_confirmation: buildPortalConfirmationPayload(saveResult),
+      }).eq('id', jobData.id), 'Store portal save metadata on job')
+      console.log('  ✓ Portal confirmation stored')
+
+      assertSupabaseOk(await supabase.from('automation_runs').update({
+        run_status: RUN_STATUS_PHASE1_SUCCESS,
         completed_at: new Date().toISOString(),
-      }).eq('id', runId)
-      await supabase.from('jobs').update({ job_status: 'waiting_for_noc' }).eq('id', jobData.id)
-      console.log('  ✓ Status: waiting_for_noc')
+      }).eq('id', runId), 'Mark automation run needs_review after Phase 1 success')
+      console.log('  ✓ Automation run status: ' + RUN_STATUS_PHASE1_SUCCESS)
 
-      var webAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://roofing-permits-production.up.railway.app'
-      fetch(webAppUrl + '/api/noc/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId: jobData.id }),
-      }).then(function(r) { return r.json() })
-        .then(function(result) { console.log('  ✓ NOC pipeline triggered') })
-        .catch(function(err) { console.error('  NOC trigger failed: ' + err.message) })
+      if (!browserOpts.skipPostPhase1Chain) {
+        console.log('  Starting post-Phase 1 automation chain...')
+        try {
+          var chainResult = await triggerNocAfterPhase1(jobData.id, Object.assign({}, browserOpts, {
+            waitForProofCompletion: browserOpts.waitForProofCompletion !== false,
+          }))
+          console.log('  Chain stopping point: ' + (chainResult.stoppingPoint || 'unknown'))
+          if (chainResult.phases && chainResult.phases.proofSend && chainResult.phases.proofSend.skipped) {
+            console.log('  Proof send: skipped — ' + (chainResult.phases.proofSend.reason || 'unknown'))
+          }
+          if (chainResult.phases && chainResult.phases.proofComplete && chainResult.phases.proofComplete.complete) {
+            console.log('  Proof complete — notarized NOC stored')
+          }
+          if (chainResult.stoppingPoint === 'ready_for_erecord_review') {
+            console.log('  eRecord prep complete — ready for admin review')
+          }
+        } catch (chainErr) {
+          console.error('  Post-Phase 1 chain failed (portal draft saved): ' + chainErr.message)
+        }
+      } else {
+        console.log('  Post-Phase 1 chain skipped (skipPostPhase1Chain=true)')
+      }
     })
 
     console.log('\n========================================')
-    console.log('PHASE 1 COMPLETE — NOC PIPELINE STARTED')
+    console.log('PHASE 1 COMPLETE — POST-PHASE 1 CHAIN')
     console.log('========================================\n')
 
   } catch (err) {
-    await handleRunError(runId, jobData.id, err)
+    if (!err.phase1Handled) await handleRunError(runId, jobData.id, err)
     throw err
   } finally {
     await browser.close()

@@ -1,0 +1,196 @@
+{
+  "mode": "calibration",
+  "created_at": "2026-05-31T05:10:53.392Z",
+  "proofPlacement": {
+    "ownerSignature": {
+      "page": 2,
+      "x": 72,
+      "y": 538,
+      "width": 380,
+      "height": 28
+    },
+    "ownerPrintedName": {
+      "page": 2,
+      "x": 72,
+      "y": 496,
+      "width": 214,
+      "height": 22
+    },
+    "ownerDate": {
+      "page": 2,
+      "x": 124,
+      "y": 410,
+      "width": 100,
+      "height": 22
+    }
+  },
+  "fieldTools": {
+    "ownerSignature": {
+      "kind": "signer",
+      "label": "Sign here"
+    },
+    "ownerPrintedName": {
+      "kind": "signer",
+      "label": "Full name"
+    },
+    "ownerDate": {
+      "kind": "signer",
+      "label": "Date signed"
+    }
+  },
+  "pdfPageSize": {
+    "width": 612,
+    "height": 792
+  },
+  "pageElements": [
+    {
+      "pageNumber": 1,
+      "top": 85,
+      "left": 146.5625,
+      "width": 711.859375,
+      "height": 915.921875,
+      "bottom": 1000.921875,
+      "right": 858.421875,
+      "scrollTop": 85,
+      "index": 0
+    },
+    {
+      "pageNumber": null,
+      "top": 95.921875,
+      "left": 168.421875,
+      "width": 668.125,
+      "height": 866.046875,
+      "bottom": 961.96875,
+      "right": 836.546875,
+      "scrollTop": 95.921875,
+      "index": 1
+    },
+    {
+      "pageNumber": 2,
+      "top": 1000.921875,
+      "left": 146.5625,
+      "width": 711.859375,
+      "height": 887.921875,
+      "bottom": 1888.84375,
+      "right": 858.421875,
+      "scrollTop": 1000.921875,
+      "index": 2
+    },
+    {
+      "pageNumber": null,
+      "top": 1011.84375,
+      "left": 168.421875,
+      "width": 668.125,
+      "height": 866.046875,
+      "bottom": 1877.890625,
+      "right": 836.546875,
+      "scrollTop": 1011.84375,
+      "index": 3
+    }
+  ],
+  "placementResults": [
+    {
+      "fieldName": "ownerSignature",
+      "placement": {
+        "page": 2,
+        "x": 72,
+        "y": 538,
+        "width": 380,
+        "height": 28
+      },
+      "pageRect": {
+        "pageNumber": 2,
+        "top": 84.921875,
+        "left": 146.5625,
+        "width": 711.859375,
+        "height": 887.921875,
+        "bottom": 972.84375,
+        "right": 858.421875,
+        "scrollTop": 84.921875,
+        "index": 2
+      },
+      "viewport": {
+        "left": 230.31066176470588,
+        "top": 380.366779003268,
+        "right": 672.3148488562092,
+        "bottom": 412.9355085784314,
+        "centerX": 451.31275531045753,
+        "centerY": 396.6511437908497,
+        "scale": 1.1631689133986929
+      },
+      "tool": {
+        "kind": "signer",
+        "label": "Sign here"
+      }
+    },
+    {
+      "fieldName": "ownerPrintedName",
+      "placement": {
+        "page": 2,
+        "x": 72,
+        "y": 496,
+        "width": 214,
+        "height": 22
+      },
+      "pageRect": {
+        "pageNumber": 2,
+        "top": 84.921875,
+        "left": 146.5625,
+        "width": 711.859375,
+        "height": 887.921875,
+        "bottom": 972.84375,
+        "right": 858.421875,
+        "scrollTop": 84.921875,
+        "index": 2
+      },
+      "viewport": {
+        "left": 230.31066176470588,
+        "top": 429.2198733660131,
+        "right": 479.22880923202615,
+        "bottom": 454.8095894607843,
+        "centerX": 354.769735498366,
+        "centerY": 442.0147314133987,
+        "scale": 1.1631689133986929
+      },
+      "tool": {
+        "kind": "signer",
+        "label": "Full name"
+      }
+    },
+    {
+      "fieldName": "ownerDate",
+      "placement": {
+        "page": 2,
+        "x": 124,
+        "y": 410,
+        "width": 100,
+        "height": 22
+      },
+      "pageRect": {
+        "pageNumber": 2,
+        "top": 84.921875,
+        "left": 146.5625,
+        "width": 711.859375,
+        "height": 887.921875,
+        "bottom": 972.84375,
+        "right": 858.421875,
+        "scrollTop": 84.921875,
+        "index": 2
+      },
+      "viewport": {
+        "left": 290.7954452614379,
+        "top": 529.2523999183006,
+        "right": 407.1123366013072,
+        "bottom": 554.842116013072,
+        "centerX": 348.9538909313726,
+        "centerY": 542.0472579656863,
+        "scale": 1.1631689133986929
+      },
+      "tool": {
+        "kind": "signer",
+        "label": "Date signed"
+      }
+    }
+  ],
+  "notes": "Adjust proofPlacement coordinates in automation/ahjs/configs/proof.config.js and rerun until fields align with page 2 execution block."
+}

@@ -1,0 +1,20 @@
+{
+  "modalTitle": null,
+  "modalBodyText": null,
+  "beforeClick": {
+    "url": "https://ep.erecording.com/Secure/Packages/PackageView.aspx?packId=50319700&isArchived=false",
+    "title": "Packages | ePrepare - The New Standard for Document Preparation",
+    "bodySample": "Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel) CSC ePrepare Package 2 Announcements Send Us Feedback Logan Lightsey WORKLIST REPORTS COUNTY KNOWLEDGE WORKLIST USER GUIDE AHJ-IQ TEST DO NOT SUBMIT 1780214731252 edit name | email notifications | Polk County, FL change Ready Average Turnaround Time: Same Day (Based on county operating hours and time of submission) Total Estimated Fees: $18.50 SEND PACKAGE FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Send me an email notification when: Rejected Recorded Created: Logan Lightsey 05/31/2026 04:05 AM | Last Modified: Logan Lightsey 05/31/2026 04:06 AM NAME/NUMBER DOCUMENT TYPE LAST MODIFIED STATUS PAGES ESTIMATED FEES DELETE Document 1 Notice Of Commencement 5/31/2026 4:06 AM Ready to Send 2 $18.50 Apply to checked... Flag Unflag Delete GO DELETE PACKAGE Show Audit History Report Copyright © Corporation Service Company. All Rights Reserved."
+  },
+  "afterClick": {
+    "url": "https://ep.erecording.com/Secure/Packages/PackageView.aspx?packId=50319700&isArchived=false",
+    "title": "Packages | ePrepare - The New Standard for Document Preparation",
+    "modalVisible": false,
+    "submitted": true,
+    "stillReady": true,
+    "paymentPage": false,
+    "urlChanged": false,
+    "bodySample": "Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel) CSC ePrepare Package 2 Announcements Send Us Feedback Logan Lightsey WORKLIST REPORTS COUNTY KNOWLEDGE WORKLIST USER GUIDE AHJ-IQ TEST DO NOT SUBMIT 1780214731252 edit name | email notifications | Polk County, FL change Ready Average Turnaround Time: Same Day (Based on county operating hours and time of submission) Total Estimated Fees: $18.50 SEND PACKAGE FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Send me an email notification when: Rejected Recorded Created: Logan Lightsey 05/31/2026 04:05 AM | Last Modified: Logan Lightsey 05/31/2026 04:06 AM NAME/NUMBER DOCUMENT TYPE LAST MODIFIED STATUS PAGES ESTIMATED FEES DELETE Document 1 Notice Of Commencement 5/31/2026 4:06 AM Ready to Send 2 $18.50 Apply to checked... Flag Unflag Delete GO DELETE PACKAGE Show Audit History Report Copyright © Corporation Service Company. All Rights Reserved. Package Sent Success This package has been submitted. CLOSE WINDOW BACK TO WORKLIST"
+  },
+  "outcome": "immediate_submit_or_navigation"
+}

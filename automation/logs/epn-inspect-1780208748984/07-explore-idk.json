@@ -1,0 +1,12 @@
+{
+  "url": "https://apps.erecording.com/Quickstart/Secure/Packages/PackageView.aspx?packId=50254044&isArchived=false",
+  "title": "The resource cannot be found.",
+  "headings": [
+    "Server Error in '/' Application.",
+    "The resource cannot be found."
+  ],
+  "links": [],
+  "buttons": [],
+  "inputs": [],
+  "bodyTextSample": "Server Error in '/' Application. The resource cannot be found. Description: HTTP 404. The resource you are looking for (or one of its dependencies) could have been removed, had its name changed, or is temporarily unavailable. Please review the following URL and make sure that it is spelled correctly. Requested URL: /Quickstart/Secure/Packages/PackageView.aspx"
+}

@@ -1,0 +1,34 @@
+{
+  "outputDir": "automation/logs/epn-inspect-1780210772560",
+  "mode": "upload-dummy",
+  "inspectedAt": "2026-05-31T07:00:23.993Z",
+  "packageName": "AHJ-IQ TEST DO NOT SUBMIT 1780210785481",
+  "packId": "50319691",
+  "packageCreated": true,
+  "docTypeSelected": true,
+  "dummyUploadSuccess": true,
+  "dummyUploadResult": {
+    "success": true,
+    "pdfPath": "automation/logs/epn-inspect-1780210772560/fixtures/AHJ-IQ-TEST-DO-NOT-SUBMIT.pdf",
+    "uploadState": {
+      "bodySample": "AHJ-IQ TEST DO NOT SUBMIT 1780210785481 Polk County, FL County Knowledge FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Prepare Image Open Upload from computer or Scan Document Type Notice Of Commencement Indexing Grantor (Owner/Lessee) Person Company Add Grantee (Contractor) Person Company Add Estimated Fees: $10.00 Save Add Doc Cancel Main Image Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel)",
+      "hasCanvas": false,
+      "fileInputCount": 0
+    }
+  },
+  "dummyPdfPath": "automation/logs/epn-inspect-1780210772560/fixtures/AHJ-IQ-TEST-DO-NOT-SUBMIT.pdf",
+  "fieldsRevealed": {
+    "parcel_apn": 0,
+    "page_count": 0,
+    "return_info": 0,
+    "grantor": 2,
+    "grantee": 2,
+    "consideration_fees": 0,
+    "document_name": 1,
+    "legal_description": 0,
+    "indexing_other": 4
+  },
+  "totalFieldsCaptured": 16,
+  "requiredFieldCount": 0,
+  "dataEntryUrl": "https://ep.erecording.com/L2/DataEntry/Index?packId=50319691#image"
+}

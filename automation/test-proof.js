@@ -1,43 +1,20 @@
 require('dotenv').config({ path: '.env.local' })
-const { startProofNotarization } = require('./proof-runner')
-const { createClient } = require('@supabase/supabase-js')
+const { sendNocToProof } = require('../lib/proof/send-noc-to-proof')
 
 async function testProof() {
   console.log('Testing Proof notarization automation...\n')
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  )
-
-  const { data: job } = await supabase
-    .from('jobs')
-    .select('*')
-    .not('noc_file_path', 'is', null)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single()
-
-  if (!job) {
-    console.error('No job with NOC found')
-    return
+  const jobId = process.argv[2]
+  if (!jobId) {
+    console.error('Usage: node automation/test-proof.js <jobId>')
+    process.exit(1)
   }
 
-  console.log('Using job: ' + job.owner_name + ' — ' + job.property_address)
-  console.log('NOC file: ' + job.noc_file_path)
-
-  const { data: nocData, error } = await supabase
-    .storage.from('job-documents').download(job.noc_file_path)
-
-  if (error) {
-    console.error('Could not download NOC:', error.message)
-    return
-  }
-
-  const pdfBytes = await nocData.arrayBuffer()
-  console.log('NOC downloaded — ' + pdfBytes.byteLength + ' bytes\n')
-
-  await startProofNotarization(job.id, job, pdfBytes)
+  const result = await sendNocToProof(jobId)
+  console.log('\nResult:', result)
 }
 
-testProof().catch(console.error)
+testProof().catch(function(err) {
+  console.error(err.message)
+  process.exit(1)
+})

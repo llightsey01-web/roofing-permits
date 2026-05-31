@@ -1,16 +1,31 @@
 // worker/runner.js
-require('dotenv').config({ path: '.env.local' })
+const path = require('path')
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') })
 const { createClient } = require('@supabase/supabase-js')
 const ws = require('ws')
+const { getProjectRoot, resolveFromRoot } = require('./project-root')
+const { verifyPolkRunnerUsesDirectTrigger } = require('./verify-noc-trigger')
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
   { realtime: { transport: ws } }
 )
+
+var verifiedPaths = verifyPolkRunnerUsesDirectTrigger()
+console.log('[worker] Project root:', getProjectRoot())
+console.log('[worker] Polk runner:', verifiedPaths.polkPath)
+console.log('[worker] NOC trigger module:', verifiedPaths.nocTriggerPath)
+
+function loadPolkRunner() {
+  var polkRunnerPath = resolveFromRoot('automation/ahjs/polk-county.runner.js')
+  return require(polkRunnerPath)
+}
+
 async function executeRun(job, runId) {
   try {
     console.log('[worker] Executing run:', runId, 'job:', job.property_address)
-    const { runPolkCounty } = require('./automation/ahjs/polk-county.runner')
+    const { runPolkCounty } = loadPolkRunner()
     await runPolkCounty(job, runId)
     console.log('[worker] Run complete:', runId)
   } catch (err) {
@@ -20,4 +35,5 @@ async function executeRun(job, runId) {
     await supabase.from('jobs').update({ job_status: 'needs_correction' }).eq('id', job.id)
   }
 }
-module.exports = { executeRun }
+
+module.exports = { executeRun, loadPolkRunner, verifyPolkRunnerUsesDirectTrigger }

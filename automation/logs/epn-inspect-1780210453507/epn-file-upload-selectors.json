@@ -1,0 +1,8 @@
+{
+  "uploadArea": "div.btn-group.upload",
+  "openFileButton": "button:has-text(\"Open File\")",
+  "scanImageButton": "button:has-text(\"Scan Image\")",
+  "fileInputs": [],
+  "fileChooserTriggered": true,
+  "clickedOpenFile": true
+}

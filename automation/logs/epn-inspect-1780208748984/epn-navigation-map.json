@@ -1,0 +1,78 @@
+{
+  "portal": "eRecording Partners Network (ePN)",
+  "loginUrl": "https://ep.erecording.com/Login.aspx#/",
+  "inspectedAt": "2026-05-31T06:26:28.650Z",
+  "pages": [
+    {
+      "step": "01-dashboard-after-login",
+      "url": "https://ep.erecording.com/Worklist",
+      "title": "Worklist - ePrepare",
+      "screenshot": "automation/logs/epn-inspect-1780208748984/01-dashboard-after-login.png",
+      "inventoryFile": "automation/logs/epn-inspect-1780208748984/01-dashboard-after-login.json",
+      "headings": []
+    },
+    {
+      "step": "02-explore-csc-eprepare",
+      "url": "https://ep.erecording.com/Worklist",
+      "title": "Worklist - ePrepare",
+      "screenshot": "automation/logs/epn-inspect-1780208748984/02-explore-csc-eprepare.png",
+      "inventoryFile": "automation/logs/epn-inspect-1780208748984/02-explore-csc-eprepare.json",
+      "headings": []
+    },
+    {
+      "step": "03-explore-upload-worklist",
+      "url": "https://ep.erecording.com/Worklist",
+      "title": "Worklist - ePrepare",
+      "screenshot": "automation/logs/epn-inspect-1780208748984/03-explore-upload-worklist.png",
+      "inventoryFile": "automation/logs/epn-inspect-1780208748984/03-explore-upload-worklist.json",
+      "headings": []
+    },
+    {
+      "step": "04-explore-worklist",
+      "url": "https://ep.erecording.com/Worklist",
+      "title": "Worklist - ePrepare",
+      "screenshot": "automation/logs/epn-inspect-1780208748984/04-explore-worklist.png",
+      "inventoryFile": "automation/logs/epn-inspect-1780208748984/04-explore-worklist.json",
+      "headings": []
+    },
+    {
+      "step": "05-explore-county-knowledge",
+      "url": "https://ep.erecording.com/L2/CountyKnowledge",
+      "title": "County Knowledge | ePrepare - The New Standard For Document Preparation",
+      "screenshot": "automation/logs/epn-inspect-1780208748984/05-explore-county-knowledge.png",
+      "inventoryFile": "automation/logs/epn-inspect-1780208748984/05-explore-county-knowledge.json",
+      "headings": []
+    },
+    {
+      "step": "06-explore-worklist-user-guide",
+      "url": "https://apps.erecording.com/Quickstart/SubmitterGuides/ePrepareGuides/Advanced%20Worklist.pdf",
+      "title": "",
+      "screenshot": "automation/logs/epn-inspect-1780208748984/06-explore-worklist-user-guide.png",
+      "inventoryFile": "automation/logs/epn-inspect-1780208748984/06-explore-worklist-user-guide.json",
+      "headings": []
+    },
+    {
+      "step": "07-explore-idk",
+      "url": "https://apps.erecording.com/Quickstart/Secure/Packages/PackageView.aspx?packId=50254044&isArchived=false",
+      "title": "The resource cannot be found.",
+      "screenshot": "automation/logs/epn-inspect-1780208748984/07-explore-idk.png",
+      "inventoryFile": "automation/logs/epn-inspect-1780208748984/07-explore-idk.json",
+      "headings": [
+        "Server Error in '/' Application.",
+        "The resource cannot be found."
+      ]
+    },
+    {
+      "step": "08-explore-polk-county-fl",
+      "url": "https://apps.erecording.com/Quickstart/Secure/L2/CountyKnowledge#/?jurisId=0",
+      "title": "404 - File or directory not found.",
+      "screenshot": "automation/logs/epn-inspect-1780208748984/08-explore-polk-county-fl.png",
+      "inventoryFile": "automation/logs/epn-inspect-1780208748984/08-explore-polk-county-fl.json",
+      "headings": [
+        "Server Error",
+        "404 - File or directory not found.",
+        "The resource you are looking for might have been removed, had its name changed, or is temporarily unavailable."
+      ]
+    }
+  ]
+}

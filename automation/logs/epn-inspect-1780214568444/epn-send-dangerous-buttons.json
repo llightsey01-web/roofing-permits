@@ -1,0 +1,17 @@
+{
+  "notClicked": true,
+  "packageViewSubmit": [
+    {
+      "selector": "#SendPackage",
+      "id": "SendPackage",
+      "tag": "button",
+      "text": "Send Package",
+      "className": "c-primary primaryButton",
+      "submitLike": true,
+      "readyLike": false,
+      "dangerous": true
+    }
+  ],
+  "modalDangerous": [],
+  "finalConfirmSelector": null
+}

@@ -1,0 +1,35 @@
+{
+  "worklist": {
+    "packageName": "#package-name",
+    "jurisdiction": "#stateCounty-search"
+  },
+  "dataEntry": {
+    "documentName": "input[placeholder=\"Document Name\"]",
+    "documentTypeDropdown": ".doctype-dropdown.k-dropdownlist",
+    "documentTypeTarget": "Notice Of Commencement",
+    "uploadArea": "div.btn-group.upload",
+    "openFileButton": "button:has-text(\"Open File\")",
+    "indexingTab": "#indexing-status",
+    "imageTab": "#image-status",
+    "safeButtons": [
+      "Save",
+      "Add Doc +",
+      "Cancel"
+    ],
+    "deletePackage": "#DeletePkgBtn"
+  },
+  "fileUpload": {
+    "clickedOpenFile": true,
+    "fileInputs": [],
+    "fileChooserTriggered": true,
+    "openFileButton": "button:has-text(\"Open File\")",
+    "uploadArea": "div.btn-group.upload"
+  },
+  "kendoDropdowns": [
+    {
+      "selector": "#k-a37e8cf9-6266-44eb-948f-c6698577f2aa",
+      "text": "Notice Of Commencement",
+      "className": "doctype-dropdown k-picker-md k-rounded-md k-picker-solid k-dropdownlist k-picker"
+    }
+  ]
+}

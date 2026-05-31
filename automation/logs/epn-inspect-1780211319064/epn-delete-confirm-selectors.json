@@ -1,0 +1,10 @@
+{
+  "buttons": [],
+  "suggestedSelectors": [
+    "#modal .contents-inner button",
+    "#modal .contents-inner input[value=\"OK\"]",
+    "#modal input[type=\"button\"][value=\"OK\"]",
+    "#modal button:has-text(\"OK\")",
+    "#modal .btn-primary"
+  ]
+}

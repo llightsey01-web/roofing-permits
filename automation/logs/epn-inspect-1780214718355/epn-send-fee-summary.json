@@ -1,0 +1,19 @@
+{
+  "packageViewFee": "Estimated Fees: $18.50",
+  "documentRowFee": [
+    {
+      "text": "Document 1 Notice Of Commencement 5/31/2026 4:06 AM Ready to Send 2 $18.50",
+      "cells": [
+        "Document 1",
+        "Notice Of Commencement",
+        "5/31/2026 4:06 AM",
+        "Ready to Send",
+        "2",
+        "$18.50"
+      ]
+    }
+  ],
+  "modalFeeSummary": null,
+  "modalPaymentLanguage": null,
+  "totalEstimatedFees": "Estimated Fees: $18.50"
+}

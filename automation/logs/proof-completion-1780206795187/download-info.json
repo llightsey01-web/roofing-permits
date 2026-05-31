@@ -1,0 +1,14 @@
+{
+  "source": "document_page_download_all_zip",
+  "suggestedFilename": "Untitled Transaction.zip",
+  "normalized": {
+    "format": "zip",
+    "outputPath": "automation/logs/proof-completion-1780206795187/noc-notarized.pdf",
+    "extractedFrom": "/var/folders/t9/2wy66cwd1bg5svnb9frhbgnc0000gn/T/proof-dl-mV7Ium/ADA_NOTICE-OF-COMMENCEMENT_102824.pdf",
+    "zipMembers": [
+      "/var/folders/t9/2wy66cwd1bg5svnb9frhbgnc0000gn/T/proof-dl-mV7Ium/ADA_NOTICE-OF-COMMENCEMENT_102824.pdf",
+      "/var/folders/t9/2wy66cwd1bg5svnb9frhbgnc0000gn/T/proof-dl-mV7Ium/Proof Verification Instructions.pdf",
+      "/var/folders/t9/2wy66cwd1bg5svnb9frhbgnc0000gn/T/proof-dl-mV7Ium/AuditTrail.pdf"
+    ]
+  }
+}

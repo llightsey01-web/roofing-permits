@@ -1,0 +1,80 @@
+{
+  "url": "https://ep.erecording.com/L2/DataEntry/Index?packId=50319690",
+  "title": "Document 1 - AHJ-IQ TEST DO NOT SUBMIT 1780210466700",
+  "headings": [
+    "AHJ-IQ TEST DO NOT SUBMIT 1780210466700",
+    "Polk County, FL County Knowledge",
+    "Prepare Image",
+    "Document Type",
+    "County Knowledge"
+  ],
+  "fields": [
+    {
+      "selector": "#k-426191cc-f894-4b39-a9b9-5f9d990633c2",
+      "tag": "input",
+      "type": "input",
+      "name": null,
+      "id": "k-426191cc-f894-4b39-a9b9-5f9d990633c2",
+      "placeholder": "Document Name",
+      "label": null,
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "Document 1",
+      "required": false,
+      "visible": true,
+      "labelText": "k-426191cc-f894-4b39-a9b9-5f9d990633c2 Document Name"
+    },
+    {
+      "selector": "#k-b4bb5b65-fbb0-4a6d-b114-4acbc9d615a0",
+      "tag": "kendo-dropdownlist",
+      "type": "kendo-dropdownlist",
+      "name": null,
+      "id": "k-b4bb5b65-fbb0-4a6d-b114-4acbc9d615a0",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "className": "doctype-dropdown k-picker-md k-rounded-md k-picker-solid k-dropdownlist k-picker",
+      "value": "Select Type",
+      "required": false,
+      "visible": true,
+      "labelText": "k-b4bb5b65-fbb0-4a6d-b114-4acbc9d615a0 Select Type"
+    },
+    {
+      "selector": "#\\38 9f667cd-b707-4ed4-b7b2-6470b0f5e143",
+      "tag": "span",
+      "type": "span",
+      "name": null,
+      "id": "89f667cd-b707-4ed4-b7b2-6470b0f5e143",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "Select Type",
+      "required": false,
+      "visible": true,
+      "labelText": "89f667cd-b707-4ed4-b7b2-6470b0f5e143 Select Type"
+    }
+  ],
+  "fileInputs": [],
+  "selects": [],
+  "kendoDropdowns": [
+    {
+      "selector": "#k-b4bb5b65-fbb0-4a6d-b114-4acbc9d615a0",
+      "text": "Select Type",
+      "className": "doctype-dropdown k-picker-md k-rounded-md k-picker-solid k-dropdownlist k-picker"
+    }
+  ],
+  "validationMessages": [
+    {
+      "selector": "li",
+      "text": "FL STATUTE 695.26 REQUIREMENTS (click here)",
+      "className": "alert alert-danger"
+    },
+    {
+      "selector": "li",
+      "text": "REVERSE MTG TAX CHANGE INFO (click here)",
+      "className": "alert alert-danger"
+    }
+  ],
+  "bodyTextSample": "AHJ-IQ TEST DO NOT SUBMIT 1780210466700 Polk County, FL County Knowledge FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Prepare Image Open or Scan Document Type Select Type Save Add Doc Cancel Main Image Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel)"
+}

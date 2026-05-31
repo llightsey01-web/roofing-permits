@@ -1,0 +1,28 @@
+{
+  "outputDir": "automation/logs/epn-inspect-1780213796849",
+  "mode": "party-add",
+  "inspectedAt": "2026-05-31T07:51:25.585Z",
+  "packId": "50319697",
+  "packageName": "AHJ-IQ TEST DO NOT SUBMIT 1780213812403",
+  "grantorAddSuccess": false,
+  "granteeAddSuccess": false,
+  "saveSuccess": true,
+  "documentStatus": "Data Entry Incomplete",
+  "packageStatus": "Preparing",
+  "stillIncomplete": true,
+  "hasSubmitButton": true,
+  "hasReadyButton": false,
+  "submitButtons": [
+    {
+      "selector": "a",
+      "id": null,
+      "tag": "a",
+      "text": "Send Us Feedback",
+      "className": "c-animate",
+      "submitLike": true,
+      "readyLike": false,
+      "dangerous": true
+    }
+  ],
+  "readyButtons": []
+}

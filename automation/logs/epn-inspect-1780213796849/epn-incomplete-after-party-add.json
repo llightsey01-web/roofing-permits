@@ -1,0 +1,175 @@
+{
+  "stillIncomplete": true,
+  "documentRowStatus": {
+    "url": "https://ep.erecording.com/Secure/Packages/PackageView.aspx?packId=50319697&isArchived=false",
+    "documentStatus": "Data Entry Incomplete",
+    "docRowMatch": "Data Entry Incomplete",
+    "rowDetails": [
+      {
+        "text": "Document 1 Notice Of Commencement 5/31/2026 3:51 AM Data Entry Incomplete 2 $18.50",
+        "cells": [
+          "Document 1",
+          "Notice Of Commencement",
+          "5/31/2026 3:51 AM",
+          "Data Entry Incomplete",
+          "2",
+          "$18.50"
+        ]
+      }
+    ],
+    "bodySample": "Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel) CSC ePrepare Package 2 Announcements Send Us Feedback Logan Lightsey WORKLIST REPORTS COUNTY KNOWLEDGE WORKLIST USER GUIDE AHJ-IQ TEST DO NOT SUBMIT 1780213812403 edit name | email notifications | Polk County, FL change Preparing Average Turnaround Time: Same Day (Based on county operating hours and time of submission) Total Estimated Fees: $18.50 FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Send me an email notification when: Rejected Recorded Created: Logan Lightsey 05/31/2026 03:50 AM | Last Modified: Logan Lightsey 05/31/2026 03:51 AM NAME/NUMBER DOCUMENT TYPE LAST MODIFIED STATUS PAGES ESTIMATED FEES DELETE Document 1 Notice Of Commencement 5/31/2026 3:51 AM Data Entry Incomplete 2 $18.50 Apply to checked... Flag Unflag Delete GO DELETE PACKAGE Show Audit History Report Copyright © Corporation Service Company. All Rights Reserved."
+  },
+  "reopenIncomplete": {
+    "incompleteReasons": [
+      {
+        "type": "invalid_section",
+        "selector": "#\\30 ",
+        "id": "0",
+        "heading": "Grantor (Owner/Lessee)",
+        "text": "Grantor (Owner/Lessee) Person Company Add",
+        "inputs": [
+          {
+            "selector": "#k-fa7f31b9-7a1a-43ad-9e79-de725171320a",
+            "type": "text",
+            "value": "GAETANO HOME SERVICES",
+            "visible": true
+          },
+          {
+            "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-person-0",
+            "type": "radio",
+            "value": "person",
+            "visible": true
+          },
+          {
+            "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-company-0",
+            "type": "radio",
+            "value": "company",
+            "visible": true
+          }
+        ]
+      },
+      {
+        "type": "invalid_section",
+        "selector": "#\\31 ",
+        "id": "1",
+        "heading": "Grantee (Contractor)",
+        "text": "Grantee (Contractor) Person Company Add",
+        "inputs": [
+          {
+            "selector": "#k-fb678cff-8539-420e-b5ae-c09039776f6f",
+            "type": "text",
+            "value": "GAETANO HOME SERVICES",
+            "visible": true
+          },
+          {
+            "selector": "#Grantee\\ \\(Contractor\\)-person-1",
+            "type": "radio",
+            "value": "person",
+            "visible": true
+          },
+          {
+            "selector": "#Grantee\\ \\(Contractor\\)-company-1",
+            "type": "radio",
+            "value": "company",
+            "visible": true
+          }
+        ]
+      },
+      {
+        "type": "validation_message",
+        "selector": "#\\30 ",
+        "text": "Grantor (Owner/Lessee) Person Company Add",
+        "className": "parent invalid"
+      },
+      {
+        "type": "validation_message",
+        "selector": "#\\31 ",
+        "text": "Grantee (Contractor) Person Company Add",
+        "className": "parent invalid"
+      }
+    ],
+    "invalidSectionCount": 2,
+    "emptyInputCount": 0,
+    "submitReadyButtons": [
+      {
+        "selector": "a",
+        "text": "AHJ-IQ TEST DO NOT SUBMIT 1780213812403",
+        "tag": "a",
+        "id": null,
+        "className": null,
+        "dangerous": true,
+        "readyLike": false
+      }
+    ],
+    "hasSubmitButton": true,
+    "hasReadyButton": false
+  },
+  "reopenResult": {
+    "success": true,
+    "method": "click_document_1_link_0",
+    "url": "https://ep.erecording.com/L2/DataEntry/Index?packId=50319697&docId=80992515&isArchived=False"
+  },
+  "partyResult": {
+    "success": false,
+    "grantor": {
+      "success": false,
+      "sectionId": "0",
+      "partyLabel": "Grantor (Owner/Lessee)",
+      "reason": "Add button not found in section #0",
+      "beforeState": {
+        "found": true,
+        "sectionId": "0",
+        "invalid": true,
+        "heading": "Grantor (Owner/Lessee)",
+        "inputValue": "GAETANO HOME SERVICES",
+        "radios": [
+          {
+            "id": "Grantor (Owner/Lessee)-person-0",
+            "value": "person",
+            "checked": false,
+            "label": "Person"
+          },
+          {
+            "id": "Grantor (Owner/Lessee)-company-0",
+            "value": "company",
+            "checked": false,
+            "label": "Company"
+          }
+        ],
+        "entries": [],
+        "entryCount": 0,
+        "hasList": true
+      }
+    },
+    "grantee": {
+      "success": false,
+      "sectionId": "1",
+      "partyLabel": "Grantee (Contractor)",
+      "reason": "Add button not found in section #1",
+      "beforeState": {
+        "found": true,
+        "sectionId": "1",
+        "invalid": true,
+        "heading": "Grantee (Contractor)",
+        "inputValue": "GAETANO HOME SERVICES",
+        "radios": [
+          {
+            "id": "Grantee (Contractor)-person-1",
+            "value": "person",
+            "checked": false,
+            "label": "Person"
+          },
+          {
+            "id": "Grantee (Contractor)-company-1",
+            "value": "company",
+            "checked": false,
+            "label": "Company"
+          }
+        ],
+        "entries": [],
+        "entryCount": 0,
+        "hasList": true
+      }
+    }
+  }
+}

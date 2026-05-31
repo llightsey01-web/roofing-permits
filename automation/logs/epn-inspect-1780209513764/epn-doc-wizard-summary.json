@@ -1,0 +1,28 @@
+{
+  "outputDir": "automation/logs/epn-inspect-1780209513764",
+  "mode": "doc-wizard",
+  "inspectedAt": "2026-05-31T06:39:47.023Z",
+  "packageName": "AHJ-IQ TEST DO NOT SUBMIT 1780209528719",
+  "packageCreated": false,
+  "packId": "50319687",
+  "editorOpened": false,
+  "addDocClicked": false,
+  "uploadSelectorsFound": 8,
+  "documentTypeOptionsFound": 0,
+  "requiredFieldCount": 9,
+  "dangerousButtonsFound": 1,
+  "createResult": {
+    "created": false,
+    "rowInfo": {
+      "found": false
+    },
+    "jurisdictionResult": {
+      "picked": false,
+      "value": "Polk County, FL",
+      "jurisdiction": "Polk County, FL",
+      "valid": true,
+      "autocompleteOptions": []
+    },
+    "alertText": null
+  }
+}

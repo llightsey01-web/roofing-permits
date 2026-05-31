@@ -1,0 +1,184 @@
+{
+  "url": "https://ep.erecording.com/L2/DataEntry/Index?packId=50319690#index",
+  "title": "Document 1 - AHJ-IQ TEST DO NOT SUBMIT 1780210466700",
+  "headings": [
+    "AHJ-IQ TEST DO NOT SUBMIT 1780210466700",
+    "Polk County, FL County Knowledge",
+    "Prepare Image",
+    "Document Type",
+    "Indexing",
+    "Grantor (Owner/Lessee)",
+    "Grantee (Contractor)",
+    "Jurisdiction Fees:",
+    "County Knowledge"
+  ],
+  "fields": [
+    {
+      "selector": "#k-426191cc-f894-4b39-a9b9-5f9d990633c2",
+      "tag": "input",
+      "type": "input",
+      "name": null,
+      "id": "k-426191cc-f894-4b39-a9b9-5f9d990633c2",
+      "placeholder": "Document Name",
+      "label": null,
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "Document 1",
+      "required": false,
+      "visible": true,
+      "labelText": "k-426191cc-f894-4b39-a9b9-5f9d990633c2 Document Name"
+    },
+    {
+      "selector": "#k-b4bb5b65-fbb0-4a6d-b114-4acbc9d615a0",
+      "tag": "kendo-dropdownlist",
+      "type": "kendo-dropdownlist",
+      "name": null,
+      "id": "k-b4bb5b65-fbb0-4a6d-b114-4acbc9d615a0",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "className": "doctype-dropdown k-picker-md k-rounded-md k-picker-solid k-dropdownlist k-picker",
+      "value": "Notice Of Commencement",
+      "required": false,
+      "visible": true,
+      "labelText": "k-b4bb5b65-fbb0-4a6d-b114-4acbc9d615a0 Notice Of Commencement"
+    },
+    {
+      "selector": "#f0d0cb8a-a560-4031-b592-ecffdc180132",
+      "tag": "span",
+      "type": "span",
+      "name": null,
+      "id": "f0d0cb8a-a560-4031-b592-ecffdc180132",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "Notice Of Commencement",
+      "required": false,
+      "visible": true,
+      "labelText": "f0d0cb8a-a560-4031-b592-ecffdc180132 Notice Of Commencement"
+    },
+    {
+      "selector": "#k-5bcbf9ca-e894-4dbc-b988-279c441ed7ed",
+      "tag": "input",
+      "type": "input",
+      "name": null,
+      "id": "k-5bcbf9ca-e894-4dbc-b988-279c441ed7ed",
+      "placeholder": "",
+      "label": "Person",
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "GAETANO HOME SERVICES",
+      "required": false,
+      "visible": true,
+      "labelText": "Person k-5bcbf9ca-e894-4dbc-b988-279c441ed7ed Person Company Add"
+    },
+    {
+      "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-person-0",
+      "tag": "input",
+      "type": "radio",
+      "name": null,
+      "id": "Grantor (Owner/Lessee)-person-0",
+      "placeholder": null,
+      "label": "Person",
+      "ariaLabel": null,
+      "className": "not-erml name-radio ng-untouched ng-pristine ng-valid",
+      "value": "person",
+      "required": false,
+      "visible": true,
+      "labelText": "Person Grantor (Owner/Lessee)-person-0 Person Company"
+    },
+    {
+      "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-company-0",
+      "tag": "input",
+      "type": "radio",
+      "name": null,
+      "id": "Grantor (Owner/Lessee)-company-0",
+      "placeholder": null,
+      "label": "Company",
+      "ariaLabel": null,
+      "className": "not-erml company-radio ng-untouched ng-pristine ng-valid",
+      "value": "company",
+      "required": false,
+      "visible": true,
+      "labelText": "Company Grantor (Owner/Lessee)-company-0 Person Company"
+    },
+    {
+      "selector": "#k-2fb01249-adbe-4aa1-a13a-741c881cc93d",
+      "tag": "input",
+      "type": "input",
+      "name": null,
+      "id": "k-2fb01249-adbe-4aa1-a13a-741c881cc93d",
+      "placeholder": "",
+      "label": "Person",
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "GAETANO HOME SERVICES",
+      "required": false,
+      "visible": true,
+      "labelText": "Person k-2fb01249-adbe-4aa1-a13a-741c881cc93d Person Company Add"
+    },
+    {
+      "selector": "#Grantee\\ \\(Contractor\\)-person-1",
+      "tag": "input",
+      "type": "radio",
+      "name": null,
+      "id": "Grantee (Contractor)-person-1",
+      "placeholder": null,
+      "label": "Person",
+      "ariaLabel": null,
+      "className": "not-erml name-radio ng-untouched ng-pristine ng-valid",
+      "value": "person",
+      "required": false,
+      "visible": true,
+      "labelText": "Person Grantee (Contractor)-person-1 Person Company"
+    },
+    {
+      "selector": "#Grantee\\ \\(Contractor\\)-company-1",
+      "tag": "input",
+      "type": "radio",
+      "name": null,
+      "id": "Grantee (Contractor)-company-1",
+      "placeholder": null,
+      "label": "Company",
+      "ariaLabel": null,
+      "className": "not-erml company-radio ng-untouched ng-pristine ng-valid",
+      "value": "company",
+      "required": false,
+      "visible": true,
+      "labelText": "Company Grantee (Contractor)-company-1 Person Company"
+    }
+  ],
+  "fileInputs": [],
+  "selects": [],
+  "kendoDropdowns": [
+    {
+      "selector": "#k-b4bb5b65-fbb0-4a6d-b114-4acbc9d615a0",
+      "text": "Notice Of Commencement",
+      "className": "doctype-dropdown k-picker-md k-rounded-md k-picker-solid k-dropdownlist k-picker"
+    }
+  ],
+  "validationMessages": [
+    {
+      "selector": "li",
+      "text": "FL STATUTE 695.26 REQUIREMENTS (click here)",
+      "className": "alert alert-danger"
+    },
+    {
+      "selector": "li",
+      "text": "REVERSE MTG TAX CHANGE INFO (click here)",
+      "className": "alert alert-danger"
+    },
+    {
+      "selector": "#\\30 ",
+      "text": "Grantor (Owner/Lessee) Person Company Add",
+      "className": "parent invalid"
+    },
+    {
+      "selector": "#\\31 ",
+      "text": "Grantee (Contractor) Person Company Add",
+      "className": "parent invalid"
+    }
+  ],
+  "bodyTextSample": "AHJ-IQ TEST DO NOT SUBMIT 1780210466700 Polk County, FL County Knowledge FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Prepare Image Open or Scan Document Type Notice Of Commencement Indexing Grantor (Owner/Lessee) Person Company Add Grantee (Contractor) Person Company Add Estimated Fees: $0.00 Save Add Doc Cancel Main Image Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel)"
+}

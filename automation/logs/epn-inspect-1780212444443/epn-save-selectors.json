@@ -1,0 +1,18 @@
+{
+  "worklist": {
+    "packageName": "#package-name",
+    "jurisdiction": "#stateCounty-search"
+  },
+  "dataEntry": {
+    "documentTypeDropdown": ".doctype-dropdown.k-dropdownlist",
+    "openFileButton": "button:has-text(\"Open File\")",
+    "saveButton": "button.btn-primary:has-text(\"Save\"), getByRole(\"button\", { name: \"Save\", exact: true })",
+    "indexingTab": "#indexing-status",
+    "grantorPersonRadio": "[id=\"Grantor (Owner/Lessee)-person-0\"]",
+    "granteeCompanyRadio": "[id=\"Grantee (Contractor)-company-1\"]",
+    "grantorInput": ".parent:has-text(\"Grantor\") .k-input-inner",
+    "granteeInput": ".parent:has-text(\"Grantee\") .k-input-inner"
+  },
+  "dummyPdfPath": "automation/logs/epn-inspect-1780212444443/fixtures/AHJ-IQ-TEST-DO-NOT-SUBMIT.pdf",
+  "dummyPdfPages": 2
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "success": true,
+    "complete": false,
+    "jobId": "766b067e-f776-47d7-883e-ded938b66ddf",
+    "transactionId": "otrkq3qbw",
+    "status": {
+      "transactionId": "otrkq3qbw",
+      "summaryUrl": "https://business.proof.com/transaction/records/otrkq3qbw/summary?configId=notarization",
+      "documentUrl": "https://business.proof.com/transaction/records/otrkq3qbw/document?configId=notarization",
+      "headerText": "Untitled Transaction test test Sent Notarize Transaction actions Summary Document Recipients Identity Risk Notes History Activity Log 1 of 2 Notice of Commencement Page 1 of 2 Florida Statutes 713.13 NOTICE OF COMMENCEMENT Permit No.:______________________ Tax Folio No.",
+      "statuses": [
+        "Sent"
+      ],
+      "summaryStatus": "Sent",
+      "documentStatus": "Sent",
+      "primaryStatus": "Sent",
+      "downloadCandidates": [],
+      "isComplete": false
+    },
+    "outputDir": "automation/logs/proof-completion-1780206358256"
+  }
+]

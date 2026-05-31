@@ -1,0 +1,158 @@
+{
+  "validationMessages": [
+    {
+      "selector": "li",
+      "text": "FL STATUTE 695.26 REQUIREMENTS (click here)",
+      "className": "alert alert-danger"
+    },
+    {
+      "selector": "li",
+      "text": "REVERSE MTG TAX CHANGE INFO (click here)",
+      "className": "alert alert-danger"
+    },
+    {
+      "selector": "#\\30 ",
+      "text": "Grantor (Owner/Lessee) Person Company Add",
+      "className": "parent invalid"
+    },
+    {
+      "selector": "#\\31 ",
+      "text": "Grantee (Contractor) Person Company Add",
+      "className": "parent invalid"
+    }
+  ],
+  "invalidSections": [
+    {
+      "selector": "#\\30 ",
+      "id": "0",
+      "className": "parent invalid",
+      "heading": "Grantor (Owner/Lessee)",
+      "text": "Grantor (Owner/Lessee) Person Company Add",
+      "invalid": true,
+      "visible": true,
+      "inputs": [
+        {
+          "selector": "#k-fc345159-8a72-4497-b1ec-8d6dc028a75f",
+          "type": "text",
+          "value": "GAETANO HOME SERVICES",
+          "visible": true
+        },
+        {
+          "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-person-0",
+          "type": "radio",
+          "value": "person",
+          "visible": true
+        },
+        {
+          "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-company-0",
+          "type": "radio",
+          "value": "company",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "selector": "#\\31 ",
+      "id": "1",
+      "className": "parent invalid",
+      "heading": "Grantee (Contractor)",
+      "text": "Grantee (Contractor) Person Company Add",
+      "invalid": true,
+      "visible": true,
+      "inputs": [
+        {
+          "selector": "#k-cc369908-2000-4d8d-ac28-bab963bf97a1",
+          "type": "text",
+          "value": "GAETANO HOME SERVICES",
+          "visible": true
+        },
+        {
+          "selector": "#Grantee\\ \\(Contractor\\)-person-1",
+          "type": "radio",
+          "value": "person",
+          "visible": true
+        },
+        {
+          "selector": "#Grantee\\ \\(Contractor\\)-company-1",
+          "type": "radio",
+          "value": "company",
+          "visible": true
+        }
+      ]
+    }
+  ],
+  "statusMatches": {
+    "dataEntryIncomplete": false,
+    "preparing": false,
+    "ready": false,
+    "draft": false
+  },
+  "incompleteReasons": [
+    {
+      "type": "invalid_section",
+      "selector": "#\\30 ",
+      "id": "0",
+      "heading": "Grantor (Owner/Lessee)",
+      "text": "Grantor (Owner/Lessee) Person Company Add",
+      "inputs": [
+        {
+          "selector": "#k-fc345159-8a72-4497-b1ec-8d6dc028a75f",
+          "type": "text",
+          "value": "GAETANO HOME SERVICES",
+          "visible": true
+        },
+        {
+          "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-person-0",
+          "type": "radio",
+          "value": "person",
+          "visible": true
+        },
+        {
+          "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-company-0",
+          "type": "radio",
+          "value": "company",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "type": "invalid_section",
+      "selector": "#\\31 ",
+      "id": "1",
+      "heading": "Grantee (Contractor)",
+      "text": "Grantee (Contractor) Person Company Add",
+      "inputs": [
+        {
+          "selector": "#k-cc369908-2000-4d8d-ac28-bab963bf97a1",
+          "type": "text",
+          "value": "GAETANO HOME SERVICES",
+          "visible": true
+        },
+        {
+          "selector": "#Grantee\\ \\(Contractor\\)-person-1",
+          "type": "radio",
+          "value": "person",
+          "visible": true
+        },
+        {
+          "selector": "#Grantee\\ \\(Contractor\\)-company-1",
+          "type": "radio",
+          "value": "company",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "type": "validation_message",
+      "selector": "#\\30 ",
+      "text": "Grantor (Owner/Lessee) Person Company Add",
+      "className": "parent invalid"
+    },
+    {
+      "type": "validation_message",
+      "selector": "#\\31 ",
+      "text": "Grantee (Contractor) Person Company Add",
+      "className": "parent invalid"
+    }
+  ]
+}

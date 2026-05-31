@@ -1,0 +1,481 @@
+{
+  "url": "https://ep.erecording.com/Secure/Packages/PackageView.aspx?packId=50319695&isArchived=false",
+  "title": "Packages | ePrepare - The New Standard for Document Preparation",
+  "headings": [
+    "AHJ-IQ TEST DO NOT SUBMIT 1780212458642(Draft)",
+    "Uploading Documents",
+    "Please select a new jurisdiction for the package.",
+    "Please enter in emails to be notified and select your email type.",
+    "Upload signed document for submission converts this package to an L2 package. Doing this will replace the rendered document you created with the ability to upload your fully executed document and electronically submit it to the jurisdiction. Click \"ACCEPT\" to continue."
+  ],
+  "fields": [
+    {
+      "selector": "#hiddenDefaultButton",
+      "tag": "input",
+      "type": "submit",
+      "name": "ctl00$ctl00$MainContent$hiddenDefaultButton",
+      "id": "hiddenDefaultButton",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "className": null,
+      "value": "Button",
+      "required": false,
+      "visible": false,
+      "labelText": "ctl00$ctl00$MainContent$hiddenDefaultButton hiddenDefaultButton AHJ-IQ TEST DO NOT SUBMIT 1780212458642(Draft) Mark package as completed edit name | email notifications | Polk County, FL change Preparing Average Turnaround T"
+    },
+    {
+      "selector": "#AddDocuments",
+      "tag": "input",
+      "type": "submit",
+      "name": "ctl00$ctl00$MainContent$AddDocuments",
+      "id": "AddDocuments",
+      "placeholder": null,
+      "label": "Mark package as completed",
+      "ariaLabel": null,
+      "className": "c-primary primaryButton",
+      "value": "Add A Doc",
+      "required": false,
+      "visible": true,
+      "labelText": "Mark package as completed ctl00$ctl00$MainContent$AddDocuments AddDocuments Send Package Send Package"
+    },
+    {
+      "selector": "#fileToUpload",
+      "tag": "input",
+      "type": "file",
+      "name": "fileToUpload",
+      "id": "fileToUpload",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "className": "input",
+      "value": null,
+      "required": false,
+      "visible": false,
+      "labelText": "fileToUpload fileToUpload Drop files here Send me an email notification when: Rejected Recorded Include image with email? PDF TIFF Created: Logan Lightsey 05/31/2026 03:27 AM | Last Modi"
+    },
+    {
+      "selector": "#chk-quick-subscribe-rejected",
+      "tag": "input",
+      "type": "checkbox",
+      "name": null,
+      "id": "chk-quick-subscribe-rejected",
+      "placeholder": null,
+      "label": "",
+      "ariaLabel": null,
+      "className": null,
+      "value": "on",
+      "required": false,
+      "visible": false,
+      "labelText": "chk-quick-subscribe-rejected Send me an email notification when: Rejected Recorded Include image with email? PDF TIFF"
+    },
+    {
+      "selector": "#chk-quick-subscribe-recorded",
+      "tag": "input",
+      "type": "checkbox",
+      "name": null,
+      "id": "chk-quick-subscribe-recorded",
+      "placeholder": null,
+      "label": "",
+      "ariaLabel": null,
+      "className": null,
+      "value": "on",
+      "required": false,
+      "visible": false,
+      "labelText": "chk-quick-subscribe-recorded Send me an email notification when: Rejected Recorded Include image with email? PDF TIFF"
+    },
+    {
+      "selector": "#chk-quick-subscribe-pdf",
+      "tag": "input",
+      "type": "checkbox",
+      "name": "imageformatgroup",
+      "id": "chk-quick-subscribe-pdf",
+      "placeholder": null,
+      "label": "",
+      "ariaLabel": null,
+      "className": null,
+      "value": "on",
+      "required": false,
+      "visible": false,
+      "labelText": "imageformatgroup chk-quick-subscribe-pdf Send me an email notification when: Rejected Recorded Include image with email? PDF TIFF"
+    },
+    {
+      "selector": "#chk-quick-subscribe-tiff",
+      "tag": "input",
+      "type": "checkbox",
+      "name": "imageformatgroup",
+      "id": "chk-quick-subscribe-tiff",
+      "placeholder": null,
+      "label": "",
+      "ariaLabel": null,
+      "className": null,
+      "value": "on",
+      "required": false,
+      "visible": false,
+      "labelText": "imageformatgroup chk-quick-subscribe-tiff Send me an email notification when: Rejected Recorded Include image with email? PDF TIFF"
+    },
+    {
+      "selector": "#checkAllOne",
+      "tag": "input",
+      "type": "checkbox",
+      "name": null,
+      "id": "checkAllOne",
+      "placeholder": null,
+      "label": "",
+      "ariaLabel": null,
+      "className": "control checkbox",
+      "value": "on",
+      "required": false,
+      "visible": false,
+      "labelText": "checkAllOne Name/Number Document Type Last Modified Status Pages Delete"
+    },
+    {
+      "selector": "#checkAllTwo",
+      "tag": "input",
+      "type": "checkbox",
+      "name": null,
+      "id": "checkAllTwo",
+      "placeholder": null,
+      "label": "",
+      "ariaLabel": null,
+      "className": "control checkbox",
+      "value": "on",
+      "required": false,
+      "visible": false,
+      "labelText": "checkAllTwo Name/Number Document Type Last Modified Status Pages Estimated Fees Delete"
+    },
+    {
+      "selector": "#check-80992513",
+      "tag": "input",
+      "type": "checkbox",
+      "name": null,
+      "id": "check-80992513",
+      "placeholder": null,
+      "label": "",
+      "ariaLabel": null,
+      "className": "control checkbox",
+      "value": "on",
+      "required": false,
+      "visible": false,
+      "labelText": "check-80992513 Document 1 Notice Of Commencement 5/31/2026 3:28 AM Data Entry Incomplete 2 $18.50"
+    },
+    {
+      "selector": "#checkAllThree",
+      "tag": "input",
+      "type": "checkbox",
+      "name": null,
+      "id": "checkAllThree",
+      "placeholder": null,
+      "label": "",
+      "ariaLabel": null,
+      "className": "control checkbox",
+      "value": "on",
+      "required": false,
+      "visible": false,
+      "labelText": "checkAllThree Name/Number Document Type Last Modified Status Recordation Info Pages Jurisdiction Fees CSC Fees Download"
+    },
+    {
+      "selector": "#selectAction",
+      "tag": "select",
+      "type": "select",
+      "name": "ctl00$ctl00$MainContent$BodyContent$selectAction",
+      "id": "selectAction",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "className": null,
+      "value": "flag",
+      "required": false,
+      "visible": true,
+      "labelText": "ctl00$ctl00$MainContent$BodyContent$selectAction selectAction Apply to checked... Flag Unflag Delete Go Delete Package"
+    },
+    {
+      "selector": "#package-change-jurisdiction",
+      "tag": "input",
+      "type": "text",
+      "name": null,
+      "id": "package-change-jurisdiction",
+      "placeholder": "Enter state or county",
+      "label": null,
+      "ariaLabel": null,
+      "className": "typeahead tt-query package-change-jurisdiction",
+      "value": null,
+      "required": false,
+      "visible": false,
+      "labelText": "package-change-jurisdiction Enter state or county Please select a new jurisdiction for the package."
+    },
+    {
+      "selector": "#rdo_standard_email_format_temp",
+      "tag": "input",
+      "type": "radio",
+      "name": "custom-email-format",
+      "id": "rdo_standard_email_format_temp",
+      "placeholder": null,
+      "label": "Standard Email Format",
+      "ariaLabel": null,
+      "className": null,
+      "value": "Standard",
+      "required": false,
+      "visible": false,
+      "labelText": "Standard Email Format custom-email-format rdo_standard_email_format_temp Standard Email Format"
+    },
+    {
+      "selector": "#rdo_custom_email_format_temp",
+      "tag": "input",
+      "type": "radio",
+      "name": "custom-email-format",
+      "id": "rdo_custom_email_format_temp",
+      "placeholder": null,
+      "label": "Custom Email Format",
+      "ariaLabel": null,
+      "className": null,
+      "value": "Custom",
+      "required": false,
+      "visible": false,
+      "labelText": "Custom Email Format custom-email-format rdo_custom_email_format_temp Custom Email Format"
+    },
+    {
+      "selector": "#email-to-add",
+      "tag": "input",
+      "type": "text",
+      "name": null,
+      "id": "email-to-add",
+      "placeholder": null,
+      "label": "Invalid email address",
+      "ariaLabel": null,
+      "className": null,
+      "value": null,
+      "required": false,
+      "visible": false,
+      "labelText": "Invalid email address email-to-add AddInvalid email address"
+    },
+    {
+      "selector": "#drp_when-notify",
+      "tag": "select",
+      "type": "select",
+      "name": null,
+      "id": "drp_when-notify",
+      "placeholder": null,
+      "label": "Send Email Notification:",
+      "ariaLabel": null,
+      "className": null,
+      "value": "recorded",
+      "required": false,
+      "visible": false,
+      "labelText": "Send Email Notification: drp_when-notify Send Email Notification: When Recorded When Rejected When Recorded or Rejected"
+    },
+    {
+      "selector": "#ckb_extn_inclattch_temp",
+      "tag": "input",
+      "type": "checkbox",
+      "name": "ckb_extn_inclattch_temp",
+      "id": "ckb_extn_inclattch_temp",
+      "placeholder": null,
+      "label": "Include document image as an attachment",
+      "ariaLabel": null,
+      "className": null,
+      "value": "on",
+      "required": false,
+      "visible": false,
+      "labelText": "Include document image as an attachment ckb_extn_inclattch_temp ckb_extn_inclattch_temp Include document image as an attachment"
+    },
+    {
+      "selector": "#drp_extn_imagefmt",
+      "tag": "select",
+      "type": "select",
+      "name": null,
+      "id": "drp_extn_imagefmt",
+      "placeholder": null,
+      "label": "Include document image as an attachment",
+      "ariaLabel": null,
+      "className": null,
+      "value": "pdf",
+      "required": false,
+      "visible": false,
+      "labelText": "Include document image as an attachment drp_extn_imagefmt Include document image as an attachment Attachment file format: PDF TIF"
+    },
+    {
+      "selector": "#txtPartyName",
+      "tag": "input",
+      "type": "text",
+      "name": null,
+      "id": "txtPartyName",
+      "placeholder": "Doe,Jon,A",
+      "label": "Party Name:",
+      "ariaLabel": null,
+      "className": null,
+      "value": null,
+      "required": false,
+      "visible": false,
+      "labelText": "Party Name: txtPartyName Doe,Jon,A Party Name: SEARCH"
+    }
+  ],
+  "fileInputs": [
+    {
+      "selector": "#fileToUpload",
+      "name": "fileToUpload",
+      "id": "fileToUpload",
+      "accept": "image/tiff,.tif,application/pdf",
+      "visible": false,
+      "hidden": true,
+      "label": null
+    }
+  ],
+  "selects": [
+    {
+      "selector": "#selectAction",
+      "label": null,
+      "options": [
+        {
+          "value": "Apply to checked...",
+          "text": "Apply to checked..."
+        },
+        {
+          "value": "flag",
+          "text": "Flag"
+        },
+        {
+          "value": "unflag",
+          "text": "Unflag"
+        },
+        {
+          "value": "deleteDocs",
+          "text": "Delete"
+        }
+      ]
+    }
+  ],
+  "kendoDropdowns": [],
+  "validationMessages": [
+    {
+      "selector": "#Notifications",
+      "text": "FL STATUTE 695.26 REQUIREMENTS (click here) FL Statute 695.26 may require:• The name and address of the person who prepared the document,• The name and address of each witness legibly printed, typewritten, or stamped immediately beneath the",
+      "className": "notification alert m10top m20left m20right m10bottom"
+    },
+    {
+      "selector": "span",
+      "text": "",
+      "className": "icon error"
+    },
+    {
+      "selector": "span",
+      "text": "",
+      "className": "icon error"
+    }
+  ],
+  "controls": [
+    {
+      "selector": "#navileaf0",
+      "text": "CSC ePrepare",
+      "tag": "a",
+      "type": null,
+      "id": "navileaf0",
+      "dangerous": false
+    },
+    {
+      "selector": "#navileaf2",
+      "text": "Package",
+      "tag": "a",
+      "type": null,
+      "id": "navileaf2",
+      "dangerous": false
+    },
+    {
+      "selector": "#HyperLink6",
+      "text": "2Announcements",
+      "tag": "a",
+      "type": null,
+      "id": "HyperLink6",
+      "dangerous": false
+    },
+    {
+      "selector": "a",
+      "text": "Send Us Feedback",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "a",
+      "text": "Logan Lightsey",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "a",
+      "text": "Worklist",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "a",
+      "text": "Reports",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "a",
+      "text": "County Knowledge",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "a",
+      "text": "Worklist User Guide",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "#lnkJurisdiction",
+      "text": "Polk County, FL",
+      "tag": "a",
+      "type": null,
+      "id": "lnkJurisdiction",
+      "dangerous": false
+    },
+    {
+      "selector": "#AddDocuments",
+      "text": "Add A Doc",
+      "tag": "input",
+      "type": "submit",
+      "id": "AddDocuments",
+      "dangerous": false
+    },
+    {
+      "selector": "a",
+      "text": "Document 1",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "#ActSelect",
+      "text": "Go",
+      "tag": "button",
+      "type": null,
+      "id": "ActSelect",
+      "dangerous": false
+    },
+    {
+      "selector": "#DeletePkgBtn",
+      "text": "Delete Package",
+      "tag": "button",
+      "type": null,
+      "id": "DeletePkgBtn",
+      "dangerous": false
+    }
+  ],
+  "bodyTextSample": "Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel) CSC ePrepare Package 2 Announcements Send Us Feedback Logan Lightsey WORKLIST REPORTS COUNTY KNOWLEDGE WORKLIST USER GUIDE AHJ-IQ TEST DO NOT SUBMIT 1780212458642 edit name | email notifications | Polk County, FL change Preparing Average Turnaround Time: Same Day (Based on county operating hours and time of submission) Total Estimated Fees: $18.50 FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Send me an email notification when: Rejected Recorded Created: Logan Lightsey 05/31/2026 03:27 AM | Last Modified: Logan Lightsey 05/31/2026 03:28 AM NAME/NUMBER DOCUMENT TYPE LAST MODIFIED STATUS PAGES ESTIMATED FEES DELETE Document 1 Notice Of Commencement 5/31/2026 3:28 AM Data Entry Incomplete 2 $18.50 Apply to checked... Flag Unflag Delete GO DELETE PACKAGE Show Audit History Report Copyright © Corporation Service Company. All Rights Reserved."
+}

@@ -1,0 +1,11 @@
+[
+  {
+    "loggedAt": "2026-05-31T08:09:40.349Z",
+    "doNotCleanupViaAutomation": true,
+    "packId": "50319700",
+    "packageName": "AHJ-IQ TEST DO NOT SUBMIT 1780214731252",
+    "incident": "Pass 9 send-inspect accidentally clicked #SendPackage — package submitted live",
+    "submittedAt": "2026-05-31T08:06:31.000Z",
+    "note": "Do not attempt cleanup/delete through automation"
+  }
+]

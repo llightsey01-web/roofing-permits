@@ -1,0 +1,126 @@
+{
+  "jobId": "488bda23-95e3-469c-9c94-0bd4260afbf0",
+  "outputDir": "automation/logs/e2e-visual-488bda23-95e3-469c-9c94-0bd4260afbf0-1780236445057",
+  "visualOptions": {
+    "headless": false,
+    "slowMo": 250,
+    "waitForProofCompletion": true
+  },
+  "safetyRules": {
+    "sendPackageClicked": false,
+    "liveSubmit": false,
+    "permitFinalSubmit": false
+  },
+  "phases": {
+    "initial": {
+      "noc_status": "queued_for_notarization",
+      "job_status": "needs_review",
+      "phase1_complete": true
+    },
+    "polk_phase1": {
+      "status": "skipped",
+      "reason": "--chain-only"
+    },
+    "chain": {
+      "noc": {
+        "skipped": true,
+        "reason": "NOC already generated",
+        "noc_file_path": "jobs/488bda23-95e3-469c-9c94-0bd4260afbf0/generated/noc-filled.pdf",
+        "noc_status": "queued_for_notarization"
+      },
+      "proofSendGate": {
+        "allowed": true,
+        "reasons": [],
+        "owner_email": "llightsey01@gmail.com",
+        "approved_emails_configured": true
+      },
+      "proofSend": {
+        "success": false,
+        "transactionId": null,
+        "nocStatus": "queued_for_notarization",
+        "jobStatus": "needs_review",
+        "identity": {
+          "job_id": "488bda23-95e3-469c-9c94-0bd4260afbf0",
+          "expected_document_name": "noc-488bda23-95e3-469c-9c94-0bd4260afbf0.pdf",
+          "expected_transaction_title": "AHJ-iQ NOC - 488bda23-95e3-469c-9c94-0bd4260afbf0 - 603 clayton circle",
+          "signer_message": "AHJ-iQ Job ID: 488bda23-95e3-469c-9c94-0bd4260afbf0\nProperty: 603 clayton circle\nParcel: 252825354530017580"
+        },
+        "matchResult": {
+          "score": 10,
+          "confidence": "weak",
+          "reasons": [
+            "sent_at_window"
+          ],
+          "proof_match_method": "sent_at_window",
+          "proof_match_confidence": "weak",
+          "expected_document_name": "noc-488bda23-95e3-469c-9c94-0bd4260afbf0.pdf",
+          "expected_transaction_title": "AHJ-iQ NOC - 488bda23-95e3-469c-9c94-0bd4260afbf0 - 603 clayton circle",
+          "acceptedForPostSendCapture": false,
+          "acceptedForScannerApply": false,
+          "acceptedForNotarization": false,
+          "manualOverride": false
+        },
+        "outputDir": "automation/logs/proof-placement-1780236445901"
+      }
+    }
+  },
+  "stoppingPoint": "waiting_for_proof",
+  "chainResult": {
+    "jobId": "488bda23-95e3-469c-9c94-0bd4260afbf0",
+    "startedAt": "2026-05-31T14:07:25.433Z",
+    "phases": {
+      "noc": {
+        "skipped": true,
+        "reason": "NOC already generated",
+        "noc_file_path": "jobs/488bda23-95e3-469c-9c94-0bd4260afbf0/generated/noc-filled.pdf",
+        "noc_status": "queued_for_notarization"
+      },
+      "proofSendGate": {
+        "allowed": true,
+        "reasons": [],
+        "owner_email": "llightsey01@gmail.com",
+        "approved_emails_configured": true
+      },
+      "proofSend": {
+        "success": false,
+        "transactionId": null,
+        "nocStatus": "queued_for_notarization",
+        "jobStatus": "needs_review",
+        "identity": {
+          "job_id": "488bda23-95e3-469c-9c94-0bd4260afbf0",
+          "expected_document_name": "noc-488bda23-95e3-469c-9c94-0bd4260afbf0.pdf",
+          "expected_transaction_title": "AHJ-iQ NOC - 488bda23-95e3-469c-9c94-0bd4260afbf0 - 603 clayton circle",
+          "signer_message": "AHJ-iQ Job ID: 488bda23-95e3-469c-9c94-0bd4260afbf0\nProperty: 603 clayton circle\nParcel: 252825354530017580"
+        },
+        "matchResult": {
+          "score": 10,
+          "confidence": "weak",
+          "reasons": [
+            "sent_at_window"
+          ],
+          "proof_match_method": "sent_at_window",
+          "proof_match_confidence": "weak",
+          "expected_document_name": "noc-488bda23-95e3-469c-9c94-0bd4260afbf0.pdf",
+          "expected_transaction_title": "AHJ-iQ NOC - 488bda23-95e3-469c-9c94-0bd4260afbf0 - 603 clayton circle",
+          "acceptedForPostSendCapture": false,
+          "acceptedForScannerApply": false,
+          "acceptedForNotarization": false,
+          "manualOverride": false
+        },
+        "outputDir": "automation/logs/proof-placement-1780236445901"
+      }
+    },
+    "stoppingPoint": "waiting_for_proof"
+  },
+  "finalDbState": {
+    "noc_status": "queued_for_notarization",
+    "job_status": "needs_review",
+    "noc_file_path": "jobs/488bda23-95e3-469c-9c94-0bd4260afbf0/generated/noc-filled.pdf",
+    "notarized_file_path": null,
+    "proof_transaction_id": null,
+    "erecord_status": null,
+    "erecord_package_id": null,
+    "erecord_document_status": null,
+    "live_submit_required": false
+  }
+}

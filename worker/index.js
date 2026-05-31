@@ -1,5 +1,6 @@
 // worker/index.js
-require('dotenv').config({ path: '.env.local' })
+const path = require('path')
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') })
 const { createClient } = require('@supabase/supabase-js')
 const ws = require('ws')
 

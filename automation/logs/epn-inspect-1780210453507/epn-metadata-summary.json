@@ -1,0 +1,27 @@
+{
+  "outputDir": "automation/logs/epn-inspect-1780210453507",
+  "mode": "metadata",
+  "inspectedAt": "2026-05-31T06:54:58.376Z",
+  "packageName": "AHJ-IQ TEST DO NOT SUBMIT 1780210466700",
+  "packId": "50319690",
+  "packageCreated": true,
+  "docTypeSelected": true,
+  "documentType": "Notice Of Commencement",
+  "dataEntryUrl": "https://ep.erecording.com/L2/DataEntry/Index?packId=50319690#image",
+  "metadataFieldCount": 9,
+  "totalFieldsCaptured": 37,
+  "requiredFieldCount": 0,
+  "fileInputSelectorFound": true,
+  "fileUploadInspect": {
+    "clickedOpenFile": true,
+    "fileInputs": [],
+    "fileChooserTriggered": true,
+    "openFileButton": "button:has-text(\"Open File\")",
+    "uploadArea": "div.btn-group.upload"
+  },
+  "stalePackIdsSkipped": [
+    "50254044",
+    "50319687",
+    "50319688"
+  ]
+}

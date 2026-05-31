@@ -1,0 +1,302 @@
+{
+  "url": "https://ep.erecording.com/Secure/Packages/PackageView.aspx?packId=50254044&isArchived=false",
+  "title": "Packages | ePrepare - The New Standard for Document Preparation",
+  "headings": [
+    "idk(Draft)"
+  ],
+  "links": [
+    {
+      "type": "link",
+      "text": "CSC ePrepare",
+      "href": "/Worklist",
+      "selector": "#navileaf0",
+      "tags": [
+        "status_history"
+      ]
+    },
+    {
+      "type": "link",
+      "text": "Package",
+      "href": "/Secure/Packages/PackageView.aspx?packId=50254044&isArchived=false",
+      "selector": "#navileaf2",
+      "tags": []
+    },
+    {
+      "type": "link",
+      "text": "2Announcements",
+      "href": "#",
+      "selector": "#HyperLink6",
+      "tags": []
+    },
+    {
+      "type": "link",
+      "text": "Send Us Feedback",
+      "href": "javascript:void(0);",
+      "selector": "a",
+      "tags": [
+        "fees_summary"
+      ]
+    },
+    {
+      "type": "link",
+      "text": "Logan Lightsey",
+      "href": "javascript:void(0);",
+      "selector": "a",
+      "tags": []
+    },
+    {
+      "type": "link",
+      "text": "Worklist",
+      "href": "/Worklist",
+      "selector": "a",
+      "tags": [
+        "status_history"
+      ]
+    },
+    {
+      "type": "link",
+      "text": "Reports",
+      "href": "/ReportHub",
+      "selector": "a",
+      "tags": []
+    },
+    {
+      "type": "link",
+      "text": "County Knowledge",
+      "href": "/L2/CountyKnowledge",
+      "selector": "a",
+      "tags": [
+        "county_jurisdiction"
+      ]
+    },
+    {
+      "type": "link",
+      "text": "",
+      "href": "/Secure/Help/Overview.aspx",
+      "selector": "a",
+      "tags": []
+    },
+    {
+      "type": "link",
+      "text": "",
+      "href": "/Secure/Admin/Settings.aspx",
+      "selector": "a",
+      "tags": []
+    },
+    {
+      "type": "link",
+      "text": "Worklist User Guide",
+      "href": "https://apps.erecording.com/Quickstart/SubmitterGuides/ePrepareGuides/Advanced%20Worklist.pdf",
+      "selector": "a",
+      "tags": [
+        "new_submission_entry",
+        "status_history",
+        "submit_button_candidate"
+      ]
+    },
+    {
+      "type": "link",
+      "text": "Polk County, FL",
+      "href": "/L2/CountyKnowledge#/?jurisId=1044",
+      "selector": "#lnkJurisdiction",
+      "tags": [
+        "county_jurisdiction"
+      ]
+    }
+  ],
+  "buttons": [
+    {
+      "type": "input",
+      "text": "Add A Doc",
+      "selector": "#AddDocuments",
+      "inputType": "submit",
+      "tags": []
+    },
+    {
+      "type": "button",
+      "text": "Go",
+      "selector": "#ActSelect",
+      "inputType": null,
+      "tags": []
+    },
+    {
+      "type": "button",
+      "text": "Delete Package",
+      "selector": "#DeletePkgBtn",
+      "inputType": null,
+      "tags": []
+    }
+  ],
+  "inputs": [
+    {
+      "tag": "input",
+      "type": "submit",
+      "name": "ctl00$ctl00$MainContent$AddDocuments",
+      "id": "AddDocuments",
+      "placeholder": null,
+      "label": null,
+      "selector": "#AddDocuments",
+      "tags": [
+        "document_upload"
+      ]
+    },
+    {
+      "tag": "select",
+      "type": "select",
+      "name": "ctl00$ctl00$MainContent$BodyContent$selectAction",
+      "id": "selectAction",
+      "placeholder": null,
+      "label": null,
+      "selector": "#selectAction",
+      "tags": []
+    }
+  ],
+  "bodyTextSample": "Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel) CSC ePrepare Package 2 Announcements Send Us Feedback Logan Lightsey WORKLIST REPORTS COUNTY KNOWLEDGE WORKLIST USER GUIDE idk edit name | email notifications | Polk County, FL change Preparing Average Turnaround Time: Same Day (Based on county operating hours and time of submission) FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Send me an email notification when: Rejected Recorded Created: Logan Lightsey 05/27/2026 12:53 AM | Last Modified: 05/27/2026 12:53 AM NAME/NUMBER DOCUMENT TYPE LAST MODIFIED STATUS PAGES RECORDATION ORDER DELETE No documents created yet. Apply to checked... Flag Unflag GO DELETE PACKAGE Show Audit History Report Copyright © Corporation Service Company. All Rights Reserved.",
+  "fileInputs": [],
+  "dropzones": [
+    {
+      "selector": "#HyperLink6",
+      "className": "c-animate dropdown-toggle",
+      "text": "2Announcements",
+      "ariaLabel": null
+    },
+    {
+      "selector": "li",
+      "className": "uh-dropdown",
+      "text": "Logan Lightsey Settings OfficesCustomer RefUser InfoReport SubJurisdictionsPaymentsFlags Help Premium Features & Enhance",
+      "ariaLabel": null
+    },
+    {
+      "selector": "a",
+      "className": "uh-dropdownbtn c-animate nudge",
+      "text": "Logan Lightsey",
+      "ariaLabel": null
+    }
+  ],
+  "selects": [
+    {
+      "selector": "#selectAction",
+      "name": "ctl00$ctl00$MainContent$BodyContent$selectAction",
+      "id": "selectAction",
+      "label": null,
+      "options": [
+        {
+          "value": "Apply to checked...",
+          "text": "Apply to checked..."
+        },
+        {
+          "value": "flag",
+          "text": "Flag"
+        },
+        {
+          "value": "unflag",
+          "text": "Unflag"
+        }
+      ]
+    }
+  ],
+  "labeledFields": [
+    {
+      "selector": "#AddDocuments",
+      "tag": "input",
+      "type": "submit",
+      "name": "ctl00$ctl00$MainContent$AddDocuments",
+      "id": "AddDocuments",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "value": "Add A Doc"
+    },
+    {
+      "selector": "#selectAction",
+      "tag": "select",
+      "type": "select",
+      "name": "ctl00$ctl00$MainContent$BodyContent$selectAction",
+      "id": "selectAction",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "value": "flag"
+    }
+  ],
+  "allButtons": [
+    {
+      "selector": "#navileaf0",
+      "text": "CSC ePrepare",
+      "tag": "a",
+      "href": "/Worklist"
+    },
+    {
+      "selector": "#navileaf2",
+      "text": "Package",
+      "tag": "a",
+      "href": "/Secure/Packages/PackageView.aspx?packId=50254044&isArchived=false"
+    },
+    {
+      "selector": "#HyperLink6",
+      "text": "2Announcements",
+      "tag": "a",
+      "href": "#"
+    },
+    {
+      "selector": "a",
+      "text": "Send Us Feedback",
+      "tag": "a",
+      "href": "javascript:void(0);"
+    },
+    {
+      "selector": "a",
+      "text": "Logan Lightsey",
+      "tag": "a",
+      "href": "javascript:void(0);"
+    },
+    {
+      "selector": "a",
+      "text": "Worklist",
+      "tag": "a",
+      "href": "/Worklist"
+    },
+    {
+      "selector": "a",
+      "text": "Reports",
+      "tag": "a",
+      "href": "/ReportHub"
+    },
+    {
+      "selector": "a",
+      "text": "County Knowledge",
+      "tag": "a",
+      "href": "/L2/CountyKnowledge"
+    },
+    {
+      "selector": "a",
+      "text": "Worklist User Guide",
+      "tag": "a",
+      "href": "https://apps.erecording.com/Quickstart/SubmitterGuides/ePrepareGuides/Advanced%20Worklist.pdf"
+    },
+    {
+      "selector": "#lnkJurisdiction",
+      "text": "Polk County, FL",
+      "tag": "a",
+      "href": "/L2/CountyKnowledge#/?jurisId=1044"
+    },
+    {
+      "selector": "#AddDocuments",
+      "text": "Add A Doc",
+      "tag": "input",
+      "href": null
+    },
+    {
+      "selector": "#ActSelect",
+      "text": "Go",
+      "tag": "button",
+      "href": null
+    },
+    {
+      "selector": "#DeletePkgBtn",
+      "text": "Delete Package",
+      "tag": "button",
+      "href": null
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "success": true,
+  "outputDir": "automation/logs/proof-records-scan-1780206715861",
+  "totalRows": 44,
+  "completedCount": 1,
+  "completedRows": [
+    {
+      "transactionName": "Untitled Transaction",
+      "type": null,
+      "status": "Complete",
+      "organization": "Logan Lightsey (ord4qewxy)",
+      "recipientName": "logan lightsey",
+      "senderName": "Logan Lightsey",
+      "dateCreated": "05/28/2026",
+      "dateCompleted": "05/28/2026",
+      "rowUrl": "/transaction/records/otge8zgp4/summary?configId=notarization",
+      "transactionId": "otge8zgp4",
+      "rowIndex": 44,
+      "rawText": "Untitled TransactionNotarizeCompleteLogan Lightsey (ord4qewxy)logan lightseyLogan Lightsey05/28/202605/28/2026Transaction menu",
+      "recipientEmail": "loganlightsey@outlook.com",
+      "recipientEmails": [
+        "loganlightsey@outlook.com",
+        "llightsey01@gmail.com"
+      ],
+      "documentName": "ADA_NOTICE-OF-COMMENCEMENT_102824.pdf",
+      "documentNames": [
+        "ADA_NOTICE-OF-COMMENCEMENT_102824.pdf",
+        "AuditTrail.pdf"
+      ],
+      "summaryUrl": "https://business.proof.com/transaction/records/otge8zgp4/summary?configId=notarization"
+    }
+  ],
+  "selected": {
+    "transactionName": "Untitled Transaction",
+    "type": null,
+    "status": "Complete",
+    "organization": "Logan Lightsey (ord4qewxy)",
+    "recipientName": "logan lightsey",
+    "senderName": "Logan Lightsey",
+    "dateCreated": "05/28/2026",
+    "dateCompleted": "05/28/2026",
+    "rowUrl": "/transaction/records/otge8zgp4/summary?configId=notarization",
+    "transactionId": "otge8zgp4",
+    "rowIndex": 44,
+    "rawText": "Untitled TransactionNotarizeCompleteLogan Lightsey (ord4qewxy)logan lightseyLogan Lightsey05/28/202605/28/2026Transaction menu",
+    "recipientEmail": "loganlightsey@outlook.com",
+    "recipientEmails": [
+      "loganlightsey@outlook.com",
+      "llightsey01@gmail.com"
+    ],
+    "documentName": "ADA_NOTICE-OF-COMMENCEMENT_102824.pdf",
+    "documentNames": [
+      "ADA_NOTICE-OF-COMMENCEMENT_102824.pdf",
+      "AuditTrail.pdf"
+    ],
+    "summaryUrl": "https://business.proof.com/transaction/records/otge8zgp4/summary?configId=notarization"
+  },
+  "linkedJobId": "766b067e-f776-47d7-883e-ded938b66ddf",
+  "download": {
+    "success": true,
+    "complete": true,
+    "jobId": "766b067e-f776-47d7-883e-ded938b66ddf",
+    "transactionId": "otge8zgp4",
+    "nocStatus": "notarized",
+    "notarizedFilePath": "jobs/766b067e-f776-47d7-883e-ded938b66ddf/notarized/noc-notarized.pdf",
+    "status": {
+      "transactionId": "otge8zgp4",
+      "summaryUrl": "https://business.proof.com/transaction/records/otge8zgp4/summary?configId=notarization",
+      "documentUrl": "https://business.proof.com/transaction/records/otge8zgp4/document?configId=notarization",
+      "headerText": "Untitled Transaction logan lightsey Complete Notarize Transaction actions Summary Document Recipients Identity Risk Meeting Notes History Activity Log 1 of 2 Notice of Commencement Page 1 of 2 Florida Statutes 713.13 NOTICE OF COMMENCEMENT Permit No.:___________________",
+      "statuses": [
+        "Complete"
+      ],
+      "summaryStatus": "Complete",
+      "documentStatus": "Complete",
+      "primaryStatus": "Complete",
+      "downloadCandidates": [
+        {
+          "tag": "BUTTON",
+          "text": "Download all",
+          "href": null
+        }
+      ],
+      "isComplete": true
+    },
+    "downloadInfo": {
+      "source": "document_page_download",
+      "suggestedFilename": "Untitled Transaction.zip"
+    },
+    "outputDir": "automation/logs/proof-records-scan-1780206715861/download-766b067e-f776-47d7-883e-ded938b66ddf"
+  }
+}

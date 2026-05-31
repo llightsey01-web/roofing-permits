@@ -1,0 +1,160 @@
+{
+  "addDocumentButton": "#AddDocuments",
+  "wizardSteps": [
+    {
+      "step": "docwizard-01-worklist-before-create",
+      "url": "https://ep.erecording.com/Worklist",
+      "uploadSelectors": [
+        {
+          "selector": "#HyperLink6",
+          "className": "c-animate dropdown-toggle",
+          "text": "2Announcements",
+          "ariaLabel": null
+        },
+        {
+          "selector": "li",
+          "className": "uh-dropdown",
+          "text": "Logan Lightsey Settings OfficesCustomer RefUser InfoReport SubJurisdictionsPaymentsFlags Help Premium Features & Enhance",
+          "ariaLabel": null
+        },
+        {
+          "selector": "a",
+          "className": "uh-dropdownbtn c-animate nudge",
+          "text": "Logan Lightsey",
+          "ariaLabel": null
+        },
+        {
+          "selector": "button",
+          "className": "btn btn-default btn-sm dropdown-toggle bs-tooltip",
+          "text": "All States",
+          "ariaLabel": null
+        },
+        {
+          "selector": "button",
+          "className": "btn btn-default btn-sm dropdown-toggle bs-tooltip disabled",
+          "text": "All Counties",
+          "ariaLabel": null
+        }
+      ],
+      "fieldCount": 7,
+      "selectCount": 1,
+      "dangerousButtons": [
+        {
+          "selector": "a",
+          "text": "Send Us Feedback",
+          "tag": "a",
+          "href": "javascript:void(0);"
+        }
+      ]
+    },
+    {
+      "step": "docwizard-02-worklist-after-create",
+      "url": "https://ep.erecording.com/Worklist",
+      "uploadSelectors": [
+        {
+          "selector": "#HyperLink6",
+          "className": "c-animate dropdown-toggle",
+          "text": "2Announcements",
+          "ariaLabel": null
+        },
+        {
+          "selector": "li",
+          "className": "uh-dropdown",
+          "text": "Logan Lightsey Settings OfficesCustomer RefUser InfoReport SubJurisdictionsPaymentsFlags Help Premium Features & Enhance",
+          "ariaLabel": null
+        },
+        {
+          "selector": "a",
+          "className": "uh-dropdownbtn c-animate nudge",
+          "text": "Logan Lightsey",
+          "ariaLabel": null
+        },
+        {
+          "selector": "button",
+          "className": "btn btn-default btn-sm dropdown-toggle bs-tooltip",
+          "text": "All States",
+          "ariaLabel": null
+        },
+        {
+          "selector": "button",
+          "className": "btn btn-default btn-sm dropdown-toggle bs-tooltip disabled",
+          "text": "All Counties",
+          "ariaLabel": null
+        }
+      ],
+      "fieldCount": 7,
+      "selectCount": 1,
+      "dangerousButtons": [
+        {
+          "selector": "a",
+          "text": "Send Us Feedback",
+          "tag": "a",
+          "href": "javascript:void(0);"
+        }
+      ]
+    }
+  ],
+  "uploadSelectors": [
+    {
+      "selector": "#HyperLink6",
+      "className": "c-animate dropdown-toggle",
+      "text": "2Announcements",
+      "ariaLabel": null
+    },
+    {
+      "selector": "li",
+      "className": "uh-dropdown",
+      "text": "Logan Lightsey Settings OfficesCustomer RefUser InfoReport SubJurisdictionsPaymentsFlags Help Premium Features & Enhance",
+      "ariaLabel": null
+    },
+    {
+      "selector": "a",
+      "className": "uh-dropdownbtn c-animate nudge",
+      "text": "Logan Lightsey",
+      "ariaLabel": null
+    },
+    {
+      "selector": "button",
+      "className": "btn btn-default btn-sm dropdown-toggle bs-tooltip",
+      "text": "All States",
+      "ariaLabel": null
+    },
+    {
+      "selector": "button",
+      "className": "btn btn-default btn-sm dropdown-toggle bs-tooltip disabled",
+      "text": "All Counties",
+      "ariaLabel": null
+    },
+    {
+      "selector": "#HyperLink6",
+      "className": "c-animate dropdown-toggle",
+      "text": "2Announcements",
+      "ariaLabel": null
+    },
+    {
+      "selector": "li",
+      "className": "uh-dropdown",
+      "text": "Logan Lightsey Settings OfficesCustomer RefUser InfoReport SubJurisdictionsPaymentsFlags Help Premium Features & Enhance",
+      "ariaLabel": null
+    },
+    {
+      "selector": "a",
+      "className": "uh-dropdownbtn c-animate nudge",
+      "text": "Logan Lightsey",
+      "ariaLabel": null
+    },
+    {
+      "selector": "button",
+      "className": "btn btn-default btn-sm dropdown-toggle bs-tooltip",
+      "text": "All States",
+      "ariaLabel": null
+    },
+    {
+      "selector": "button",
+      "className": "btn btn-default btn-sm dropdown-toggle bs-tooltip disabled",
+      "text": "All Counties",
+      "ariaLabel": null
+    }
+  ],
+  "documentTypeSelectors": []
+}

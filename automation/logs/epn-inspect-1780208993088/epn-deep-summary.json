@@ -1,0 +1,14 @@
+{
+  "outputDir": "automation/logs/epn-inspect-1780208993088",
+  "packageName": "AHJ-IQ TEST DO NOT SUBMIT 1780209005668",
+  "packId": "50254044",
+  "editorOpened": false,
+  "editorUrl": null,
+  "uploadSelectorsFound": 15,
+  "documentTypeOptionsFound": 0,
+  "requiredFieldCount": 9,
+  "dangerousButtonsFound": 3,
+  "packageEditorSelectorsPath": "automation/logs/epn-inspect-1780208993088/epn-package-editor-selectors.json",
+  "requiredFieldsPath": "automation/logs/epn-inspect-1780208993088/epn-required-fields.json",
+  "deepNavigationMapPath": "automation/logs/epn-inspect-1780208993088/epn-deep-navigation-map.json"
+}

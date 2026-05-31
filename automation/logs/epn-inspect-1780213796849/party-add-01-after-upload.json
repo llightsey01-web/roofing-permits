@@ -1,0 +1,608 @@
+{
+  "url": "https://ep.erecording.com/L2/DataEntry/Index?packId=50319697",
+  "title": "Document 1 - AHJ-IQ TEST DO NOT SUBMIT 1780213812403",
+  "headings": [
+    "AHJ-IQ TEST DO NOT SUBMIT 1780213812403",
+    "Polk County, FL County Knowledge",
+    "Prepare Image",
+    "Document Type",
+    "Indexing",
+    "Grantor (Owner/Lessee)",
+    "Grantee (Contractor)",
+    "Jurisdiction Fees:",
+    "County Knowledge"
+  ],
+  "fields": [
+    {
+      "selector": "#k-427c45e2-399a-4763-8134-278c745891f0",
+      "tag": "input",
+      "type": "input",
+      "name": null,
+      "id": "k-427c45e2-399a-4763-8134-278c745891f0",
+      "placeholder": "Document Name",
+      "label": null,
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "Document 1",
+      "required": false,
+      "visible": true,
+      "labelText": "k-427c45e2-399a-4763-8134-278c745891f0 Document Name"
+    },
+    {
+      "selector": "#k-6b86f66b-64a8-42c4-a25d-9d5a2e682d92",
+      "tag": "kendo-dropdownlist",
+      "type": "kendo-dropdownlist",
+      "name": null,
+      "id": "k-6b86f66b-64a8-42c4-a25d-9d5a2e682d92",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "className": "doctype-dropdown k-picker-md k-rounded-md k-picker-solid k-dropdownlist k-picker",
+      "value": "Notice Of Commencement",
+      "required": false,
+      "visible": true,
+      "labelText": "k-6b86f66b-64a8-42c4-a25d-9d5a2e682d92 Notice Of Commencement"
+    },
+    {
+      "selector": "#b586fb92-896b-4e48-9b49-e17d18ba4196",
+      "tag": "span",
+      "type": "span",
+      "name": null,
+      "id": "b586fb92-896b-4e48-9b49-e17d18ba4196",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "Notice Of Commencement",
+      "required": false,
+      "visible": true,
+      "labelText": "b586fb92-896b-4e48-9b49-e17d18ba4196 Notice Of Commencement"
+    },
+    {
+      "selector": "#k-faa3aef5-7bcc-44e1-8c61-738cbed4bfce",
+      "tag": "input",
+      "type": "input",
+      "name": null,
+      "id": "k-faa3aef5-7bcc-44e1-8c61-738cbed4bfce",
+      "placeholder": "",
+      "label": "Person",
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "GAETANO HOME SERVICES",
+      "required": false,
+      "visible": true,
+      "labelText": "Person k-faa3aef5-7bcc-44e1-8c61-738cbed4bfce Person Company Add"
+    },
+    {
+      "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-person-0",
+      "tag": "input",
+      "type": "radio",
+      "name": null,
+      "id": "Grantor (Owner/Lessee)-person-0",
+      "placeholder": null,
+      "label": "Person",
+      "ariaLabel": null,
+      "className": "not-erml name-radio ng-untouched ng-pristine ng-valid",
+      "value": "person",
+      "required": false,
+      "visible": true,
+      "labelText": "Person Grantor (Owner/Lessee)-person-0 Person Company"
+    },
+    {
+      "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-company-0",
+      "tag": "input",
+      "type": "radio",
+      "name": null,
+      "id": "Grantor (Owner/Lessee)-company-0",
+      "placeholder": null,
+      "label": "Company",
+      "ariaLabel": null,
+      "className": "not-erml company-radio ng-untouched ng-pristine ng-valid",
+      "value": "company",
+      "required": false,
+      "visible": true,
+      "labelText": "Company Grantor (Owner/Lessee)-company-0 Person Company"
+    },
+    {
+      "selector": "#k-601cf750-895e-4367-8cd1-3301741245b4",
+      "tag": "input",
+      "type": "input",
+      "name": null,
+      "id": "k-601cf750-895e-4367-8cd1-3301741245b4",
+      "placeholder": "",
+      "label": "Person",
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "GAETANO HOME SERVICES",
+      "required": false,
+      "visible": true,
+      "labelText": "Person k-601cf750-895e-4367-8cd1-3301741245b4 Person Company Add"
+    },
+    {
+      "selector": "#Grantee\\ \\(Contractor\\)-person-1",
+      "tag": "input",
+      "type": "radio",
+      "name": null,
+      "id": "Grantee (Contractor)-person-1",
+      "placeholder": null,
+      "label": "Person",
+      "ariaLabel": null,
+      "className": "not-erml name-radio ng-untouched ng-pristine ng-valid",
+      "value": "person",
+      "required": false,
+      "visible": true,
+      "labelText": "Person Grantee (Contractor)-person-1 Person Company"
+    },
+    {
+      "selector": "#Grantee\\ \\(Contractor\\)-company-1",
+      "tag": "input",
+      "type": "radio",
+      "name": null,
+      "id": "Grantee (Contractor)-company-1",
+      "placeholder": null,
+      "label": "Company",
+      "ariaLabel": null,
+      "className": "not-erml company-radio ng-untouched ng-pristine ng-valid",
+      "value": "company",
+      "required": false,
+      "visible": true,
+      "labelText": "Company Grantee (Contractor)-company-1 Person Company"
+    }
+  ],
+  "fileInputs": [],
+  "selects": [],
+  "kendoDropdowns": [
+    {
+      "selector": "#k-6b86f66b-64a8-42c4-a25d-9d5a2e682d92",
+      "text": "Notice Of Commencement",
+      "className": "doctype-dropdown k-picker-md k-rounded-md k-picker-solid k-dropdownlist k-picker"
+    }
+  ],
+  "validationMessages": [
+    {
+      "selector": "li",
+      "text": "FL STATUTE 695.26 REQUIREMENTS (click here)",
+      "className": "alert alert-danger"
+    },
+    {
+      "selector": "li",
+      "text": "REVERSE MTG TAX CHANGE INFO (click here)",
+      "className": "alert alert-danger"
+    },
+    {
+      "selector": "#\\30 ",
+      "text": "Grantor (Owner/Lessee) Person Company Add",
+      "className": "parent invalid"
+    },
+    {
+      "selector": "#\\31 ",
+      "text": "Grantee (Contractor) Person Company Add",
+      "className": "parent invalid"
+    }
+  ],
+  "controls": [
+    {
+      "selector": "a",
+      "text": "AHJ-IQ TEST DO NOT SUBMIT 1780213812403",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": true
+    },
+    {
+      "selector": "a",
+      "text": "FL STATUTE 695.26 REQUIREMENTS (click here)",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "a",
+      "text": "REVERSE MTG TAX CHANGE INFO (click here)",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Open File",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Scan Image",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Add",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Add",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "a",
+      "text": "Main Image",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    }
+  ],
+  "bodyTextSample": "AHJ-IQ TEST DO NOT SUBMIT 1780213812403 Polk County, FL County Knowledge FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Prepare Image Open Upload from computer or Scan Document Type Notice Of Commencement Indexing Grantor (Owner/Lessee) Person Company Add Grantee (Contractor) Person Company Add Estimated Fees: $18.50 Save Add Doc Cancel Main Image Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel)",
+  "sections": [
+    {
+      "selector": "#\\30 ",
+      "id": "0",
+      "className": "parent invalid",
+      "heading": "Grantor (Owner/Lessee)",
+      "text": "Grantor (Owner/Lessee) Person Company Add",
+      "invalid": true,
+      "visible": true,
+      "inputs": [
+        {
+          "selector": "#k-faa3aef5-7bcc-44e1-8c61-738cbed4bfce",
+          "type": "text",
+          "value": "GAETANO HOME SERVICES",
+          "visible": true
+        },
+        {
+          "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-person-0",
+          "type": "radio",
+          "value": "person",
+          "visible": true
+        },
+        {
+          "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-company-0",
+          "type": "radio",
+          "value": "company",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "selector": "#\\31 ",
+      "id": "1",
+      "className": "parent invalid",
+      "heading": "Grantee (Contractor)",
+      "text": "Grantee (Contractor) Person Company Add",
+      "invalid": true,
+      "visible": true,
+      "inputs": [
+        {
+          "selector": "#k-601cf750-895e-4367-8cd1-3301741245b4",
+          "type": "text",
+          "value": "GAETANO HOME SERVICES",
+          "visible": true
+        },
+        {
+          "selector": "#Grantee\\ \\(Contractor\\)-person-1",
+          "type": "radio",
+          "value": "person",
+          "visible": true
+        },
+        {
+          "selector": "#Grantee\\ \\(Contractor\\)-company-1",
+          "type": "radio",
+          "value": "company",
+          "visible": true
+        }
+      ]
+    }
+  ],
+  "invalidSections": [
+    {
+      "selector": "#\\30 ",
+      "id": "0",
+      "className": "parent invalid",
+      "heading": "Grantor (Owner/Lessee)",
+      "text": "Grantor (Owner/Lessee) Person Company Add",
+      "invalid": true,
+      "visible": true,
+      "inputs": [
+        {
+          "selector": "#k-faa3aef5-7bcc-44e1-8c61-738cbed4bfce",
+          "type": "text",
+          "value": "GAETANO HOME SERVICES",
+          "visible": true
+        },
+        {
+          "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-person-0",
+          "type": "radio",
+          "value": "person",
+          "visible": true
+        },
+        {
+          "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-company-0",
+          "type": "radio",
+          "value": "company",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "selector": "#\\31 ",
+      "id": "1",
+      "className": "parent invalid",
+      "heading": "Grantee (Contractor)",
+      "text": "Grantee (Contractor) Person Company Add",
+      "invalid": true,
+      "visible": true,
+      "inputs": [
+        {
+          "selector": "#k-601cf750-895e-4367-8cd1-3301741245b4",
+          "type": "text",
+          "value": "GAETANO HOME SERVICES",
+          "visible": true
+        },
+        {
+          "selector": "#Grantee\\ \\(Contractor\\)-person-1",
+          "type": "radio",
+          "value": "person",
+          "visible": true
+        },
+        {
+          "selector": "#Grantee\\ \\(Contractor\\)-company-1",
+          "type": "radio",
+          "value": "company",
+          "visible": true
+        }
+      ]
+    }
+  ],
+  "tabs": [
+    {
+      "selector": "#image-status",
+      "id": "image-status",
+      "text": "",
+      "className": "btn bs-tooltip btn-success",
+      "active": false,
+      "visible": true
+    },
+    {
+      "selector": "#indexing-status",
+      "id": "indexing-status",
+      "text": "",
+      "className": "btn bs-tooltip btn-default",
+      "active": false,
+      "visible": true
+    },
+    {
+      "selector": "a",
+      "id": null,
+      "text": "Main Image",
+      "className": null,
+      "active": false,
+      "visible": true
+    }
+  ],
+  "hiddenFields": [],
+  "emptyVisibleInputs": [],
+  "allClickables": [
+    {
+      "selector": "a",
+      "text": "AHJ-IQ TEST DO NOT SUBMIT 1780213812403",
+      "tag": "a",
+      "id": null,
+      "className": null,
+      "dangerous": true,
+      "readyLike": false
+    },
+    {
+      "selector": "a",
+      "text": "FL STATUTE 695.26 REQUIREMENTS (click here)",
+      "tag": "a",
+      "id": null,
+      "className": null,
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "a",
+      "text": "REVERSE MTG TAX CHANGE INFO (click here)",
+      "tag": "a",
+      "id": null,
+      "className": null,
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "div",
+      "text": "Open FileUpload from computerorScan Image",
+      "tag": "div",
+      "id": null,
+      "className": "btn-group-indented image-controls btn-group btn-group-justified btn-group-block",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "div",
+      "text": "Open FileUpload from computer",
+      "tag": "div",
+      "id": null,
+      "className": "btn-group upload",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Open File",
+      "tag": "button",
+      "id": null,
+      "className": "file-open btn btn-default bs-tooltip",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "div",
+      "text": "orScan Image",
+      "tag": "div",
+      "id": null,
+      "className": "btn-group letter",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Scan Image",
+      "tag": "button",
+      "id": null,
+      "className": "scan-letter btn btn-default bs-tooltip",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "#doc-type",
+      "text": "Notice Of Commencement",
+      "tag": "div",
+      "id": "doc-type",
+      "className": "btn-group",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "id": null,
+      "className": "k-input-button k-button k-icon-button k-button-md k-button-solid k-button-solid-base",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "id": null,
+      "className": "k-input-button k-button k-icon-button k-button-md k-button-solid k-button-solid-base",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Add",
+      "tag": "button",
+      "id": null,
+      "className": "m5top clone add btn btn-info",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "id": null,
+      "className": "k-input-button k-button k-icon-button k-button-md k-button-solid k-button-solid-base",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "button",
+      "text": "Add",
+      "tag": "button",
+      "id": null,
+      "className": "m5top clone add btn btn-info",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "div",
+      "text": "Save Add Doc Cancel",
+      "tag": "div",
+      "id": null,
+      "className": "btn-group btn-group-indented btn-group-justified",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "#save-button",
+      "text": "Save",
+      "tag": "span",
+      "id": "save-button",
+      "className": "btn btn-primary",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "#NextButton",
+      "text": "Add Doc",
+      "tag": "span",
+      "id": "NextButton",
+      "className": "btn btn-warning",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "#cancel-l2",
+      "text": "Cancel",
+      "tag": "span",
+      "id": "cancel-l2",
+      "className": "btn btn-default",
+      "dangerous": false,
+      "readyLike": false
+    },
+    {
+      "selector": "a",
+      "text": "Main Image",
+      "tag": "a",
+      "id": null,
+      "className": null,
+      "dangerous": false,
+      "readyLike": false
+    }
+  ],
+  "statusMatches": {
+    "dataEntryIncomplete": false,
+    "preparing": false,
+    "ready": false,
+    "draft": false
+  },
+  "pageControls": [
+    {
+      "selector": "body",
+      "text": "Drop Image HereAHJ-IQ TEST DO NOT SUBMIT 1780213812403 Polk County, FL County Kn",
+      "className": "dataEntry-page ng-tns-0-0"
+    }
+  ]
+}

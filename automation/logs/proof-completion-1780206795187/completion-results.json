@@ -1,0 +1,45 @@
+[
+  {
+    "success": true,
+    "complete": true,
+    "jobId": "766b067e-f776-47d7-883e-ded938b66ddf",
+    "transactionId": "otge8zgp4",
+    "nocStatus": "notarized",
+    "notarizedFilePath": "jobs/766b067e-f776-47d7-883e-ded938b66ddf/notarized/noc-notarized.pdf",
+    "status": {
+      "transactionId": "otge8zgp4",
+      "summaryUrl": "https://business.proof.com/transaction/records/otge8zgp4/summary?configId=notarization",
+      "documentUrl": "https://business.proof.com/transaction/records/otge8zgp4/document?configId=notarization",
+      "headerText": "Untitled Transaction logan lightsey Complete Notarize Transaction actions Summary Document Recipients Identity Risk Meeting Notes History Activity Log 1 of 2 Notice of Commencement Page 1 of 2 Florida Statutes 713.13 NOTICE OF COMMENCEMENT Permit No.:___________________",
+      "statuses": [
+        "Complete"
+      ],
+      "summaryStatus": "Complete",
+      "documentStatus": "Complete",
+      "primaryStatus": "Complete",
+      "downloadCandidates": [
+        {
+          "tag": "BUTTON",
+          "text": "Download all",
+          "href": null
+        }
+      ],
+      "isComplete": true
+    },
+    "downloadInfo": {
+      "source": "document_page_download_all_zip",
+      "suggestedFilename": "Untitled Transaction.zip",
+      "normalized": {
+        "format": "zip",
+        "outputPath": "automation/logs/proof-completion-1780206795187/noc-notarized.pdf",
+        "extractedFrom": "/var/folders/t9/2wy66cwd1bg5svnb9frhbgnc0000gn/T/proof-dl-mV7Ium/ADA_NOTICE-OF-COMMENCEMENT_102824.pdf",
+        "zipMembers": [
+          "/var/folders/t9/2wy66cwd1bg5svnb9frhbgnc0000gn/T/proof-dl-mV7Ium/ADA_NOTICE-OF-COMMENCEMENT_102824.pdf",
+          "/var/folders/t9/2wy66cwd1bg5svnb9frhbgnc0000gn/T/proof-dl-mV7Ium/Proof Verification Instructions.pdf",
+          "/var/folders/t9/2wy66cwd1bg5svnb9frhbgnc0000gn/T/proof-dl-mV7Ium/AuditTrail.pdf"
+        ]
+      }
+    },
+    "outputDir": "automation/logs/proof-completion-1780206795187"
+  }
+]

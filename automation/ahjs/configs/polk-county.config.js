@@ -32,9 +32,16 @@ module.exports = {
     zip:                '#ctl00_PlaceHolderMain_WorkLocationEdit_txtZip',
     addressSearchBtn:   '#ctl00_PlaceHolderMain_WorkLocationEdit_btnSearch',
     addressResult:      '#ctl00_PlaceHolderMain_WorkLocationEdit .ACA_Grid_Row',
+    saveAndResumeBtn:   '#ctl00_PlaceHolderMain_actionBarBottom_btnSave',
 
     // Parcel (auto-fills from address search)
     parcelNo:           '#ctl00_PlaceHolderMain_ParcelEdit_txtParcelNo',
+    parcelSearchBtn:    '#ctl00_PlaceHolderMain_ParcelEdit_btnSearch',
+    legalDescription:   '#ctl00_PlaceHolderMain_ParcelEdit_txtLegalDescription',
+    parcelLot:          '#ctl00_PlaceHolderMain_ParcelEdit_txtLot',
+    parcelBlock:        '#ctl00_PlaceHolderMain_ParcelEdit_txtBlock',
+    parcelTract:        '#ctl00_PlaceHolderMain_ParcelEdit_txtTract',
+    parcelSubdivision:  '#ctl00_PlaceHolderMain_ParcelEdit_ddlSubdivision',
 
     // Owner (auto-fills from address search)
     ownerName:          '#ctl00_PlaceHolderMain_OwnerEdit_txtName',

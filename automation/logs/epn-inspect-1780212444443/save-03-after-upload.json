@@ -1,0 +1,274 @@
+{
+  "url": "https://ep.erecording.com/L2/DataEntry/Index?packId=50319695",
+  "title": "Document 1 - AHJ-IQ TEST DO NOT SUBMIT 1780212458642",
+  "headings": [
+    "AHJ-IQ TEST DO NOT SUBMIT 1780212458642",
+    "Polk County, FL County Knowledge",
+    "Prepare Image",
+    "Document Type",
+    "Indexing",
+    "Grantor (Owner/Lessee)",
+    "Grantee (Contractor)",
+    "Jurisdiction Fees:",
+    "County Knowledge"
+  ],
+  "fields": [
+    {
+      "selector": "#k-661d6b87-1a41-4f11-978b-098638b4f352",
+      "tag": "input",
+      "type": "input",
+      "name": null,
+      "id": "k-661d6b87-1a41-4f11-978b-098638b4f352",
+      "placeholder": "Document Name",
+      "label": null,
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "Document 1",
+      "required": false,
+      "visible": true,
+      "labelText": "k-661d6b87-1a41-4f11-978b-098638b4f352 Document Name"
+    },
+    {
+      "selector": "#k-6ce1bc63-5f9c-4a43-9dee-a73b01bb89da",
+      "tag": "kendo-dropdownlist",
+      "type": "kendo-dropdownlist",
+      "name": null,
+      "id": "k-6ce1bc63-5f9c-4a43-9dee-a73b01bb89da",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "className": "doctype-dropdown k-picker-md k-rounded-md k-picker-solid k-dropdownlist k-picker",
+      "value": "Notice Of Commencement",
+      "required": false,
+      "visible": true,
+      "labelText": "k-6ce1bc63-5f9c-4a43-9dee-a73b01bb89da Notice Of Commencement"
+    },
+    {
+      "selector": "#f6e8e064-2c4d-4962-880c-8875a0b588eb",
+      "tag": "span",
+      "type": "span",
+      "name": null,
+      "id": "f6e8e064-2c4d-4962-880c-8875a0b588eb",
+      "placeholder": null,
+      "label": null,
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "Notice Of Commencement",
+      "required": false,
+      "visible": true,
+      "labelText": "f6e8e064-2c4d-4962-880c-8875a0b588eb Notice Of Commencement"
+    },
+    {
+      "selector": "#k-bdac70f1-d9ec-4c5d-94da-b1bbc72f1b4f",
+      "tag": "input",
+      "type": "input",
+      "name": null,
+      "id": "k-bdac70f1-d9ec-4c5d-94da-b1bbc72f1b4f",
+      "placeholder": "",
+      "label": "Person",
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "GAETANO HOME SERVICES",
+      "required": false,
+      "visible": true,
+      "labelText": "Person k-bdac70f1-d9ec-4c5d-94da-b1bbc72f1b4f Person Company Add"
+    },
+    {
+      "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-person-0",
+      "tag": "input",
+      "type": "radio",
+      "name": null,
+      "id": "Grantor (Owner/Lessee)-person-0",
+      "placeholder": null,
+      "label": "Person",
+      "ariaLabel": null,
+      "className": "not-erml name-radio ng-untouched ng-pristine ng-valid",
+      "value": "person",
+      "required": false,
+      "visible": true,
+      "labelText": "Person Grantor (Owner/Lessee)-person-0 Person Company"
+    },
+    {
+      "selector": "#Grantor\\ \\(Owner\\/Lessee\\)-company-0",
+      "tag": "input",
+      "type": "radio",
+      "name": null,
+      "id": "Grantor (Owner/Lessee)-company-0",
+      "placeholder": null,
+      "label": "Company",
+      "ariaLabel": null,
+      "className": "not-erml company-radio ng-untouched ng-pristine ng-valid",
+      "value": "company",
+      "required": false,
+      "visible": true,
+      "labelText": "Company Grantor (Owner/Lessee)-company-0 Person Company"
+    },
+    {
+      "selector": "#k-c5abb76d-8feb-49cb-9462-98b7730c6262",
+      "tag": "input",
+      "type": "input",
+      "name": null,
+      "id": "k-c5abb76d-8feb-49cb-9462-98b7730c6262",
+      "placeholder": "",
+      "label": "Person",
+      "ariaLabel": null,
+      "className": "k-input-inner",
+      "value": "GAETANO HOME SERVICES",
+      "required": false,
+      "visible": true,
+      "labelText": "Person k-c5abb76d-8feb-49cb-9462-98b7730c6262 Person Company Add"
+    },
+    {
+      "selector": "#Grantee\\ \\(Contractor\\)-person-1",
+      "tag": "input",
+      "type": "radio",
+      "name": null,
+      "id": "Grantee (Contractor)-person-1",
+      "placeholder": null,
+      "label": "Person",
+      "ariaLabel": null,
+      "className": "not-erml name-radio ng-untouched ng-pristine ng-valid",
+      "value": "person",
+      "required": false,
+      "visible": true,
+      "labelText": "Person Grantee (Contractor)-person-1 Person Company"
+    },
+    {
+      "selector": "#Grantee\\ \\(Contractor\\)-company-1",
+      "tag": "input",
+      "type": "radio",
+      "name": null,
+      "id": "Grantee (Contractor)-company-1",
+      "placeholder": null,
+      "label": "Company",
+      "ariaLabel": null,
+      "className": "not-erml company-radio ng-untouched ng-pristine ng-valid",
+      "value": "company",
+      "required": false,
+      "visible": true,
+      "labelText": "Company Grantee (Contractor)-company-1 Person Company"
+    }
+  ],
+  "fileInputs": [],
+  "selects": [],
+  "kendoDropdowns": [
+    {
+      "selector": "#k-6ce1bc63-5f9c-4a43-9dee-a73b01bb89da",
+      "text": "Notice Of Commencement",
+      "className": "doctype-dropdown k-picker-md k-rounded-md k-picker-solid k-dropdownlist k-picker"
+    }
+  ],
+  "validationMessages": [
+    {
+      "selector": "li",
+      "text": "FL STATUTE 695.26 REQUIREMENTS (click here)",
+      "className": "alert alert-danger"
+    },
+    {
+      "selector": "li",
+      "text": "REVERSE MTG TAX CHANGE INFO (click here)",
+      "className": "alert alert-danger"
+    },
+    {
+      "selector": "#\\30 ",
+      "text": "Grantor (Owner/Lessee) Person Company Add",
+      "className": "parent invalid"
+    },
+    {
+      "selector": "#\\31 ",
+      "text": "Grantee (Contractor) Person Company Add",
+      "className": "parent invalid"
+    }
+  ],
+  "controls": [
+    {
+      "selector": "a",
+      "text": "AHJ-IQ TEST DO NOT SUBMIT 1780212458642",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": true
+    },
+    {
+      "selector": "a",
+      "text": "FL STATUTE 695.26 REQUIREMENTS (click here)",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "a",
+      "text": "REVERSE MTG TAX CHANGE INFO (click here)",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Open File",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Scan Image",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Add",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Select",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "button",
+      "text": "Add",
+      "tag": "button",
+      "type": "button",
+      "id": null,
+      "dangerous": false
+    },
+    {
+      "selector": "a",
+      "text": "Main Image",
+      "tag": "a",
+      "type": null,
+      "id": null,
+      "dangerous": false
+    }
+  ],
+  "bodyTextSample": "AHJ-IQ TEST DO NOT SUBMIT 1780212458642 Polk County, FL County Knowledge FL STATUTE 695.26 REQUIREMENTS (click here) REVERSE MTG TAX CHANGE INFO (click here) Prepare Image Open Upload from computer or Scan Document Type Notice Of Commencement Indexing Grantor (Owner/Lessee) Person Company Add Grantee (Contractor) Person Company Add Estimated Fees: $18.50 Save Add Doc Cancel Main Image Inactivity warning! You will automatically be logged off in 15 seconds! (Click here to cancel)"
+}
