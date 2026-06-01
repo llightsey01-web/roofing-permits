@@ -154,9 +154,6 @@ async function main() {
   console.log('Final noc_status: ' + report.finalDbState.noc_status)
   console.log('eRecord status: ' + (report.finalDbState.erecord_status || 'not started'))
   console.log('#SendPackage clicked: false')
-  if (report.stoppingPoint === 'proof_send_gated') {
-    console.log('\nProof gated — set PROOF_APPROVED_TEST_EMAILS in .env.local to continue chain')
-  }
   if (isReadyForErecordReview(job)) {
     console.log('Ready for eRecording Review — packId ' + (report.finalDbState.erecord_package_id || 'n/a'))
   }
