@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '../../lib/supabase'
+import { safeGetUser, redirectIfStaleSession } from '../../lib/auth/safe-auth'
 import EnvironmentBadge from '../ui/EnvironmentBadge'
 import { adminTheme } from '../../lib/ui/admin-theme'
 
@@ -20,10 +21,12 @@ export default function AdminLayout({ children }) {
 
   useEffect(() => {
     async function checkAuth() {
+      try {
       const supabase = createClient()
-      const { data: { user: authUser } } = await supabase.auth.getUser()
+      const { user: authUser, staleSession } = await safeGetUser(supabase)
+      if (redirectIfStaleSession(router, staleSession)) return
       if (!authUser) {
-        router.push('/login')
+        router.replace('/login')
         return
       }
 
@@ -40,6 +43,10 @@ export default function AdminLayout({ children }) {
 
       setUser(authUser)
       setLoading(false)
+      } catch (err) {
+        console.error('[auth] Admin layout auth check failed:', err)
+        router.replace('/login')
+      }
     }
     checkAuth()
   }, [router])

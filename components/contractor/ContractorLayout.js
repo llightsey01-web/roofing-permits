@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '../../lib/supabase'
+import { safeGetUser, redirectIfStaleSession } from '../../lib/auth/safe-auth'
 import EnvironmentBadge from '../ui/EnvironmentBadge'
 import { contractorTheme } from '../../lib/ui/contractor-theme'
 
@@ -20,10 +21,12 @@ export default function ContractorLayout({ children }) {
 
   useEffect(() => {
     async function checkAuth() {
+      try {
       const supabase = createClient()
-      const { data: { user: authUser } } = await supabase.auth.getUser()
+      const { user: authUser, staleSession } = await safeGetUser(supabase)
+      if (redirectIfStaleSession(router, staleSession)) return
       if (!authUser) {
-        router.push('/login')
+        router.replace('/login')
         return
       }
 
@@ -50,6 +53,10 @@ export default function ContractorLayout({ children }) {
 
       setUser({ ...authUser, ...userData })
       setLoading(false)
+      } catch (err) {
+        console.error('[auth] Contractor layout auth check failed:', err)
+        router.replace('/login')
+      }
     }
     checkAuth()
   }, [router])

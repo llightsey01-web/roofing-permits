@@ -1,20 +1,45 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '../../lib/supabase'
+import { safeGetSession } from '../../lib/auth/safe-auth'
+import { SESSION_EXPIRED_MESSAGE } from '../../lib/auth/clear-stale-session'
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get('session') === 'expired') {
+      setNotice(SESSION_EXPIRED_MESSAGE)
+    }
+
+    async function clearStaleSessionOnLoad() {
+      try {
+        const supabase = createClient()
+        const { staleSession } = await safeGetSession(supabase)
+        if (staleSession) {
+          setNotice(SESSION_EXPIRED_MESSAGE)
+        }
+      } catch (err) {
+        console.warn('[auth] Login page stale session check failed:', err)
+      }
+    }
+
+    clearStaleSessionOnLoad()
+  }, [searchParams])
 
   async function handleLogin(e) {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setNotice('')
 
     const supabase = createClient()
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -62,6 +87,20 @@ export default function LoginPage() {
         <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '32px' }}>
           Sign in to your account
         </p>
+
+        {notice && (
+          <p style={{
+            color: '#92400e',
+            backgroundColor: '#fffbeb',
+            border: '1px solid #fcd34d',
+            borderRadius: '8px',
+            fontSize: '14px',
+            marginBottom: '16px',
+            padding: '10px 12px',
+          }}>
+            {notice}
+          </p>
+        )}
 
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: '16px' }}>
@@ -130,5 +169,17 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading...</p>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }

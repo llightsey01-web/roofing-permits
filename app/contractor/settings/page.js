@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../../lib/supabase'
+import { safeGetSession, safeGetUser, redirectIfStaleSession } from '../../../lib/auth/safe-auth'
 import { contractorTheme, contractorCardStyle } from '../../../lib/ui/contractor-theme'
 
 export default function ContractorSettingsPage() {
@@ -32,16 +33,20 @@ export default function ContractorSettingsPage() {
 
   async function getToken() {
     const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
+    const { session, staleSession } = await safeGetSession(supabase)
+    if (redirectIfStaleSession(router, staleSession)) return null
     return session?.access_token
   }
 
   async function loadAll() {
+    try {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    const { user, staleSession } = await safeGetUser(supabase)
+    if (redirectIfStaleSession(router, staleSession)) return
+    if (!user) { router.replace('/login'); return }
 
     const token = await getToken()
+    if (!token) return
     const [companyRes, credRes, ahjRes] = await Promise.all([
       fetch('/api/contractor/company', { headers: { Authorization: 'Bearer ' + token } }),
       fetch('/api/contractor/credentials', { headers: { Authorization: 'Bearer ' + token } }),
@@ -68,6 +73,10 @@ export default function ContractorSettingsPage() {
 
     setAhjs(ahjRes.data || [])
     setLoading(false)
+    } catch (err) {
+      console.error('[auth] Contractor settings load failed:', err)
+      router.replace('/login')
+    }
   }
 
   async function handleSaveCompany(e) {

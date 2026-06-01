@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../../../lib/supabase'
+import { safeGetSession, redirectIfStaleSession } from '../../../../lib/auth/safe-auth'
 import { contractorTheme, contractorCardStyle } from '../../../../lib/ui/contractor-theme'
 
 const emptyMaterial = { manufacturer: '', product_name: '', approval_number: '' }
@@ -89,8 +90,9 @@ export default function ContractorNewJobPage() {
     setError('')
 
     const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { router.push('/login'); return }
+    const { session, staleSession } = await safeGetSession(supabase)
+    if (redirectIfStaleSession(router, staleSession)) return
+    if (!session) { router.replace('/login'); return }
 
     const payload = {
       ...form,

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../../../lib/supabase'
+import { safeGetSession, redirectIfStaleSession } from '../../../../lib/auth/safe-auth'
 import { permitStatusConfig, nocStatusConfig, jobTimelineStages, getTimelineProgress } from '../../../../lib/contractor/status-config'
 import { contractorTheme, contractorCardStyle } from '../../../../lib/ui/contractor-theme'
 
@@ -26,9 +27,11 @@ export default function ContractorJobDetailPage({ params }) {
   }, [])
 
   async function loadJob(id) {
+    try {
     const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { router.push('/login'); return }
+    const { session, staleSession } = await safeGetSession(supabase)
+    if (redirectIfStaleSession(router, staleSession)) return
+    if (!session) { router.replace('/login'); return }
 
     const response = await fetch('/api/contractor/jobs/' + id, {
       headers: { Authorization: 'Bearer ' + session.access_token },
@@ -46,6 +49,10 @@ export default function ContractorJobDetailPage({ params }) {
     setLogs(result.logs || [])
     setDownloadUrls(result.downloadUrls || {})
     setLoading(false)
+    } catch (err) {
+      console.error('[auth] Contractor job detail load failed:', err)
+      router.replace('/login')
+    }
   }
 
   if (loading) {

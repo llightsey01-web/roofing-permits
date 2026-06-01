@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../../lib/supabase'
+import { safeGetUser, safeGetSession, redirectIfStaleSession } from '../../../lib/auth/safe-auth'
 
 export default function JobDetailPage({ params }) {
   const router = useRouter()
@@ -40,9 +41,11 @@ export default function JobDetailPage({ params }) {
   }, [])
 
   async function loadJob(id) {
+    try {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    const { user, staleSession } = await safeGetUser(supabase)
+    if (redirectIfStaleSession(router, staleSession)) return
+    if (!user) { router.replace('/login'); return }
 
     const { data: job } = await supabase
       .from('jobs').select('*').eq('id', id).single()
@@ -70,6 +73,10 @@ export default function JobDetailPage({ params }) {
     } else {
       setRecordedDownloadUrl(null)
     }
+    } catch (err) {
+      console.error('[auth] Job detail load failed:', err)
+      router.replace('/login')
+    }
   }
 
   async function handleFileUpload(e, documentType) {
@@ -77,7 +84,9 @@ export default function JobDetailPage({ params }) {
     if (!file) return
     setUploading(true)
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { user, staleSession } = await safeGetUser(supabase)
+    if (redirectIfStaleSession(router, staleSession)) { setUploading(false); return }
+    if (!user) { router.replace('/login'); setUploading(false); return }
     const filePath = `jobs/${jobId}/${documentType}/${file.name}`
     const { error: uploadError } = await supabase.storage
       .from('job-documents').upload(filePath, file, { upsert: true })
@@ -103,7 +112,9 @@ export default function JobDetailPage({ params }) {
     setRunningAutomation(true)
     setAutomationMessage('')
     const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
+    const { session, staleSession } = await safeGetSession(supabase)
+    if (redirectIfStaleSession(router, staleSession)) { setRunningAutomation(false); return }
+    if (!session) { router.replace('/login'); setRunningAutomation(false); return }
 
     const response = await fetch('/api/automation/run', {
       method: 'POST',
@@ -131,7 +142,8 @@ export default function JobDetailPage({ params }) {
     setRecordingMessage('')
 
     const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
+    const { session, staleSession } = await safeGetSession(supabase)
+    if (redirectIfStaleSession(router, staleSession)) { setRecordingSubmitting(false); return }
     if (!session) {
       setRecordingMessage('Error: not authenticated')
       setRecordingSubmitting(false)
@@ -178,7 +190,8 @@ export default function JobDetailPage({ params }) {
     setRecordingMessage('')
 
     const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
+    const { session, staleSession } = await safeGetSession(supabase)
+    if (redirectIfStaleSession(router, staleSession)) { setRecordingSubmitting(false); return }
     if (!session) {
       setRecordingMessage('Error: not authenticated')
       setProviderSaving(false)

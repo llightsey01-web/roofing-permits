@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
+  "dev": "node scripts/validate-dev-env.js && next dev",
+  "dev:stable": "node scripts/start-dev-stable.js",
+  "health": "node scripts/check-local-health.js",
+  "build": "next build",
+  "start": "next start",
+  "lint": "eslint"
+},
   "dependencies": {
     "@antiadmin/anticaptchaofficial": "^1.0.55",
     "@dropbox/sign": "^1.11.0",

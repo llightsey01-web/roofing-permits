@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../../lib/supabase'
+import { safeGetUser, safeGetSession, redirectIfStaleSession } from '../../../lib/auth/safe-auth'
 
 const emptyMaterial = { manufacturer: '', product_name: '', approval_number: '' }
 
@@ -42,18 +43,27 @@ export default function NewJobPage() {
   const [ventilation, setVentilation] = useState({ ...emptyMaterial })
 
   useEffect(() => {
+    async function initPage() {
+      try {
+        const supabase = createClient()
+        const { user, staleSession } = await safeGetUser(supabase)
+        if (redirectIfStaleSession(router, staleSession)) return
+        if (!user) { router.replace('/login'); return }
+        const { data: userData } = await supabase
+          .from('users').select('company_id').eq('id', user.id).single()
+        if (userData?.company_id) setCompanyId(userData.company_id)
+      } catch (err) {
+        console.error('[auth] New job page auth check failed:', err)
+        router.replace('/login')
+      }
+    }
+    initPage()
     const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { router.push('/login'); return }
-      const { data: userData } = await supabase
-        .from('users').select('company_id').eq('id', user.id).single()
-      if (userData?.company_id) setCompanyId(userData.company_id)
-    })
     supabase.from('product_approvals').select('*').eq('is_active', true)
       .then(({ data }) => setProducts(data || []))
     supabase.from('ahj_portals').select('id, name, county_or_city').eq('is_active', true)
       .then(({ data }) => setAllAHJs(data || []))
-  }, [])
+  }, [router])
 
   async function handleAHJResolve() {
     if (!form.property_address || !form.property_city || !form.property_zip) return
@@ -124,7 +134,9 @@ export default function NewJobPage() {
     setError('')
 
     const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
+    const { session, staleSession } = await safeGetSession(supabase)
+    if (redirectIfStaleSession(router, staleSession)) { setLoading(false); return }
+    if (!session) { router.replace('/login'); setLoading(false); return }
 
     const payload = {
       ...form,

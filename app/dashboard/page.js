@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../lib/supabase'
+import { safeGetUser, redirectIfStaleSession } from '../../lib/auth/safe-auth'
 import { adminTheme, adminStatCardStyle, adminPanelStyle } from '../../lib/ui/admin-theme'
 
 export default function DashboardPage() {
@@ -11,18 +12,26 @@ export default function DashboardPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { router.push('/login'); return }
+    async function loadDashboard() {
+      try {
+        const supabase = createClient()
+        const { user, staleSession } = await safeGetUser(supabase)
+        if (redirectIfStaleSession(router, staleSession)) return
+        if (!user) { router.replace('/login'); return }
 
-      const { data } = await supabase
-        .from('jobs')
-        .select('*')
-        .order('created_at', { ascending: false })
+        const { data } = await supabase
+          .from('jobs')
+          .select('*')
+          .order('created_at', { ascending: false })
 
-      setJobs(data || [])
-      setLoading(false)
-    })
+        setJobs(data || [])
+        setLoading(false)
+      } catch (err) {
+        console.error('[auth] Dashboard load failed:', err)
+        router.replace('/login')
+      }
+    }
+    loadDashboard()
   }, [router])
 
   const permitStatusConfig = {
