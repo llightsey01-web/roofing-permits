@@ -1,49 +1,51 @@
-// app/api/noc/start/route.ts
+// app/api/noc/start/route.js
 // Starts the NOC phase for a job after parcel_number has been saved
-import { runNocPhaseForJob } from '../../../../lib/noc/run-noc-phase.js'
-import { authenticateRequest, assertJobAccess } from '../../../../lib/auth/session.js'
-import { isInternalApiRequest } from '../../../../lib/auth/internal-api.js'
+
+const { runNocPhaseForJob } = require('../../../../lib/noc/run-noc-phase.js')
+const { continueAfterNocGenerated } = require('../../../../lib/automation/noc-after-noc-core.js')
+const { authenticateRequest, assertJobAccess } = require('../../../../lib/auth/session.js')
+const { isInternalApiRequest } = require('../../../../lib/auth/internal-api.js')
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-function jsonResponse(body: unknown, status = 200) {
+function jsonResponse(body, status = 200) {
   return Response.json(body, {
     status,
     headers: { 'Content-Type': 'application/json' },
   })
 }
 
-async function authorizeNocStart(request: Request, jobId: string) {
+async function authorizeNocStart(request, jobId) {
   if (isInternalApiRequest(request)) {
-    return { ok: true as const }
+    return { ok: true }
   }
 
   const context = await authenticateRequest(request)
   if (context.error) {
-    return { ok: false as const, status: context.status, error: context.error }
+    return { ok: false, status: context.status, error: context.error }
   }
 
   if (context.isSuperAdmin) {
-    return { ok: true as const }
+    return { ok: true }
   }
 
   const access = await assertJobAccess(context.supabase, jobId, context.companyId)
   if (access.error) {
-    return { ok: false as const, status: access.status, error: access.error }
+    return { ok: false, status: access.status, error: access.error }
   }
 
-  return { ok: true as const }
+  return { ok: true }
 }
 
-export async function POST(request: Request) {
+export async function POST(request) {
   try {
     const contentType = request.headers.get('content-type') || ''
     if (!contentType.includes('application/json')) {
       return jsonResponse({ error: 'Content-Type must be application/json' }, 415)
     }
 
-    let body: { jobId?: string }
+    let body
     try {
       body = await request.json()
     } catch {
@@ -61,10 +63,6 @@ export async function POST(request: Request) {
     }
 
     const phase = await runNocPhaseForJob(jobId)
-    const chainMod = await import('../../../../lib/automation/noc-after-noc-core.js')
-    const continueAfterNocGenerated =
-      chainMod.continueAfterNocGenerated ||
-      (chainMod.default && chainMod.default.continueAfterNocGenerated)
     const chainResult = await continueAfterNocGenerated(jobId, { waitForProofCompletion: false })
 
     return jsonResponse({
@@ -79,7 +77,7 @@ export async function POST(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
     const statusCode = typeof err === 'object' && err !== null && 'statusCode' in err
-      ? Number((err as { statusCode?: number }).statusCode) || 500
+      ? Number(err.statusCode) || 500
       : 500
     console.error('NOC start error:', message)
     return jsonResponse({ error: message }, statusCode)
