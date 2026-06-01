@@ -55,19 +55,30 @@ export default function AdminPage() {
 
       if (companyError) throw new Error('Failed to create company: ' + companyError.message)
 
-      const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
-        form.contact_email,
-        {
-          data: {
-            company_id: company.id,
-            full_name: form.contact_first_name + ' ' + form.contact_last_name,
-            role: 'company_admin',
-          },
-          redirectTo: 'https://roofing-permits-production.up.railway.app/dashboard',
-        }
-      )
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('Session expired — sign in again')
 
-      if (inviteError) throw new Error('Failed to send invite: ' + inviteError.message)
+      const inviteResponse = await fetch('/api/admin/invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + session.access_token,
+        },
+        body: JSON.stringify({
+          email: form.contact_email,
+          company_id: company.id,
+          full_name: form.contact_first_name + ' ' + form.contact_last_name,
+          role: 'company_admin',
+          redirectTo: 'https://roofing-permits-production.up.railway.app/dashboard',
+        }),
+      })
+
+      const invitePayload = await inviteResponse.json()
+      if (!inviteResponse.ok) {
+        throw new Error(invitePayload.error || 'Failed to send invite')
+      }
+
+      const inviteData = { user: invitePayload.user }
 
       await supabase.from('users').insert({
         id: inviteData.user.id,

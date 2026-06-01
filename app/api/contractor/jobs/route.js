@@ -80,7 +80,28 @@ export async function POST(request) {
       return Response.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    return Response.json({ success: true, job }, { status: 201 })
+    const { error: runError } = await context.supabase
+      .from('automation_runs')
+      .insert({
+        job_id: job.id,
+        run_status: 'queued',
+        started_at: new Date().toISOString(),
+      })
+
+    if (runError) {
+      console.error('AUTOMATION QUEUE FAILED:', runError.message)
+    }
+
+    const { error: statusError } = await context.supabase
+      .from('jobs')
+      .update({ job_status: 'automation_running' })
+      .eq('id', job.id)
+
+    if (statusError) {
+      console.error('Failed to update job status:', statusError.message)
+    }
+
+    return Response.json({ success: true, job: { ...job, job_status: 'automation_running' } }, { status: 201 })
   } catch (err) {
     console.error('Contractor job creation error:', err.message)
     return Response.json({ error: err.message }, { status: 500 })
