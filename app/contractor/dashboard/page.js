@@ -10,6 +10,7 @@ import { contractorTheme, contractorCardStyle, contractorStatCardStyle } from '.
 export default function ContractorDashboardPage() {
   const router = useRouter()
   const [jobs, setJobs] = useState([])
+  const [pendingReviewJobIds, setPendingReviewJobIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -47,6 +48,14 @@ export default function ContractorDashboardPage() {
         job => job.company_id === userData.company_id || job.company_id === result.companyId
       )
       setJobs(scoped)
+
+      const { data: pendingReviews } = await supabase
+        .from('review_requests')
+        .select('job_id')
+        .eq('company_id', userData.company_id)
+        .eq('review_status', 'pending')
+
+      setPendingReviewJobIds(new Set((pendingReviews || []).map(r => r.job_id)))
     }
     setLoading(false)
     } catch (err) {
@@ -152,9 +161,22 @@ export default function ContractorDashboardPage() {
               {jobs.map((job, i) => {
                 const pStatus = permitStatusConfig[job.job_status] || permitStatusConfig.draft
                 const nStatus = nocStatusConfig[job.noc_status || 'not_started'] || nocStatusConfig.not_started
+                const actionRequired = pendingReviewJobIds.has(job.id)
                 return (
                   <tr key={job.id} style={{ borderBottom: i < jobs.length - 1 ? '1px solid #f0f9ff' : 'none' }}>
-                    <td style={{ padding: '16px', fontSize: '15px', fontWeight: '600', color: contractorTheme.textBody }}>{job.owner_name}</td>
+                    <td style={{ padding: '16px', fontSize: '15px', fontWeight: '600', color: contractorTheme.textBody }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span>{job.owner_name}</span>
+                        {actionRequired && (
+                          <span style={{
+                            fontSize: '10px', fontWeight: '700', padding: '3px 8px', borderRadius: '999px',
+                            backgroundColor: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca',
+                          }}>
+                            Action Required
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td style={{ padding: '16px' }}>
                       <p style={{ fontSize: '14px', margin: 0, color: contractorTheme.textBody }}>{job.property_address}</p>
                       <p style={{ fontSize: '12px', color: contractorTheme.textMuted, margin: '2px 0 0 0' }}>
@@ -179,15 +201,17 @@ export default function ContractorDashboardPage() {
                     </td>
                     <td style={{ padding: '16px' }}>
                       <button
-                        onClick={() => router.push('/contractor/jobs/' + job.id)}
+                        onClick={() => router.push(actionRequired ? '/contractor/jobs/' + job.id + '/review' : '/contractor/jobs/' + job.id)}
                         style={{
                           fontSize: '13px', padding: '8px 16px',
                           border: 'none', borderRadius: '999px',
-                          backgroundColor: contractorTheme.accentSoft,
-                          cursor: 'pointer', color: contractorTheme.accent, fontWeight: '600',
+                          backgroundColor: actionRequired ? '#fef2f2' : contractorTheme.accentSoft,
+                          cursor: 'pointer',
+                          color: actionRequired ? '#b91c1c' : contractorTheme.accent,
+                          fontWeight: '600',
                         }}
                       >
-                        View details
+                        {actionRequired ? 'Review now' : 'View details'}
                       </button>
                     </td>
                   </tr>

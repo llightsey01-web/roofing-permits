@@ -26,6 +26,14 @@ export default function ContractorSettingsPage() {
   const [editingCred, setEditingCred] = useState(null)
   const [credSaving, setCredSaving] = useState(false)
   const [credMessage, setCredMessage] = useState('')
+  const [reviewGates, setReviewGates] = useState({
+    noc_before_send: false,
+    permit_before_submit: false,
+    auto_approve_all: true,
+  })
+  const [reviewSaving, setReviewSaving] = useState(false)
+  const [reviewSaved, setReviewSaved] = useState(false)
+  const [reviewError, setReviewError] = useState('')
 
   useEffect(() => {
     loadAll()
@@ -47,9 +55,10 @@ export default function ContractorSettingsPage() {
 
     const token = await getToken()
     if (!token) return
-    const [companyRes, credRes, ahjRes] = await Promise.all([
+    const [companyRes, credRes, gatesRes, ahjRes] = await Promise.all([
       fetch('/api/contractor/company', { headers: { Authorization: 'Bearer ' + token } }),
       fetch('/api/contractor/credentials', { headers: { Authorization: 'Bearer ' + token } }),
+      fetch('/api/contractor/company/review-gates', { headers: { Authorization: 'Bearer ' + token } }),
       supabase.from('ahj_portals').select('id, name, county_or_city').eq('is_active', true),
     ])
 
@@ -71,12 +80,42 @@ export default function ContractorSettingsPage() {
       setEncryptionConfigured(credData.encryptionConfigured !== false)
     }
 
+    const gatesData = await gatesRes.json()
+    if (gatesRes.ok && gatesData.review_gates) {
+      setReviewGates(gatesData.review_gates)
+    }
+
     setAhjs(ahjRes.data || [])
     setLoading(false)
     } catch (err) {
       console.error('[auth] Contractor settings load failed:', err)
       router.replace('/login')
     }
+  }
+
+  async function handleSaveReviewGates(e) {
+    e.preventDefault()
+    setReviewSaving(true)
+    setReviewError('')
+    const token = await getToken()
+    const response = await fetch('/api/contractor/company/review-gates', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({
+        noc_before_send: reviewGates.noc_before_send,
+        permit_before_submit: reviewGates.permit_before_submit,
+        auto_approve_all: !reviewGates.noc_before_send && !reviewGates.permit_before_submit,
+      }),
+    })
+    const result = await response.json()
+    if (!response.ok) {
+      setReviewError(result.error || 'Failed to save review preferences')
+    } else {
+      setReviewGates(result.review_gates)
+      setReviewSaved(true)
+      setTimeout(() => setReviewSaved(false), 3000)
+    }
+    setReviewSaving(false)
   }
 
   async function handleSaveCompany(e) {
@@ -224,6 +263,51 @@ export default function ContractorSettingsPage() {
         }}>
           {saving ? 'Saving...' : 'Save company info'}
         </button>
+      </form>
+
+      <form onSubmit={handleSaveReviewGates}>
+        <div style={sectionStyle}>
+          <h2 style={sectionTitleStyle}>Review Preferences</h2>
+          <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '0 0 16px 0' }}>
+            Choose which stages you want to review before automation continues.
+          </p>
+          <label style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '16px', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={reviewGates.noc_before_send}
+              onChange={e => setReviewGates(p => ({ ...p, noc_before_send: e.target.checked }))}
+              style={{ marginTop: '4px' }}
+            />
+            <span>
+              <strong style={{ display: 'block', color: contractorTheme.text, fontSize: '14px' }}>Review NOC before sending to homeowner</strong>
+              <span style={{ fontSize: '13px', color: contractorTheme.textMuted }}>
+                We&apos;ll pause and show you the NOC before sending it to your customer for signing.
+              </span>
+            </span>
+          </label>
+          <label style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '20px', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={reviewGates.permit_before_submit}
+              onChange={e => setReviewGates(p => ({ ...p, permit_before_submit: e.target.checked }))}
+              style={{ marginTop: '4px' }}
+            />
+            <span>
+              <strong style={{ display: 'block', color: contractorTheme.text, fontSize: '14px' }}>Review permit before submitting to county</strong>
+              <span style={{ fontSize: '13px', color: contractorTheme.textMuted }}>
+                We&apos;ll pause and show you all filled permit fields before submitting to Polk County.
+              </span>
+            </span>
+          </label>
+          {reviewError && <p style={{ color: '#b91c1c', fontSize: '13px', marginBottom: '12px' }}>{reviewError}</p>}
+          {reviewSaved && <p style={{ color: '#15803d', fontSize: '13px', marginBottom: '12px' }}>Review preferences saved</p>}
+          <button type="submit" disabled={reviewSaving} style={{
+            padding: '10px 20px', backgroundColor: reviewSaving ? '#94a3b8' : contractorTheme.accent,
+            color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer',
+          }}>
+            {reviewSaving ? 'Saving...' : 'Save preferences'}
+          </button>
+        </div>
       </form>
 
       <div style={sectionStyle}>

@@ -14,6 +14,7 @@ export default function ContractorJobDetailPage({ params }) {
   const [documents, setDocuments] = useState([])
   const [logs, setLogs] = useState([])
   const [downloadUrls, setDownloadUrls] = useState({})
+  const [pendingReview, setPendingReview] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -33,12 +34,18 @@ export default function ContractorJobDetailPage({ params }) {
     if (redirectIfStaleSession(router, staleSession)) return
     if (!session) { router.replace('/login'); return }
 
-    const response = await fetch('/api/contractor/jobs/' + id, {
-      headers: { Authorization: 'Bearer ' + session.access_token },
-    })
-    const result = await response.json()
+    const [jobResponse, reviewResponse] = await Promise.all([
+      fetch('/api/contractor/jobs/' + id, {
+        headers: { Authorization: 'Bearer ' + session.access_token },
+      }),
+      fetch('/api/jobs/' + id + '/review', {
+        headers: { Authorization: 'Bearer ' + session.access_token },
+      }),
+    ])
+    const result = await jobResponse.json()
+    const reviewResult = await reviewResponse.json()
 
-    if (!response.ok) {
+    if (!jobResponse.ok) {
       setError(result.error || 'Failed to load job')
       setLoading(false)
       return
@@ -48,6 +55,9 @@ export default function ContractorJobDetailPage({ params }) {
     setDocuments(result.documents || [])
     setLogs(result.logs || [])
     setDownloadUrls(result.downloadUrls || {})
+    if (reviewResponse.ok) {
+      setPendingReview(reviewResult.review || null)
+    }
     setLoading(false)
     } catch (err) {
       console.error('[auth] Contractor job detail load failed:', err)
@@ -93,6 +103,39 @@ export default function ContractorJobDetailPage({ params }) {
         style={{ fontSize: '14px', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '16px', padding: 0 }}>
         ← Back to dashboard
       </button>
+
+      {pendingReview && (
+        <div style={{
+          ...contractorCardStyle(),
+          padding: '18px 20px',
+          marginBottom: '20px',
+          backgroundColor: '#fef2f2',
+          border: '1px solid #fecaca',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '16px',
+          flexWrap: 'wrap',
+        }}>
+          <div>
+            <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#b91c1c' }}>Review Required</p>
+            <p style={{ margin: '6px 0 0 0', fontSize: '14px', color: '#7f1d1d' }}>
+              {pendingReview.review_type === 'noc_before_send'
+                ? 'Please review the NOC before it is sent to the homeowner.'
+                : 'Please review the permit application before county submission.'}
+            </p>
+          </div>
+          <button
+            onClick={() => router.push('/contractor/jobs/' + jobId + '/review')}
+            style={{
+              padding: '10px 18px', borderRadius: '999px', border: 'none',
+              backgroundColor: '#b91c1c', color: 'white', fontWeight: '600', cursor: 'pointer',
+            }}
+          >
+            Open review
+          </button>
+        </div>
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
