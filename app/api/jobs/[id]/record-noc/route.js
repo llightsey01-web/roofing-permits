@@ -1,21 +1,27 @@
 // app/api/jobs/[id]/record-noc/route.js
 // Manual eRecording bridge — mark notarized NOC as recorded
 
-import { createClient } from '../../../../../lib/supabase-server'
 import { recordNocForJob, uploadRecordedNocPdf } from '../../../../../lib/noc/record-noc'
+import { authenticateRequest, assertJobAccess } from '../../../../../lib/auth/session.js'
 
 export async function POST(request, { params }) {
   try {
     const { id: jobId } = await params
     if (!jobId) return Response.json({ error: 'Job ID required' }, { status: 400 })
 
-    const supabase = createClient()
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    const context = await authenticateRequest(request)
+    if (context.error) {
+      return Response.json({ error: context.error }, { status: context.status })
+    }
 
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    if (authError || !user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!context.isSuperAdmin) {
+      const access = await assertJobAccess(context.supabase, jobId, context.companyId)
+      if (access.error) {
+        return Response.json({ error: access.error }, { status: access.status })
+      }
+    }
+
+    const user = context.user
 
     const contentType = request.headers.get('content-type') || ''
     let recordingNumber = null

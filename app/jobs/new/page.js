@@ -70,9 +70,17 @@ export default function NewJobPage() {
     setAhjLoading(true)
     setDetectedAHJ(null)
     try {
+      const supabase = createClient()
+      const { session, staleSession } = await safeGetSession(supabase)
+      if (redirectIfStaleSession(router, staleSession)) { setAhjLoading(false); return }
+      if (!session) { router.replace('/login'); setAhjLoading(false); return }
+
       const response = await fetch('/api/resolve-ahj', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + session.access_token,
+        },
         body: JSON.stringify({
           propertyAddress: form.property_address,
           propertyCity: form.property_city,
