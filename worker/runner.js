@@ -22,11 +22,25 @@ function loadPolkRunner() {
   return require(polkRunnerPath)
 }
 
+function loadErecordService() {
+  var erecordServicePath = resolveFromRoot('lib/erecord/service.js')
+  return require(erecordServicePath)
+}
+
 async function executeRun(job, runId) {
   try {
     console.log('[worker] Executing run:', runId, 'job:', job.property_address)
-    const { runPolkCounty } = loadPolkRunner()
-    await runPolkCounty(job, runId)
+
+    if (job.noc_status === 'queued_for_erecord' || job.noc_status === 'notarized') {
+      console.log('[worker] noc_status=' + job.noc_status + ' — routing to ePN prep...')
+      const { prepareRecordingPackage } = loadErecordService()
+      await prepareRecordingPackage(job.id, { headless: true })
+      console.log('[worker] ePN prep complete for job:', job.id)
+    } else {
+      const { runPolkCounty } = loadPolkRunner()
+      await runPolkCounty(job, runId)
+    }
+
     console.log('[worker] Run complete:', runId)
   } catch (err) {
     console.error('[worker] Run failed:', err.message)
