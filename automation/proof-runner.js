@@ -96,7 +96,7 @@ async function sendTransaction(page) {
 async function calibrateProofPlacement(pdfBytes, options) {
   return withProofSession(pdfBytes, async function(page) {
     return runPlacementCalibration(page, options)
-  }, { headless: false, slowMo: 500 })
+  }, { headless: true, slowMo: 500 })
 }
 
 async function startProofNotarization(jobId, job, nocPdfBytes, options) {
@@ -249,7 +249,7 @@ async function startProofNotarization(jobId, job, nocPdfBytes, options) {
       outputDir: outputDir,
     }
   }, Object.assign({
-    headless: false,
+    headless: true,
     slowMo: 500,
     uploadFilename: identity.expected_document_name,
     identity: identity,
