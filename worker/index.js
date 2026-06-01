@@ -11,6 +11,8 @@ const supabase = createClient(
 )
 
 const POLL_INTERVAL_MS = 30000
+const PROOF_POLL_INTERVAL_MS = 30 * 60 * 1000
+const PROOF_POLL_START_DELAY_MS = 5 * 60 * 1000
 
 async function claimAndRun() {
   console.log('[worker] Polling for queued runs...')
@@ -74,7 +76,55 @@ async function poll() {
   setTimeout(poll, POLL_INTERVAL_MS)
 }
 
+async function pollProofCompletions() {
+  try {
+    const { data: jobs, error } = await supabase
+      .from('jobs')
+      .select('id, owner_name, property_address, job_specs, noc_status')
+      .eq('noc_status', 'sent_to_homeowner')
+
+    if (error) {
+      console.error('[proof-poller] Query error:', error.message)
+      return
+    }
+
+    if (!jobs || jobs.length === 0) {
+      console.log('[proof-poller] No jobs waiting for Proof completion')
+      return
+    }
+
+    console.log('[proof-poller] Checking ' + jobs.length + ' job(s) for Proof completion...')
+
+    const { runProofCompletionCheck } = require('../lib/proof/completion.js')
+
+    for (const job of jobs) {
+      try {
+        console.log('[proof-poller] Checking job ' + job.id + ' (' + job.property_address + ')...')
+
+        const result = await runProofCompletionCheck({ jobId: job.id, headless: true })
+        const jobResult = (result.results || [])[0]
+
+        if (jobResult && jobResult.complete) {
+          console.log('[proof-poller] ✓ Job ' + job.id + ' notarized — triggering ePN')
+          await supabase.from('jobs')
+            .update({ noc_status: 'queued_for_erecord' })
+            .eq('id', job.id)
+        } else {
+          console.log('[proof-poller] Job ' + job.id + ' not yet complete')
+        }
+      } catch (jobErr) {
+        console.error('[proof-poller] Error checking job ' + job.id + ':', jobErr.message)
+      }
+    }
+  } catch (err) {
+    console.error('[proof-poller] Poll error:', err.message)
+  }
+
+  setTimeout(pollProofCompletions, PROOF_POLL_INTERVAL_MS)
+}
+
 console.log('[worker] Starting AHJ-iQ automation worker')
 console.log('[worker] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'MISSING')
 console.log('[worker] Service key:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'MISSING')
 poll()
+setTimeout(pollProofCompletions, PROOF_POLL_START_DELAY_MS)
