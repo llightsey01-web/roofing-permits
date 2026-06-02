@@ -14,7 +14,42 @@ const POLL_INTERVAL_MS = 30000
 const PROOF_POLL_INTERVAL_MS = 30 * 60 * 1000
 const PROOF_POLL_START_DELAY_MS = 5 * 60 * 1000
 
+const PERMIT_RUN_TYPES = ['permit_phase_1', 'permit_resume', 'permit_submit']
 const PERMIT_RUN_TYPE_FILTER = 'run_type.in.(permit_phase_1,permit_resume,permit_submit),run_type.is.null'
+const PERMIT_STUCK_RUN_FILTER = 'run_type.in.(permit_phase_1,permit_resume,permit_submit),run_type.is.null'
+
+async function recoverStuckRuns() {
+  console.log('[worker] Checking for stuck running permit runs...')
+  const { data: stuckRuns, error } = await supabase
+    .from('automation_runs')
+    .select('id, job_id, run_type')
+    .eq('run_status', 'running')
+    .or(PERMIT_STUCK_RUN_FILTER)
+
+  if (error) {
+    console.error('[worker] Failed to check stuck runs:', error.message)
+    return
+  }
+
+  if (!stuckRuns || stuckRuns.length === 0) {
+    console.log('[worker] No stuck runs found')
+    return
+  }
+
+  console.log('[worker] Found ' + stuckRuns.length + ' stuck run(s) — resetting to queued')
+
+  for (const run of stuckRuns) {
+    await supabase
+      .from('automation_runs')
+      .update({
+        run_status: 'queued',
+        started_at: new Date().toISOString(),
+      })
+      .eq('id', run.id)
+      .eq('run_status', 'running')
+    console.log('[worker] Reset stuck run:', run.id, 'type:', run.run_type || '(null)')
+  }
+}
 
 async function claimAndRun() {
   console.log('[worker] Polling for queued permit portal runs...')
@@ -42,7 +77,11 @@ async function claimAndRun() {
 
   const { error: claimError } = await supabase
     .from('automation_runs')
-    .update({ run_status: 'running', started_at: new Date().toISOString() })
+    .update({
+      run_status: 'running',
+      started_at: new Date().toISOString(),
+      attempts: (run.attempts || 0) + 1,
+    })
     .eq('id', run.id)
     .eq('run_status', 'queued')
 
@@ -129,5 +168,7 @@ async function pollProofCompletions() {
 console.log('[worker] Starting AHJ-iQ permit portal worker (Worker 1)')
 console.log('[worker] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'MISSING')
 console.log('[worker] Service key:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'MISSING')
-poll()
-setTimeout(pollProofCompletions, PROOF_POLL_START_DELAY_MS)
+recoverStuckRuns().then(function() {
+  poll()
+  setTimeout(pollProofCompletions, PROOF_POLL_START_DELAY_MS)
+})

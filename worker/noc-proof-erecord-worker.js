@@ -68,6 +68,40 @@ async function requeueRun(runId, attempts) {
   }).eq('id', runId)
 }
 
+async function recoverStuckRuns() {
+  console.log('[noc-worker] Checking for stuck running runs...')
+  var { data: stuckRuns, error } = await supabase
+    .from('automation_runs')
+    .select('id, job_id, run_type')
+    .eq('run_status', 'running')
+    .in('run_type', HANDLED_RUN_TYPES)
+
+  if (error) {
+    console.error('[noc-worker] Failed to check stuck runs:', error.message)
+    return
+  }
+
+  if (!stuckRuns || stuckRuns.length === 0) {
+    console.log('[noc-worker] No stuck runs found')
+    return
+  }
+
+  console.log('[noc-worker] Found ' + stuckRuns.length + ' stuck run(s) — resetting to queued')
+
+  for (var i = 0; i < stuckRuns.length; i++) {
+    var run = stuckRuns[i]
+    await supabase
+      .from('automation_runs')
+      .update({
+        run_status: 'queued',
+        started_at: new Date().toISOString(),
+      })
+      .eq('id', run.id)
+      .eq('run_status', 'running')
+    console.log('[noc-worker] Reset stuck run:', run.id, 'type:', run.run_type)
+  }
+}
+
 async function handleNocGenerate(job, run) {
   var { runNocPhaseForJob } = resolveLib('lib/noc/run-noc-phase.js')
 
@@ -215,7 +249,11 @@ async function claimAndRun() {
 
   var { error: claimError } = await supabase
     .from('automation_runs')
-    .update({ run_status: 'running', started_at: new Date().toISOString() })
+    .update({
+      run_status: 'running',
+      started_at: new Date().toISOString(),
+      attempts: (run.attempts || 0) + 1,
+    })
     .eq('id', run.id)
     .eq('run_status', 'queued')
 
@@ -254,4 +292,4 @@ async function poll() {
 
 console.log('[noc-worker] Starting NOC + Proof + ePN worker (Worker 2)')
 console.log('[noc-worker] Handled run types:', HANDLED_RUN_TYPES.join(', '))
-poll()
+recoverStuckRuns().then(function() { poll() })
