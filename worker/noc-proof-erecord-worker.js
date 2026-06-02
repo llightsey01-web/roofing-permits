@@ -93,6 +93,22 @@ async function handleProofSend(job, run) {
   var result = await sendNocToProof(job.id, { headless: true, companyId: job.company_id || null })
   await markRunComplete(run.id)
 
+  var { data: updatedJob } = await supabase
+    .from('jobs')
+    .select('job_specs')
+    .eq('id', job.id)
+    .single()
+
+  var transactionId =
+    (updatedJob && updatedJob.job_specs && updatedJob.job_specs.proof && updatedJob.job_specs.proof.transaction_id) ||
+    (result && result.transactionId) ||
+    null
+
+  if (!transactionId) {
+    console.log('[noc-worker] Proof send finished without transaction_id for job ' + job.id + ' — not queuing proof_check')
+    return result
+  }
+
   await supabase.from('automation_runs').insert({
     job_id: job.id,
     run_type: 'proof_check',
