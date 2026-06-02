@@ -14,13 +14,16 @@ const POLL_INTERVAL_MS = 30000
 const PROOF_POLL_INTERVAL_MS = 30 * 60 * 1000
 const PROOF_POLL_START_DELAY_MS = 5 * 60 * 1000
 
+const PERMIT_RUN_TYPE_FILTER = 'run_type.in.(permit_phase_1,permit_resume,permit_submit),run_type.is.null'
+
 async function claimAndRun() {
-  console.log('[worker] Polling for queued runs...')
+  console.log('[worker] Polling for queued permit portal runs...')
 
   const { data: runs, error } = await supabase
     .from('automation_runs')
-    .select('id, job_id, run_status')
+    .select('id, job_id, run_status, run_type, payload, dependency_run_id, attempts')
     .eq('run_status', 'queued')
+    .or(PERMIT_RUN_TYPE_FILTER)
     .order('started_at', { ascending: true })
     .limit(1)
 
@@ -30,12 +33,12 @@ async function claimAndRun() {
   }
 
   if (!runs || runs.length === 0) {
-    console.log('[worker] No queued runs found')
+    console.log('[worker] No queued permit runs found')
     return
   }
 
   const run = runs[0]
-  console.log('[worker] Found queued run:', run.id, 'job:', run.job_id)
+  console.log('[worker] Found queued run:', run.id, 'job:', run.job_id, 'run_type:', run.run_type || '(null)')
 
   const { error: claimError } = await supabase
     .from('automation_runs')
@@ -64,7 +67,7 @@ async function claimAndRun() {
   const jobWithDocs = { ...job, documents: documents || [] }
 
   const { executeRun } = require('./runner')
-  await executeRun(jobWithDocs, run.id)
+  await executeRun(jobWithDocs, run)
 }
 
 async function poll() {
@@ -123,7 +126,7 @@ async function pollProofCompletions() {
   setTimeout(pollProofCompletions, PROOF_POLL_INTERVAL_MS)
 }
 
-console.log('[worker] Starting AHJ-iQ automation worker')
+console.log('[worker] Starting AHJ-iQ permit portal worker (Worker 1)')
 console.log('[worker] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'MISSING')
 console.log('[worker] Service key:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'MISSING')
 poll()
