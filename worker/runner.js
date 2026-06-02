@@ -30,6 +30,49 @@ function loadPolkRunner() {
   return require(polkRunnerPath)
 }
 
+function loadLeeRunner() {
+  var leeRunnerPath = resolveFromRoot('automation/ahjs/lee-county.runner.js')
+  return require(leeRunnerPath)
+}
+
+async function loadAhjForJob(job) {
+  if (!job.ahj_id) {
+    throw new Error('Job ' + job.id + ' has no AHJ assigned')
+  }
+
+  var { data: ahj, error } = await supabase
+    .from('ahj_portals')
+    .select('id, name, workflow_file, credential_key')
+    .eq('id', job.ahj_id)
+    .single()
+
+  if (error || !ahj) {
+    throw new Error('AHJ not found for job ' + job.id + ': ' + (error && error.message ? error.message : job.ahj_id))
+  }
+
+  return ahj
+}
+
+async function runPermitWorkflow(job, runId) {
+  var ahj = await loadAhjForJob(job)
+  console.log('[worker] AHJ:', ahj.name, 'workflow:', ahj.workflow_file)
+
+  switch (ahj.workflow_file) {
+    case 'polk-county.runner.js': {
+      var { runPolkCounty } = loadPolkRunner()
+      await runPolkCounty(job, runId)
+      return
+    }
+    case 'lee-county.runner.js': {
+      var { runLeeCounty } = loadLeeRunner()
+      await runLeeCounty(job, runId)
+      return
+    }
+    default:
+      throw new Error('No runner found for workflow file: ' + ahj.workflow_file)
+  }
+}
+
 async function releaseRunToQueue(runId) {
   await supabase.from('automation_runs').update({
     run_status: 'queued',
@@ -51,8 +94,7 @@ async function executeRun(job, run) {
       return
     }
 
-    var { runPolkCounty } = loadPolkRunner()
-    await runPolkCounty(job, runId)
+    await runPermitWorkflow(job, runId)
 
     console.log('[worker] Run complete:', runId)
   } catch (err) {
@@ -63,4 +105,4 @@ async function executeRun(job, run) {
   }
 }
 
-module.exports = { executeRun, loadPolkRunner, verifyPolkRunnerUsesDirectTrigger, deriveRunType, PERMIT_RUN_TYPES }
+module.exports = { executeRun, loadPolkRunner, loadLeeRunner, runPermitWorkflow, verifyPolkRunnerUsesDirectTrigger, deriveRunType, PERMIT_RUN_TYPES }

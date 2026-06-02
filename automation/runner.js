@@ -42,19 +42,9 @@ async function runAutomation(jobId, runId) {
   console.log(`AHJ: ${job.ahj_portals.name}`)
   console.log(`Workflow file: ${job.ahj_portals.workflow_file}`)
 
-  // Load credentials from environment
-  const credentialKey = job.ahj_portals.credential_key
-  const username = process.env[`${credentialKey}_USERNAME`]
-  const password = process.env[`${credentialKey}_PASSWORD`]
-
-  if (!username || !password) {
-    throw new Error(`No credentials found for ${credentialKey}. Add ${credentialKey}_USERNAME and ${credentialKey}_PASSWORD to .env.local`)
-  }
-
-  // Build job data object for the runner
+  // Build job data object for the runner — credentials loaded inside each AHJ runner
   const jobData = {
     ...job,
-    credentials: { username, password },
     documents: job.job_documents || [],
   }
 
@@ -74,6 +64,11 @@ async function runAutomation(jobId, runId) {
     case 'polk-county.runner.js': {
       const { runPolkCounty } = require('./ahjs/polk-county.runner')
       await runPolkCounty(jobData, runId)
+      break
+    }
+    case 'lee-county.runner.js': {
+      const { runLeeCounty } = require('./ahjs/lee-county.runner')
+      await runLeeCounty(jobData, runId)
       break
     }
     default:
