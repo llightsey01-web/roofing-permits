@@ -23,7 +23,14 @@ const HANDLED_RUN_TYPES = [
 ]
 
 function resolveLib(relativePath) {
-  return require(path.join(__dirname, '..', relativePath))
+  var candidates = [
+    path.join(__dirname, relativePath),
+    path.join(__dirname, '..', relativePath),
+  ]
+  for (var i = 0; i < candidates.length; i++) {
+    try { return require(candidates[i]) } catch (e) {}
+  }
+  throw new Error('Cannot resolve lib module: ' + relativePath)
 }
 
 async function markRunComplete(runId, extra) {
