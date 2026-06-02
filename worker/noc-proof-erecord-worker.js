@@ -83,7 +83,7 @@ async function handleProofSend(job, run) {
   var { sendNocToProof } = resolveLib('lib/proof/send-noc-to-proof.js')
   var chain = resolveLib('lib/automation/noc-proof-erecord-chain.js')
 
-  var result = await sendNocToProof(job.id, { headless: true })
+  var result = await sendNocToProof(job.id, { headless: true, companyId: job.company_id || null })
   await markRunComplete(run.id)
 
   var queued = await chain.queueProofCheckRun(job.id, run.id, {})
@@ -94,7 +94,11 @@ async function handleProofCheck(job, run) {
   var { runProofCompletionCheck } = resolveLib('lib/proof/completion.js')
   var chain = resolveLib('lib/automation/noc-proof-erecord-chain.js')
 
-  var checkResult = await runProofCompletionCheck({ jobId: job.id, headless: true })
+  var checkResult = await runProofCompletionCheck({
+    jobId: job.id,
+    headless: true,
+    companyId: job.company_id || null,
+  })
   var jobResult = (checkResult.results || [])[0]
 
   if (jobResult && jobResult.complete) {
@@ -111,7 +115,10 @@ async function handleProofCheck(job, run) {
 async function handleErecordPrepare(job, run) {
   var { prepareRecordingPackage } = resolveLib('lib/erecord/service.js')
 
-  var prepResult = await prepareRecordingPackage(job.id, { headless: true })
+  var prepResult = await prepareRecordingPackage(job.id, {
+    headless: true,
+    companyId: job.company_id || null,
+  })
   await markRunComplete(run.id)
   return prepResult
 }
