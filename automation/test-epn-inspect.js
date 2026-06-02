@@ -78,7 +78,7 @@ async function main() {
   }
   console.log('========================================\n')
 
-  var credentialError = validateEpnCredentials()
+  var credentialError = await validateEpnCredentials()
   if (credentialError) {
     console.error('Inspection aborted: ' + credentialError)
     process.exit(1)

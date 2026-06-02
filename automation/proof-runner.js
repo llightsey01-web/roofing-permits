@@ -102,7 +102,7 @@ async function calibrateProofPlacement(pdfBytes, options) {
 async function startProofNotarization(jobId, job, nocPdfBytes, options) {
   console.log('Starting Proof notarization for job ' + jobId)
 
-  var credentialError = validateProofCredentials()
+  var credentialError = await validateProofCredentials(job.company_id || null)
   if (credentialError) {
     console.error('Proof send aborted: ' + credentialError)
     return { success: false, skipped: true, reason: credentialError }
@@ -253,6 +253,7 @@ async function startProofNotarization(jobId, job, nocPdfBytes, options) {
     slowMo: 500,
     uploadFilename: identity.expected_document_name,
     identity: identity,
+    companyId: job.company_id || null,
   }, options || {}))
 }
 
