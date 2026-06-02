@@ -1,0 +1,7 @@
+FROM node:20-slim
+WORKDIR /app
+COPY worker/package.json ./
+RUN npm install --omit=dev
+COPY worker/ops-worker.js ./index.js
+COPY lib/ ./lib/
+CMD ["node", "index.js"]
