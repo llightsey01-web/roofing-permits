@@ -70,29 +70,44 @@ async function requeueRun(runId, attempts) {
 
 async function handleNocGenerate(job, run) {
   var { runNocPhaseForJob } = resolveLib('lib/noc/run-noc-phase.js')
-  var chain = resolveLib('lib/automation/noc-proof-erecord-chain.js')
 
-  var phase = await runNocPhaseForJob(job.id, { currentRunId: run.id })
+  var result = await runNocPhaseForJob(job.id, { currentRunId: run.id })
   await markRunComplete(run.id)
 
-  var queued = await chain.queueDownstreamAfterNoc(job.id, run.id, {})
-  return { phase: phase, queued: queued }
+  await supabase.from('automation_runs').insert({
+    job_id: job.id,
+    run_type: 'proof_send',
+    run_status: 'queued',
+    dependency_run_id: run.id,
+    started_at: new Date().toISOString(),
+    attempts: 0,
+  })
+  console.log('[noc-worker] Queued proof_send for job ' + job.id)
+
+  return result
 }
 
 async function handleProofSend(job, run) {
   var { sendNocToProof } = resolveLib('lib/proof/send-noc-to-proof.js')
-  var chain = resolveLib('lib/automation/noc-proof-erecord-chain.js')
 
   var result = await sendNocToProof(job.id, { headless: true, companyId: job.company_id || null })
   await markRunComplete(run.id)
 
-  var queued = await chain.queueProofCheckRun(job.id, run.id, {})
-  return { result: result, queued: queued }
+  await supabase.from('automation_runs').insert({
+    job_id: job.id,
+    run_type: 'proof_check',
+    run_status: 'queued',
+    dependency_run_id: run.id,
+    started_at: new Date().toISOString(),
+    attempts: 0,
+  })
+  console.log('[noc-worker] Queued proof_check for job ' + job.id)
+
+  return result
 }
 
 async function handleProofCheck(job, run) {
   var { runProofCompletionCheck } = resolveLib('lib/proof/completion.js')
-  var chain = resolveLib('lib/automation/noc-proof-erecord-chain.js')
 
   var checkResult = await runProofCompletionCheck({
     jobId: job.id,
@@ -103,8 +118,18 @@ async function handleProofCheck(job, run) {
 
   if (jobResult && jobResult.complete) {
     await markRunComplete(run.id)
-    var queued = await chain.queueErecordPrepareRun(job.id, run.id, {})
-    return { complete: true, jobResult: jobResult, queued: queued }
+
+    await supabase.from('automation_runs').insert({
+      job_id: job.id,
+      run_type: 'erecord_prepare',
+      run_status: 'queued',
+      dependency_run_id: run.id,
+      started_at: new Date().toISOString(),
+      attempts: 0,
+    })
+    console.log('[noc-worker] Queued erecord_prepare for job ' + job.id)
+
+    return { complete: true, jobResult: jobResult }
   }
 
   console.log('[noc-worker] Proof not complete for job ' + job.id + ' — requeue proof_check')
