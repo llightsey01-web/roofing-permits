@@ -6,12 +6,21 @@ import { createClient } from '../../lib/supabase'
 import { safeGetUser, redirectIfStaleSession } from '../../lib/auth/safe-auth'
 import EnvironmentBadge from '../../components/ui/EnvironmentBadge'
 import { contractorTheme } from '../../lib/ui/contractor-theme'
+import './contractor-portal.css'
 
 const navItems = [
-  { href: '/contractor/dashboard', label: 'Dashboard' },
-  { href: '/contractor/jobs/new', label: 'New Application' },
-  { href: '/contractor/settings', label: 'Settings' },
+  { href: '/contractor/dashboard', label: 'Dashboard', shortLabel: 'Home', icon: '⌂' },
+  { href: '/contractor/jobs/new', label: 'New Application', shortLabel: 'New Job', icon: '+' },
+  { href: '/contractor/settings', label: 'Settings', shortLabel: 'Settings', icon: '⚙' },
 ]
+
+function isNavActive(pathname, href) {
+  if (pathname === href) return true
+  if (href === '/contractor/dashboard') {
+    return pathname?.startsWith('/contractor/jobs/') && pathname !== '/contractor/jobs/new'
+  }
+  return false
+}
 
 export default function ContractorLayout({ children }) {
   const router = useRouter()
@@ -64,40 +73,44 @@ export default function ContractorLayout({ children }) {
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: contractorTheme.pageBgGradient,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: contractorTheme.fontFamily,
-      }}>
+      <div
+        className="contractor-shell"
+        style={{
+          background: contractorTheme.pageBgGradient,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: contractorTheme.fontFamily,
+        }}
+      >
         <p style={{ color: contractorTheme.textMuted, fontSize: '15px' }}>Loading Dart iQ...</p>
       </div>
     )
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: contractorTheme.pageBgGradient,
-      fontFamily: contractorTheme.fontFamily,
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      <header style={{
-        backgroundColor: contractorTheme.headerBg,
-        borderBottom: '1px solid ' + contractorTheme.headerBorder,
-        padding: '0 24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        height: '64px',
-        boxShadow: contractorTheme.shadow,
-        flexWrap: 'wrap',
-        gap: '12px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+    <div
+      className="contractor-shell"
+      style={{
+        background: contractorTheme.pageBgGradient,
+        fontFamily: contractorTheme.fontFamily,
+        color: contractorTheme.textBody,
+      }}
+    >
+      <header
+        className="contractor-header"
+        style={{
+          backgroundColor: contractorTheme.headerBg,
+          borderBottom: '1px solid ' + contractorTheme.headerBorder,
+          padding: '0 24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          height: '64px',
+          boxShadow: contractorTheme.shadow,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px', minWidth: 0 }}>
           <button
             type="button"
             onClick={() => router.push('/contractor/dashboard')}
@@ -109,33 +122,40 @@ export default function ContractorLayout({ children }) {
               background: 'none',
               cursor: 'pointer',
               padding: 0,
+              minHeight: '44px',
             }}
           >
-            <div style={{
-              width: '36px',
-              height: '36px',
-              backgroundColor: contractorTheme.accent,
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                backgroundColor: contractorTheme.accent,
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: contractorTheme.accentGlow,
+                flexShrink: 0,
+              }}
+            >
               <span style={{ color: '#ffffff', fontSize: '15px', fontWeight: '800' }}>D</span>
             </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ textAlign: 'left', minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <span style={{ color: contractorTheme.text, fontSize: '18px', fontWeight: '700' }}>Dart iQ</span>
                 <EnvironmentBadge label="Contractor" variant="contractor" />
               </div>
-              <span style={{ color: contractorTheme.textMuted, fontSize: '12px' }}>
+              <span
+                className="contractor-header-subtitle"
+                style={{ color: contractorTheme.textMuted, fontSize: '12px', display: 'block' }}
+              >
                 Permit automation by {contractorTheme.companyLegal}
               </span>
             </div>
           </button>
-          <nav style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          <nav className="contractor-desktop-nav" style={{ gap: '6px', flexWrap: 'wrap' }}>
             {navItems.map(item => {
-              const isActive = pathname === item.href ||
-                (item.href === '/contractor/dashboard' && pathname?.startsWith('/contractor/jobs/') && pathname !== '/contractor/jobs/new')
+              const isActive = isNavActive(pathname, item.href)
               return (
                 <button
                   key={item.href}
@@ -143,7 +163,8 @@ export default function ContractorLayout({ children }) {
                   onClick={() => router.push(item.href)}
                   style={{
                     fontSize: '14px',
-                    padding: '8px 14px',
+                    padding: '10px 14px',
+                    minHeight: '44px',
                     borderRadius: '8px',
                     border: 'none',
                     cursor: 'pointer',
@@ -159,16 +180,20 @@ export default function ContractorLayout({ children }) {
           </nav>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '13px', color: contractorTheme.textMuted }}>{user?.email}</span>
+          <span className="contractor-header-email" style={{ fontSize: '13px', color: contractorTheme.textMuted }}>
+            {user?.email}
+          </span>
           <button
             type="button"
+            className="contractor-desktop-signout"
             onClick={handleSignOut}
             style={{
               fontSize: '13px',
-              padding: '8px 14px',
+              padding: '10px 14px',
+              minHeight: '44px',
               border: '1px solid ' + contractorTheme.border,
               borderRadius: '8px',
-              backgroundColor: '#ffffff',
+              backgroundColor: contractorTheme.inputBg,
               color: contractorTheme.textBody,
               cursor: 'pointer',
             }}
@@ -177,17 +202,51 @@ export default function ContractorLayout({ children }) {
           </button>
         </div>
       </header>
-      <main style={{ flex: 1 }}>{children}</main>
-      <footer style={{
-        borderTop: '1px solid ' + contractorTheme.border,
-        padding: '20px 24px',
-        textAlign: 'center',
-        fontSize: '13px',
-        color: contractorTheme.textMuted,
-        backgroundColor: '#ffffff',
-      }}>
+
+      <main className="contractor-main">{children}</main>
+
+      <footer
+        className="contractor-footer-desktop"
+        style={{
+          borderTop: '1px solid ' + contractorTheme.border,
+          padding: '20px 24px',
+          textAlign: 'center',
+          fontSize: '13px',
+          color: contractorTheme.textMuted,
+          backgroundColor: contractorTheme.headerBg,
+        }}
+      >
         © {contractorTheme.footerYear} {contractorTheme.companyLegal}
       </footer>
+
+      <nav className="contractor-bottom-nav" aria-label="Mobile navigation">
+        <div className="contractor-bottom-nav-inner">
+          {navItems.map(item => {
+            const isActive = isNavActive(pathname, item.href)
+            return (
+              <button
+                key={item.href}
+                type="button"
+                className={'contractor-bottom-nav-item' + (isActive ? ' is-active' : '')}
+                onClick={() => router.push(item.href)}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                <span className="contractor-bottom-nav-icon" aria-hidden="true">{item.icon}</span>
+                <span>{item.shortLabel}</span>
+              </button>
+            )
+          })}
+          <button
+            type="button"
+            className="contractor-bottom-nav-item"
+            onClick={handleSignOut}
+            aria-label="Sign out"
+          >
+            <span className="contractor-bottom-nav-icon" aria-hidden="true">↪</span>
+            <span>Logout</span>
+          </button>
+        </div>
+      </nav>
     </div>
   )
 }

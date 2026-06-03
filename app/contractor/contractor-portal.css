@@ -1,0 +1,274 @@
+/* Dart iQ contractor portal — mobile + overflow safety */
+.contractor-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+.contractor-main {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.contractor-header {
+  flex-shrink: 0;
+}
+
+.contractor-desktop-nav,
+.contractor-desktop-signout,
+.contractor-header-email {
+  display: flex;
+}
+
+.contractor-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 64px;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  background-color: #1e293b;
+  border-top: 1px solid #334155;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.contractor-bottom-nav-inner {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+}
+
+.contractor-bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 44px;
+  min-width: 44px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+  padding: 6px 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.contractor-bottom-nav-item.is-active {
+  color: #3b82f6;
+}
+
+.contractor-bottom-nav-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.contractor-footer-desktop {
+  flex-shrink: 0;
+}
+
+.contractor-page {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 28px 24px 40px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.contractor-page-narrow {
+  max-width: 800px;
+}
+
+.contractor-page-detail {
+  max-width: 920px;
+}
+
+.contractor-dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.contractor-dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.contractor-dashboard-jobs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.contractor-btn-primary {
+  min-height: 44px;
+}
+
+.contractor-btn-block-mobile {
+  width: auto;
+}
+
+.contractor-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.contractor-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.contractor-job-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.contractor-pipeline-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 0;
+  min-width: 0;
+}
+
+.contractor-pipeline-label {
+  font-size: 15px;
+  margin: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.contractor-doc-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 44px;
+  padding: 14px 18px;
+  box-sizing: border-box;
+  text-decoration: none;
+  border-radius: 10px;
+}
+
+.contractor-address-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .contractor-desktop-nav,
+  .contractor-desktop-signout,
+  .contractor-header-email {
+    display: none !important;
+  }
+
+  .contractor-header-subtitle {
+    display: none !important;
+  }
+
+  .contractor-bottom-nav {
+    display: block;
+  }
+
+  .contractor-main {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0));
+  }
+
+  .contractor-footer-desktop {
+    display: none;
+  }
+
+  .contractor-header {
+    padding: 0 16px !important;
+    height: 56px !important;
+  }
+
+  .contractor-page,
+  .contractor-page-narrow,
+  .contractor-page-detail {
+    padding: 16px 16px 24px;
+  }
+
+  .contractor-dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .contractor-dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .contractor-dashboard-jobs {
+    grid-template-columns: 1fr;
+  }
+
+  .contractor-btn-block-mobile {
+    width: 100%;
+  }
+
+  .contractor-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .contractor-form-grid-full {
+    grid-column: 1 / -1;
+  }
+
+  .contractor-form-actions {
+    flex-direction: column;
+  }
+
+  .contractor-form-actions button,
+  .contractor-form-actions .contractor-btn-cancel {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .contractor-job-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .contractor-pipeline-label {
+    font-size: 14px;
+  }
+
+  .contractor-review-banner {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .contractor-review-banner button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .contractor-job-title {
+    font-size: 22px !important;
+  }
+
+  .contractor-back-btn {
+    min-height: 44px;
+    padding: 8px 0 !important;
+  }
+}

@@ -79,7 +79,7 @@ function StageIcon({ state }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
-      backgroundColor: '#e2e8f0',
+      backgroundColor: contractorTheme.border,
       flexShrink: 0,
     }} />
   )
@@ -145,7 +145,7 @@ export default function ContractorJobDetailPage({ params }) {
 
   if (loading) {
     return (
-      <div style={{ padding: '48px', textAlign: 'center' }}>
+      <div className="contractor-page" style={{ padding: '48px 16px', textAlign: 'center' }}>
         <p style={{ color: contractorTheme.textMuted }}>Loading application...</p>
       </div>
     )
@@ -153,12 +153,13 @@ export default function ContractorJobDetailPage({ params }) {
 
   if (error || !job) {
     return (
-      <div style={{ padding: '48px', textAlign: 'center' }}>
+      <div className="contractor-page" style={{ padding: '48px 16px', textAlign: 'center' }}>
         <p style={{ color: contractorTheme.textMuted }}>{error || 'Application not found'}</p>
         <button
           type="button"
+          className="contractor-back-btn"
           onClick={() => router.push('/contractor/dashboard')}
-          style={{ marginTop: '16px', color: contractorTheme.accent, background: 'none', border: 'none', cursor: 'pointer' }}
+          style={{ marginTop: '16px', color: contractorTheme.accent, background: 'none', border: 'none', cursor: 'pointer', fontSize: '15px' }}
         >
           ← Back to dashboard
         </button>
@@ -169,7 +170,7 @@ export default function ContractorJobDetailPage({ params }) {
   const pStatus = permitStatusConfig[job.job_status] || permitStatusConfig.draft
   const nStatus = nocStatusConfig[job.noc_status || 'not_started'] || nocStatusConfig.not_started
 
-  const sectionStyle = { ...contractorCardStyle(), padding: '24px', marginBottom: '20px' }
+  const sectionStyle = { ...contractorCardStyle(), padding: '24px', marginBottom: '20px', boxSizing: 'border-box' }
   const sectionTitleStyle = {
     fontSize: '16px',
     fontWeight: '600',
@@ -179,53 +180,57 @@ export default function ContractorJobDetailPage({ params }) {
     paddingBottom: '12px',
     borderBottom: '1px solid ' + contractorTheme.border,
   }
-  const gridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }
 
   function Field({ label, value }) {
     return (
       <div>
         <p style={{ fontSize: '12px', color: contractorTheme.textMuted, margin: '0 0 4px 0' }}>{label}</p>
-        <p style={{ fontSize: '14px', color: contractorTheme.text, fontWeight: '500', margin: 0 }}>{value || '—'}</p>
+        <p style={{ fontSize: '14px', color: contractorTheme.text, fontWeight: '500', margin: 0, wordBreak: 'break-word' }}>{value || '—'}</p>
       </div>
     )
   }
 
   return (
-    <div style={{ maxWidth: '920px', margin: '28px auto', padding: '0 24px 48px' }}>
+    <div className="contractor-page contractor-page-detail">
       <style>{'@keyframes dartiq-spin { to { transform: rotate(360deg); } }'}</style>
 
       <button
         type="button"
+        className="contractor-back-btn"
         onClick={() => router.push('/contractor/dashboard')}
         style={{
-          fontSize: '14px',
+          fontSize: '15px',
           color: contractorTheme.textMuted,
           background: 'none',
           border: 'none',
           cursor: 'pointer',
           marginBottom: '16px',
-          padding: 0,
+          padding: '8px 0',
+          minHeight: '44px',
         }}
       >
         ← Back to dashboard
       </button>
 
       {pendingReview && (
-        <div style={{
-          ...contractorCardStyle(),
-          padding: '18px 20px',
-          marginBottom: '20px',
-          backgroundColor: contractorTheme.errorSoft,
-          border: '1px solid #fecaca',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '16px',
-          flexWrap: 'wrap',
-        }}>
-          <div>
+        <div
+          className="contractor-review-banner"
+          style={{
+            ...contractorCardStyle(),
+            padding: '18px 20px',
+            marginBottom: '20px',
+            backgroundColor: contractorTheme.errorSoft,
+            border: '1px solid ' + contractorTheme.border,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '16px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
             <p style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: contractorTheme.error }}>Action Required</p>
-            <p style={{ margin: '6px 0 0 0', fontSize: '14px', color: '#7f1d1d' }}>
+            <p style={{ margin: '6px 0 0 0', fontSize: '14px', color: contractorTheme.textBody, wordBreak: 'break-word' }}>
               {pendingReview.review_type === 'noc_before_send'
                 ? 'Review the NOC before it is sent to the homeowner.'
                 : 'Review the permit application before county submission.'}
@@ -235,13 +240,16 @@ export default function ContractorJobDetailPage({ params }) {
             type="button"
             onClick={() => router.push('/contractor/jobs/' + jobId + '/review')}
             style={{
-              padding: '10px 18px',
+              padding: '12px 18px',
+              minHeight: '44px',
               borderRadius: '8px',
               border: 'none',
               backgroundColor: contractorTheme.error,
               color: 'white',
               fontWeight: '600',
               cursor: 'pointer',
+              fontSize: '14px',
+              flexShrink: 0,
             }}
           >
             Open review
@@ -249,27 +257,31 @@ export default function ContractorJobDetailPage({ params }) {
         </div>
       )}
 
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: '24px',
-        gap: '16px',
-        flexWrap: 'wrap',
-      }}>
-        <div>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '24px',
+          gap: '16px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ minWidth: 0, flex: 1 }}>
           <p style={{ fontSize: '13px', color: contractorTheme.accent, fontWeight: '600', margin: '0 0 4px 0' }}>
             Dart iQ application
           </p>
-          <h1 style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: 0 }}>{job.owner_name}</h1>
-          <p style={{ fontSize: '15px', color: contractorTheme.textMuted, margin: '6px 0 0 0' }}>
+          <h1 className="contractor-job-title" style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: 0, wordBreak: 'break-word' }}>
+            {job.owner_name}
+          </h1>
+          <p style={{ fontSize: '15px', color: contractorTheme.textMuted, margin: '6px 0 0 0', wordBreak: 'break-word' }}>
             {job.property_address}, {job.property_city}, {job.property_state} {job.property_zip}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <span style={{
             fontSize: '12px',
-            padding: '4px 12px',
+            padding: '6px 12px',
             borderRadius: '6px',
             backgroundColor: nStatus.bg,
             color: nStatus.text,
@@ -279,7 +291,7 @@ export default function ContractorJobDetailPage({ params }) {
           </span>
           <span style={{
             fontSize: '12px',
-            padding: '4px 12px',
+            padding: '6px 12px',
             borderRadius: '6px',
             backgroundColor: pStatus.bg,
             color: pStatus.text,
@@ -292,7 +304,7 @@ export default function ContractorJobDetailPage({ params }) {
 
       <div style={sectionStyle}>
         <h2 style={sectionTitleStyle}>Permit pipeline</h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {PIPELINE_STAGES.map((stage, idx) => {
             const state = getStageState(job, stage, idx)
             const label = STAGE_LABELS[stage.key] || stage.label
@@ -301,26 +313,24 @@ export default function ContractorJobDetailPage({ params }) {
             return (
               <div
                 key={stage.key}
+                className="contractor-pipeline-row"
                 style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '14px',
-                  padding: '12px 0',
-                  borderBottom: idx < PIPELINE_STAGES.length - 1 ? '1px solid #f1f5f9' : 'none',
+                  borderBottom: idx < PIPELINE_STAGES.length - 1 ? '1px solid ' + contractorTheme.border : 'none',
                 }}
               >
                 <StageIcon state={state} />
-                <div style={{ paddingTop: '2px', flex: 1 }}>
-                  <p style={{
-                    fontSize: '15px',
-                    fontWeight: state === 'in_progress' ? '700' : '500',
-                    color: state === 'pending' ? contractorTheme.textMuted : contractorTheme.text,
-                    margin: 0,
-                  }}>
+                <div style={{ paddingTop: '2px', flex: 1, minWidth: 0 }}>
+                  <p
+                    className="contractor-pipeline-label"
+                    style={{
+                      fontWeight: state === 'in_progress' ? '700' : '500',
+                      color: state === 'pending' ? contractorTheme.textMuted : contractorTheme.text,
+                    }}
+                  >
                     {label}
                   </p>
                   {showHomeowner && (
-                    <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '4px 0 0 0' }}>
+                    <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '4px 0 0 0', wordBreak: 'break-word' }}>
                       Homeowner: {job.owner_name}
                     </p>
                   )}
@@ -339,7 +349,7 @@ export default function ContractorJobDetailPage({ params }) {
 
       <div style={sectionStyle}>
         <h2 style={sectionTitleStyle}>Homeowner & property</h2>
-        <div style={gridStyle}>
+        <div className="contractor-job-grid">
           <Field label="Owner name" value={job.owner_name} />
           <Field label="Owner phone" value={job.owner_phone} />
           <Field label="Owner email" value={job.owner_email} />
@@ -381,7 +391,7 @@ export default function ContractorJobDetailPage({ params }) {
           )}
         </div>
         {job.noc_recording_number && (
-          <p style={{ fontSize: '13px', color: contractorTheme.textBody, marginTop: '16px' }}>
+          <p style={{ fontSize: '13px', color: contractorTheme.textBody, marginTop: '16px', wordBreak: 'break-word' }}>
             Recording number: <strong>{job.noc_recording_number}</strong>
           </p>
         )}
@@ -392,14 +402,26 @@ export default function ContractorJobDetailPage({ params }) {
           <h2 style={sectionTitleStyle}>Recent updates</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '320px', overflowY: 'auto' }}>
             {logs.map(log => (
-              <div key={log.id} style={{ padding: '10px 12px', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+              <div
+                key={log.id}
+                style={{
+                  padding: '10px 12px',
+                  backgroundColor: contractorTheme.inputBg,
+                  borderRadius: '8px',
+                  border: '1px solid ' + contractorTheme.border,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '13px', fontWeight: '500', color: contractorTheme.text }}>{log.step_name || 'Step'}</span>
                   <span style={{ fontSize: '12px', color: contractorTheme.textMuted, flexShrink: 0 }}>
                     {new Date(log.created_at).toLocaleString()}
                   </span>
                 </div>
-                {log.message && <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '4px 0 0 0' }}>{log.message}</p>}
+                {log.message && (
+                  <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '4px 0 0 0', wordBreak: 'break-word' }}>
+                    {log.message}
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -415,22 +437,17 @@ function DocumentLink({ label, url }) {
       href={url}
       target="_blank"
       rel="noreferrer"
+      className="contractor-doc-link"
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '14px 18px',
         border: '1px solid ' + contractorTheme.border,
-        borderRadius: '10px',
         backgroundColor: contractorTheme.accentSoft,
-        textDecoration: 'none',
         color: contractorTheme.accent,
         fontSize: '14px',
         fontWeight: '600',
       }}
     >
-      <span>{label}</span>
-      <span>Download →</span>
+      <span style={{ wordBreak: 'break-word', paddingRight: '8px' }}>{label}</span>
+      <span style={{ flexShrink: 0 }}>Download →</span>
     </a>
   )
 }

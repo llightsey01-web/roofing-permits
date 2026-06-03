@@ -97,7 +97,7 @@ export default function ContractorDashboardPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: '64px', textAlign: 'center' }}>
+      <div className="contractor-page" style={{ padding: '64px 16px', textAlign: 'center' }}>
         <p style={{ color: contractorTheme.textMuted, fontSize: '15px' }}>Loading your applications...</p>
       </div>
     )
@@ -111,15 +111,8 @@ export default function ContractorDashboardPage() {
   }
 
   return (
-    <div style={{ padding: '28px 24px 40px', maxWidth: '1140px', margin: '0 auto' }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: '28px',
-        gap: '16px',
-        flexWrap: 'wrap',
-      }}>
+    <div className="contractor-page">
+      <div className="contractor-dashboard-header">
         <div>
           <h1 style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: 0 }}>
             Dashboard
@@ -130,6 +123,7 @@ export default function ContractorDashboardPage() {
         </div>
         <button
           type="button"
+          className="contractor-btn-primary contractor-btn-block-mobile"
           onClick={() => router.push('/contractor/jobs/new')}
           style={contractorPrimaryButtonStyle(false)}
         >
@@ -138,25 +132,22 @@ export default function ContractorDashboardPage() {
       </div>
 
       {error && (
-        <div style={{
-          padding: '14px 18px',
-          backgroundColor: contractorTheme.errorSoft,
-          borderRadius: '10px',
-          marginBottom: '24px',
-          color: contractorTheme.error,
-          fontSize: '14px',
-          border: '1px solid #fecaca',
-        }}>
+        <div
+          style={{
+            padding: '14px 18px',
+            backgroundColor: contractorTheme.errorSoft,
+            borderRadius: '10px',
+            marginBottom: '24px',
+            color: contractorTheme.error,
+            fontSize: '14px',
+            border: '1px solid ' + contractorTheme.border,
+          }}
+        >
           {error}
         </div>
       )}
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-        gap: '14px',
-        marginBottom: '32px',
-      }}>
+      <div className="contractor-dashboard-stats">
         {[
           { label: 'Total applications', value: stats.total, color: contractorTheme.text },
           { label: 'In progress', value: stats.active, color: contractorTheme.accent },
@@ -175,22 +166,23 @@ export default function ContractorDashboardPage() {
       </h2>
 
       {jobs.length === 0 ? (
-        <div style={{ ...contractorCardStyle(), padding: '56px 32px', textAlign: 'center' }}>
+        <div style={{ ...contractorCardStyle(), padding: '48px 24px', textAlign: 'center' }}>
           <p style={{ color: contractorTheme.text, fontSize: '17px', fontWeight: '600', margin: '0 0 8px 0' }}>
             No applications yet
           </p>
-          <p style={{
-            color: contractorTheme.textMuted,
-            fontSize: '15px',
-            margin: '0 0 20px 0',
-            maxWidth: '400px',
-            marginLeft: 'auto',
-            marginRight: 'auto',
-          }}>
+          <p
+            style={{
+              color: contractorTheme.textMuted,
+              fontSize: '15px',
+              margin: '0 auto 20px',
+              maxWidth: '400px',
+            }}
+          >
             Start your first permit application and Dart iQ will guide it from intake through county submission.
           </p>
           <button
             type="button"
+            className="contractor-btn-primary contractor-btn-block-mobile"
             onClick={() => router.push('/contractor/jobs/new')}
             style={contractorPrimaryButtonStyle(false)}
           >
@@ -198,11 +190,7 @@ export default function ContractorDashboardPage() {
           </button>
         </div>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: '16px',
-        }}>
+        <div className="contractor-dashboard-jobs">
           {jobs.map(job => {
             const pStatus = permitStatusConfig[job.job_status] || permitStatusConfig.draft
             const nStatus = nocStatusConfig[job.noc_status || 'not_started'] || nocStatusConfig.not_started
@@ -219,19 +207,23 @@ export default function ContractorDashboardPage() {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '12px',
+                  width: '100%',
+                  minWidth: 0,
+                  boxSizing: 'border-box',
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{
-                      fontSize: '15px',
-                      fontWeight: '700',
-                      color: contractorTheme.text,
-                      margin: 0,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}>
+                    <p
+                      className="contractor-address-ellipsis"
+                      style={{
+                        fontSize: '15px',
+                        fontWeight: '700',
+                        color: contractorTheme.text,
+                        margin: 0,
+                      }}
+                      title={job.property_address}
+                    >
                       {job.property_address}
                     </p>
                     <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '4px 0 0 0' }}>
@@ -239,22 +231,24 @@ export default function ContractorDashboardPage() {
                     </p>
                   </div>
                   {actionRequired && (
-                    <span style={{
-                      fontSize: '10px',
-                      fontWeight: '700',
-                      padding: '4px 8px',
-                      borderRadius: '6px',
-                      backgroundColor: contractorTheme.errorSoft,
-                      color: contractorTheme.error,
-                      border: '1px solid #fecaca',
-                      flexShrink: 0,
-                    }}>
+                    <span
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: '700',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        backgroundColor: contractorTheme.errorSoft,
+                        color: contractorTheme.error,
+                        border: '1px solid ' + contractorTheme.border,
+                        flexShrink: 0,
+                      }}
+                    >
                       Action Required
                     </span>
                   )}
                 </div>
 
-                <p style={{ fontSize: '13px', color: contractorTheme.textBody, margin: 0 }}>
+                <p style={{ fontSize: '13px', color: contractorTheme.textBody, margin: 0, wordBreak: 'break-word' }}>
                   <span style={{ color: contractorTheme.textMuted }}>Stage: </span>
                   {stageLabel}
                 </p>
@@ -264,24 +258,28 @@ export default function ContractorDashboardPage() {
                 </p>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  <span style={{
-                    fontSize: '11px',
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    backgroundColor: pStatus.bg,
-                    color: pStatus.text,
-                    fontWeight: '600',
-                  }}>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      backgroundColor: pStatus.bg,
+                      color: pStatus.text,
+                      fontWeight: '600',
+                    }}
+                  >
                     {pStatus.label}
                   </span>
-                  <span style={{
-                    fontSize: '11px',
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    backgroundColor: nStatus.bg,
-                    color: nStatus.text,
-                    fontWeight: '600',
-                  }}>
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      backgroundColor: nStatus.bg,
+                      color: nStatus.text,
+                      fontWeight: '600',
+                    }}
+                  >
                     NOC: {nStatus.label}
                   </span>
                 </div>
@@ -293,8 +291,9 @@ export default function ContractorDashboardPage() {
                   )}
                   style={{
                     marginTop: '4px',
-                    fontSize: '13px',
-                    padding: '10px 16px',
+                    fontSize: '14px',
+                    padding: '12px 16px',
+                    minHeight: '44px',
                     border: 'none',
                     borderRadius: '8px',
                     backgroundColor: actionRequired ? contractorTheme.errorSoft : contractorTheme.accentSoft,

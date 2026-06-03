@@ -4,7 +4,12 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../../../lib/supabase'
 import { safeGetSession, redirectIfStaleSession } from '../../../../lib/auth/safe-auth'
-import { contractorTheme, contractorCardStyle, contractorPrimaryButtonStyle } from '../../../../lib/ui/contractor-theme'
+import {
+  contractorTheme,
+  contractorCardStyle,
+  contractorPrimaryButtonStyle,
+  contractorInputStyle,
+} from '../../../../lib/ui/contractor-theme'
 
 const emptyMaterial = { manufacturer: '', product_name: '', approval_number: '' }
 
@@ -162,18 +167,15 @@ export default function ContractorNewJobPage() {
     }
   }
 
-  const inputStyle = {
-    width: '100%',
-    padding: '11px 14px',
-    border: '1px solid ' + contractorTheme.border,
-    borderRadius: '10px',
-    fontSize: '14px',
-    boxSizing: 'border-box',
-    backgroundColor: '#ffffff',
-    color: contractorTheme.textBody,
+  const inputStyle = contractorInputStyle()
+  const labelStyle = {
+    display: 'block',
+    fontSize: '13px',
+    fontWeight: '600',
+    marginBottom: '6px',
+    color: contractorTheme.text,
   }
-  const labelStyle = { display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: contractorTheme.text }
-  const sectionStyle = { ...contractorCardStyle(), padding: '24px', marginBottom: '20px' }
+  const sectionStyle = { ...contractorCardStyle(), padding: '24px', marginBottom: '20px', boxSizing: 'border-box' }
   const sectionTitleStyle = {
     fontSize: '16px',
     fontWeight: '600',
@@ -182,14 +184,13 @@ export default function ContractorNewJobPage() {
     marginTop: 0,
   }
   const sectionDescStyle = { fontSize: '13px', color: contractorTheme.textMuted, margin: '0 0 20px 0' }
-  const gridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }
 
   const subSectionStyle = {
     border: '1px solid ' + contractorTheme.border,
     borderRadius: '10px',
     padding: '16px',
     marginBottom: '16px',
-    backgroundColor: contractorTheme.accentSoft || 'rgba(59, 130, 246, 0.08)',
+    backgroundColor: contractorTheme.accentSoft,
   }
 
   const subLabelStyle = {
@@ -209,7 +210,7 @@ export default function ContractorNewJobPage() {
     return (
       <div style={subSectionStyle}>
         <p style={subLabelStyle}>{title}</p>
-        <div style={gridStyle}>
+        <div className="contractor-form-grid">
           <div>
             <label style={labelStyle}>Manufacturer *</label>
             <select
@@ -226,8 +227,7 @@ export default function ContractorNewJobPage() {
             <select
               style={{
                 ...inputStyle,
-                backgroundColor: values.manufacturer ? inputStyle.backgroundColor : contractorTheme.accentSoft,
-                opacity: values.manufacturer ? 1 : 0.85,
+                opacity: values.manufacturer ? 1 : 0.7,
               }}
               value={values.product_name}
               onChange={e => handleMaterialChange(setter, 'product_name', e.target.value, layerType, values)}
@@ -237,7 +237,7 @@ export default function ContractorNewJobPage() {
               {productList.map(p => <option key={p.id} value={p.product_name}>{p.product_name}</option>)}
             </select>
           </div>
-          <div style={{ gridColumn: '1 / -1' }}>
+          <div className="contractor-form-grid-full">
             <label style={labelStyle}>
               FL product approval #
               {approvalFilled && (
@@ -249,8 +249,7 @@ export default function ContractorNewJobPage() {
             <input
               style={{
                 ...inputStyle,
-                backgroundColor: approvalFilled ? contractorTheme.successSoft : inputStyle.backgroundColor,
-                borderColor: approvalFilled ? '#86efac' : contractorTheme.border,
+                borderColor: approvalFilled ? contractorTheme.success : contractorTheme.border,
               }}
               value={values.approval_number}
               onChange={e => handleMaterialChange(setter, 'approval_number', e.target.value, layerType, values)}
@@ -263,7 +262,7 @@ export default function ContractorNewJobPage() {
   }
 
   return (
-    <div style={{ maxWidth: '800px', margin: '28px auto', padding: '0 24px 48px' }}>
+    <div className="contractor-page contractor-page-narrow">
       <h1 style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: '0 0 8px 0' }}>
         New permit application
       </h1>
@@ -272,16 +271,18 @@ export default function ContractorNewJobPage() {
       </p>
 
       {success && (
-        <div style={{
-          padding: '14px 18px',
-          backgroundColor: contractorTheme.successSoft,
-          borderRadius: '10px',
-          marginBottom: '20px',
-          color: contractorTheme.success,
-          fontSize: '14px',
-          fontWeight: '600',
-          border: '1px solid #bbf7d0',
-        }}>
+        <div
+          style={{
+            padding: '14px 18px',
+            backgroundColor: contractorTheme.successSoft,
+            borderRadius: '10px',
+            marginBottom: '20px',
+            color: contractorTheme.success,
+            fontSize: '14px',
+            fontWeight: '600',
+            border: '1px solid ' + contractorTheme.border,
+          }}
+        >
           Application submitted successfully. Redirecting to your application...
         </div>
       )}
@@ -290,7 +291,7 @@ export default function ContractorNewJobPage() {
         <div style={sectionStyle}>
           <h2 style={sectionTitleStyle}>1. Homeowner information</h2>
           <p style={sectionDescStyle}>Who owns the property and how can we reach them?</p>
-          <div style={gridStyle}>
+          <div className="contractor-form-grid">
             <div>
               <label style={labelStyle}>Owner name *</label>
               <input style={inputStyle} name="owner_name" value={form.owner_name} onChange={handleChange} required />
@@ -299,7 +300,7 @@ export default function ContractorNewJobPage() {
               <label style={labelStyle}>Owner phone</label>
               <input style={inputStyle} name="owner_phone" value={form.owner_phone} onChange={handleChange} />
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div className="contractor-form-grid-full">
               <label style={labelStyle}>Owner email</label>
               <input style={inputStyle} type="email" name="owner_email" value={form.owner_email} onChange={handleChange} />
             </div>
@@ -313,7 +314,7 @@ export default function ContractorNewJobPage() {
             <label style={labelStyle}>Street address *</label>
             <input style={inputStyle} name="property_address" value={form.property_address} onChange={handleChange} required />
           </div>
-          <div style={gridStyle}>
+          <div className="contractor-form-grid">
             <div>
               <label style={labelStyle}>City *</label>
               <input style={inputStyle} name="property_city" value={form.property_city} onChange={handleChange} required />
@@ -361,13 +362,13 @@ export default function ContractorNewJobPage() {
           <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Scope of work</label>
             <textarea
-              style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
+              style={{ ...inputStyle, height: '80px', resize: 'vertical', minHeight: '80px' }}
               name="scope_of_work"
               value={form.scope_of_work}
               onChange={handleChange}
             />
           </div>
-          <div style={gridStyle}>
+          <div className="contractor-form-grid">
             <div>
               <label style={labelStyle}>Roof type</label>
               <select style={inputStyle} name="roof_type" value={form.roof_type} onChange={handleChange}>
@@ -400,14 +401,15 @@ export default function ContractorNewJobPage() {
                 type="button"
                 onClick={() => { setShowVentilation(false); setVentilation({ ...emptyMaterial }) }}
                 style={{
-                  fontSize: '13px',
+                  fontSize: '14px',
                   color: contractorTheme.error,
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  padding: '0',
+                  padding: '12px 0',
                   marginBottom: '16px',
                   display: 'block',
+                  minHeight: '44px',
                 }}
               >
                 Remove ventilation
@@ -418,14 +420,15 @@ export default function ContractorNewJobPage() {
               type="button"
               onClick={() => setShowVentilation(true)}
               style={{
-                fontSize: '13px',
+                fontSize: '14px',
                 color: contractorTheme.accent,
                 background: 'transparent',
                 border: '1px dashed ' + contractorTheme.border,
                 borderRadius: '10px',
                 cursor: 'pointer',
-                padding: '12px 16px',
+                padding: '14px 16px',
                 width: '100%',
+                minHeight: '44px',
                 textAlign: 'center',
                 fontWeight: '500',
               }}
@@ -439,7 +442,7 @@ export default function ContractorNewJobPage() {
           <h2 style={sectionTitleStyle}>5. Internal notes</h2>
           <p style={sectionDescStyle}>Optional notes visible only to your team.</p>
           <textarea
-            style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
+            style={{ ...inputStyle, height: '80px', resize: 'vertical', minHeight: '80px' }}
             name="notes"
             value={form.notes}
             onChange={handleChange}
@@ -451,23 +454,30 @@ export default function ContractorNewJobPage() {
           <p style={{ color: contractorTheme.error, fontSize: '14px', marginBottom: '16px' }}>{error}</p>
         )}
 
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div className="contractor-form-actions">
           <button
             type="button"
+            className="contractor-btn-cancel"
             onClick={() => router.push('/contractor/dashboard')}
             style={{
               padding: '12px 24px',
+              minHeight: '44px',
               border: '1px solid ' + contractorTheme.border,
               borderRadius: '10px',
-              backgroundColor: '#ffffff',
-              fontSize: '14px',
+              backgroundColor: contractorTheme.inputBg,
+              fontSize: '15px',
               cursor: 'pointer',
               color: contractorTheme.textBody,
             }}
           >
             Cancel
           </button>
-          <button type="submit" disabled={loading || success} style={contractorPrimaryButtonStyle(loading || success)}>
+          <button
+            type="submit"
+            disabled={loading || success}
+            className="contractor-btn-primary"
+            style={contractorPrimaryButtonStyle(loading || success)}
+          >
             {loading ? 'Submitting...' : 'Start Permit Application'}
           </button>
         </div>
