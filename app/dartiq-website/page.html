@@ -546,6 +546,15 @@
       color: var(--white);
     }
 
+    .pricing-disclaimer {
+      text-align: center;
+      max-width: 720px;
+      margin: 1.5rem auto 0;
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--gray);
+    }
+
     /* Form */
     .form-section {
       background: var(--navy-light);
@@ -668,7 +677,7 @@
       color: var(--blue-light);
     }
 
-    /* Responsive */
+    /* Responsive — layout-only overrides; colors, gradients, and contrast match desktop */
     @media (min-width: 768px) {
       .nav-links {
         display: flex;
@@ -682,15 +691,15 @@
 
     @media (max-width: 767px) {
       .hero {
-        padding-top: 6rem;
+        padding: 8rem 0 5rem;
       }
 
       .hero-stats {
-        gap: 1.5rem;
+        gap: 2.5rem;
       }
 
       .form-section {
-        padding: 2rem 1.5rem;
+        padding: 3rem;
       }
 
       .btn-group {
@@ -746,8 +755,8 @@
             <div class="stat-label">Steps, fully automated</div>
           </div>
           <div>
-            <div class="stat-value">0</div>
-            <div class="stat-label">Portal logins required</div>
+            <div class="stat-value">Handled</div>
+            <div class="stat-label">We handle county portals for you</div>
           </div>
           <div>
             <div class="stat-value">FL</div>
@@ -764,7 +773,7 @@
       <div class="section-header">
         <div class="section-label">How It Works</div>
         <h2 class="section-title">From job details to approved permit</h2>
-        <p class="section-desc">Five automated steps. Zero manual portal work.</p>
+        <p class="section-desc">Five automated steps. You never touch a portal.</p>
       </div>
       <div class="pipeline">
         <div class="pipeline-step">
@@ -887,14 +896,14 @@
     <div class="container">
       <div class="section-header">
         <div class="section-label">Pricing</div>
-        <h2 class="section-title">Simple, transparent pricing</h2>
-        <p class="section-desc">Pay per permit. No surprises.</p>
+        <h2 class="section-title">Simple Monthly Pricing</h2>
+        <p class="section-desc">No per-permit fees. No surprises. Cancel anytime.</p>
       </div>
       <div class="pricing-grid">
         <div class="pricing-card">
           <div class="pricing-name">Starter</div>
-          <div class="pricing-price">$49<span>/permit</span></div>
-          <div class="pricing-volume">Up to 10 permits per month</div>
+          <div class="pricing-price">$750<span>/month</span></div>
+          <div class="pricing-volume">Up to 10 permits/month</div>
           <ul class="pricing-features">
             <li>Full permit automation</li>
             <li>NOC generation &amp; notarization</li>
@@ -907,8 +916,8 @@
         <div class="pricing-card featured">
           <div class="pricing-badge">Most Popular</div>
           <div class="pricing-name">Growth</div>
-          <div class="pricing-price">$39<span>/permit</span></div>
-          <div class="pricing-volume">11–50 permits per month</div>
+          <div class="pricing-price">$1,875<span>/month</span></div>
+          <div class="pricing-volume">11–25 permits/month</div>
           <ul class="pricing-features">
             <li>Everything in Starter</li>
             <li>Priority processing</li>
@@ -919,11 +928,24 @@
           <a href="#demo" class="btn btn-primary" style="width: 100%;">Get Started</a>
         </div>
         <div class="pricing-card">
-          <div class="pricing-name">Enterprise</div>
-          <div class="pricing-price">Custom</div>
-          <div class="pricing-volume">50+ permits per month</div>
+          <div class="pricing-name">Scale</div>
+          <div class="pricing-price">$3,750<span>/month</span></div>
+          <div class="pricing-volume">25–50 permits/month</div>
           <ul class="pricing-features">
             <li>Everything in Growth</li>
+            <li>Dedicated processing queue</li>
+            <li>Advanced reporting</li>
+            <li>Multiple team roles</li>
+            <li>Phone &amp; email support</li>
+          </ul>
+          <a href="#demo" class="btn btn-secondary" style="width: 100%;">Get Started</a>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-name">Enterprise</div>
+          <div class="pricing-price">Contact Sales</div>
+          <div class="pricing-volume">50+ permits/month</div>
+          <ul class="pricing-features">
+            <li>Everything in Scale</li>
             <li>Custom county onboarding</li>
             <li>Dedicated account manager</li>
             <li>SLA guarantees</li>
@@ -932,7 +954,7 @@
           <a href="#demo" class="btn btn-secondary" style="width: 100%;">Contact Sales</a>
         </div>
       </div>
-      <p class="pricing-note"><strong>No monthly minimums.</strong> Pay per permit.</p>
+      <p class="pricing-disclaimer">* Monthly subscription covers Dart iQ software and automation services only. Permit application fees, notarization fees, county recording fees, and any other government or third-party fees are not included and are billed separately or passed through at cost.</p>
     </div>
   </section>
 
