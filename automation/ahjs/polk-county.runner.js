@@ -50,7 +50,7 @@ async function waitForPortalPostbackQuiet(page, maxMs) {
   }
 }
 
-async function clickSaveAndResumeLater(page) {
+async function clickSaveAndResumeLater(page, config) {
   await page.evaluate(function() {
     var mask = document.getElementById('dvACADialogLayerMask')
     if (mask) mask.remove()
@@ -1005,7 +1005,7 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
       assertSupabaseOk(await supabase.from('jobs').update(updateData).eq('id', jobData.id), 'Save parcel and legal description on job')
       console.log('  ✓ Parcel saved: ' + parcelNumber)
 
-      var urlBeforeSave = await clickSaveAndResumeLater(page)
+      var urlBeforeSave = await clickSaveAndResumeLater(page, config)
       console.log('  ✓ Save and Resume Later clicked')
 
       var saveResult = await confirmPortalDraftSaved(page, urlBeforeSave)
