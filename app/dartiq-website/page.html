@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DartiQ — The Intelligent Permit Platform. Automate Florida roofing permits end-to-end, from parcel lookup to recorded NOC to permit submission.">
+  <title>DartiQ — The Intelligent Permit Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0f172a;
+      --navy-light: #1e293b;
+      --navy-lighter: #334155;
+      --blue: #3b82f6;
+      --blue-light: #60a5fa;
+      --blue-glow: rgba(59, 130, 246, 0.35);
+      --white: #ffffff;
+      --gray: #94a3b8;
+      --gray-light: #cbd5e1;
+      --success: #22c55e;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--navy);
+      color: var(--white);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Nav */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 800;
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--blue), var(--blue-light));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+
+    .nav-links {
+      display: none;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 0.9rem;
+      color: var(--gray-light);
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--white);
+    }
+
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.6rem 1.25rem;
+      background: var(--blue);
+      color: var(--white);
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 8px;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .nav-cta:hover {
+      background: var(--blue-light);
+      transform: translateY(-1px);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.875rem 1.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: var(--white);
+      box-shadow: 0 4px 24px var(--blue-glow);
+    }
+
+    .btn-primary:hover {
+      background: var(--blue-light);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px var(--blue-glow);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--white);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--blue);
+      color: var(--blue-light);
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 8rem 0 5rem;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(59, 130, 246, 0.18), transparent),
+        radial-gradient(ellipse 50% 40% at 80% 60%, rgba(59, 130, 246, 0.08), transparent);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, black, transparent);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      max-width: 720px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.875rem;
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--blue-light);
+      margin-bottom: 1.5rem;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.25rem;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--white), var(--blue-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(1.05rem, 2.5vw, 1.25rem);
+      color: var(--gray-light);
+      max-width: 580px;
+      margin-bottom: 2.5rem;
+      line-height: 1.7;
+    }
+
+    .hero-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2.5rem;
+      margin-top: 4rem;
+      padding-top: 2.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--blue-light);
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--gray);
+      margin-top: 0.25rem;
+    }
+
+    /* Sections */
+    section {
+      padding: 6rem 0;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 640px;
+      margin: 0 auto 4rem;
+    }
+
+    .section-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--blue);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+
+    .section-desc {
+      color: var(--gray-light);
+      font-size: 1.05rem;
+    }
+
+    /* Pipeline */
+    .pipeline {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .pipeline-step {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 1.5rem;
+      position: relative;
+      padding-bottom: 2.5rem;
+    }
+
+    .pipeline-step:last-child {
+      padding-bottom: 0;
+    }
+
+    .pipeline-step:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 31px;
+      top: 64px;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--blue), rgba(59, 130, 246, 0.2));
+    }
+
+    .step-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--navy-light);
+      border: 2px solid rgba(59, 130, 246, 0.3);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      position: relative;
+      z-index: 1;
+      flex-shrink: 0;
+    }
+
+    .step-content {
+      padding-top: 0.5rem;
+    }
+
+    .step-number {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.35rem;
+    }
+
+    .step-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+
+    .step-desc {
+      color: var(--gray-light);
+      font-size: 0.95rem;
+    }
+
+    /* Features */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .feature-card {
+      background: var(--navy-light);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 2rem;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(59, 130, 246, 0.3);
+      transform: translateY(-4px);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(59, 130, 246, 0.12);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card p {
+      color: var(--gray-light);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* Audience */
+    .audience-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .audience-card {
+      background: linear-gradient(135deg, var(--navy-light), rgba(30, 41, 59, 0.5));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .audience-card .emoji {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .audience-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .audience-card p {
+      color: var(--gray-light);
+      font-size: 0.9rem;
+    }
+
+    /* Pricing */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .pricing-card {
+      background: var(--navy-light);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      position: relative;
+    }
+
+    .pricing-card.featured {
+      border-color: var(--blue);
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.12), var(--navy-light));
+      box-shadow: 0 0 60px rgba(59, 130, 246, 0.15);
+    }
+
+    .pricing-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--blue);
+      color: var(--white);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.35rem 1rem;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+
+    .pricing-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gray-light);
+      margin-bottom: 0.5rem;
+    }
+
+    .pricing-price {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+    }
+
+    .pricing-price span {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--gray);
+    }
+
+    .pricing-volume {
+      font-size: 0.85rem;
+      color: var(--gray);
+      margin-bottom: 1.5rem;
+    }
+
+    .pricing-features {
+      list-style: none;
+      margin-bottom: 2rem;
+    }
+
+    .pricing-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.9rem;
+      color: var(--gray-light);
+      margin-bottom: 0.75rem;
+    }
+
+    .pricing-features li::before {
+      content: '✓';
+      color: var(--blue);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .pricing-note {
+      text-align: center;
+      margin-top: 2.5rem;
+      font-size: 1rem;
+      color: var(--gray-light);
+    }
+
+    .pricing-note strong {
+      color: var(--white);
+    }
+
+    /* Form */
+    .form-section {
+      background: var(--navy-light);
+      border-radius: 24px;
+      padding: 3rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--gray-light);
+    }
+
+    input, select {
+      padding: 0.8rem 1rem;
+      background: var(--navy);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      color: var(--white);
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--blue);
+    }
+
+    input::placeholder {
+      color: var(--gray);
+    }
+
+    select option {
+      background: var(--navy);
+    }
+
+    .form-success {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .form-success.visible {
+      display: block;
+    }
+
+    .form-success .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-success h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-success p {
+      color: var(--gray-light);
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 3rem 0 2rem;
+    }
+
+    .footer-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      text-align: center;
+    }
+
+    .footer-brand {
+      font-size: 0.9rem;
+      color: var(--gray);
+    }
+
+    .footer-tagline {
+      font-size: 0.85rem;
+      color: var(--gray);
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-size: 0.85rem;
+      color: var(--gray-light);
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--blue-light);
+    }
+
+    /* Responsive */
+    @media (min-width: 768px) {
+      .nav-links {
+        display: flex;
+      }
+
+      .pipeline {
+        max-width: 640px;
+        margin: 0 auto;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .hero {
+        padding-top: 6rem;
+      }
+
+      .hero-stats {
+        gap: 1.5rem;
+      }
+
+      .form-section {
+        padding: 2rem 1.5rem;
+      }
+
+      .btn-group {
+        flex-direction: column;
+      }
+
+      .btn-group .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="#" class="logo">
+        <div class="logo-icon">D</div>
+        DartiQ
+      </a>
+      <ul class="nav-links">
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#demo">Demo</a></li>
+      </ul>
+      <a href="#demo" class="nav-cta">Request a Demo</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="badge">
+          <span class="badge-dot"></span>
+          The Intelligent Permit Platform
+        </div>
+        <h1><span>Permits on Autopilot</span></h1>
+        <p class="hero-sub">
+          DartiQ automates Florida roofing permits end-to-end. From parcel lookup to recorded NOC to permit submission — without touching a portal.
+        </p>
+        <div class="btn-group">
+          <a href="#demo" class="btn btn-primary">Request a Demo</a>
+          <a href="#how-it-works" class="btn btn-secondary">See How It Works</a>
+        </div>
+        <div class="hero-stats">
+          <div>
+            <div class="stat-value">5</div>
+            <div class="stat-label">Steps, fully automated</div>
+          </div>
+          <div>
+            <div class="stat-value">0</div>
+            <div class="stat-label">Portal logins required</div>
+          </div>
+          <div>
+            <div class="stat-value">FL</div>
+            <div class="stat-label">Built for Florida contractors</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">How It Works</div>
+        <h2 class="section-title">From job details to approved permit</h2>
+        <p class="section-desc">Five automated steps. Zero manual portal work.</p>
+      </div>
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="step-icon">📋</div>
+          <div class="step-content">
+            <div class="step-number">Step 1</div>
+            <div class="step-title">Submit job details</div>
+            <p class="step-desc">Enter the property address and job scope. DartiQ handles everything from there.</p>
+          </div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-icon">🔍</div>
+          <div class="step-content">
+            <div class="step-number">Step 2</div>
+            <div class="step-title">Parcel &amp; legal description retrieved</div>
+            <p class="step-desc">DartiQ automatically pulls parcel data and legal descriptions from county records.</p>
+          </div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-icon">📄</div>
+          <div class="step-content">
+            <div class="step-number">Step 3</div>
+            <div class="step-title">NOC generated &amp; sent for signing</div>
+            <p class="step-desc">Notice of Commencement is generated and sent to the homeowner for remote digital notarization.</p>
+          </div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-icon">🏛️</div>
+          <div class="step-content">
+            <div class="step-number">Step 4</div>
+            <div class="step-title">NOC recorded with county</div>
+            <p class="step-desc">The notarized NOC is eRecorded with the county clerk automatically — no trips to the courthouse.</p>
+          </div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-icon">✅</div>
+          <div class="step-content">
+            <div class="step-number">Step 5</div>
+            <div class="step-title">Permit submitted &amp; approved</div>
+            <p class="step-desc">DartiQ navigates the AHJ portal, submits the permit application, and tracks approval status in real time.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" style="background: rgba(30, 41, 59, 0.3);">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Features</div>
+        <h2 class="section-title">Everything you need to scale permits</h2>
+        <p class="section-desc">Purpose-built automation for Florida roofing workflows.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🤖</div>
+          <h3>Automated Portal Navigation</h3>
+          <p>DartiQ logs into county portals, fills forms, uploads documents, and submits applications — hands-free.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📝</div>
+          <h3>Digital NOC Generation</h3>
+          <p>Automatically generate compliant Notice of Commencement documents from parcel and job data.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">✍️</div>
+          <h3>Remote Online Notarization</h3>
+          <p>Homeowners sign and notarize NOCs remotely — no in-person appointments required.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📡</div>
+          <h3>eRecording Integration</h3>
+          <p>Notarized documents are electronically recorded with the county clerk automatically.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🗺️</div>
+          <h3>Multi-County Support</h3>
+          <p>Polk County, Lee County, and expanding — one platform for all your Florida jobs.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Contractor Portal</h3>
+          <p>Real-time job status, document access, and permit tracking in one dashboard.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Who It's For -->
+  <section id="who">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Who It's For</div>
+        <h2 class="section-title">Built for Florida roofing professionals</h2>
+        <p class="section-desc">Whether you're a solo operator or scaling a team, DartiQ removes the permit bottleneck.</p>
+      </div>
+      <div class="audience-grid">
+        <div class="audience-card">
+          <div class="emoji">🏠</div>
+          <h3>Florida Roofing Contractors</h3>
+          <p>Stop spending hours on portals. Focus on roofs, not paperwork.</p>
+        </div>
+        <div class="audience-card">
+          <div class="emoji">⚡</div>
+          <h3>Permit Expeditors</h3>
+          <p>Automate repetitive workflows and handle more clients without adding headcount.</p>
+        </div>
+        <div class="audience-card">
+          <div class="emoji">📈</div>
+          <h3>Scaling Roofing Companies</h3>
+          <p>Processing 10+ jobs per month? DartiQ keeps permit throughput from becoming your ceiling.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" style="background: rgba(30, 41, 59, 0.3);">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Pricing</div>
+        <h2 class="section-title">Simple, transparent pricing</h2>
+        <p class="section-desc">Pay per permit. No surprises.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="pricing-name">Starter</div>
+          <div class="pricing-price">$49<span>/permit</span></div>
+          <div class="pricing-volume">Up to 10 permits per month</div>
+          <ul class="pricing-features">
+            <li>Full permit automation</li>
+            <li>NOC generation &amp; notarization</li>
+            <li>eRecording included</li>
+            <li>Contractor portal access</li>
+            <li>Email support</li>
+          </ul>
+          <a href="#demo" class="btn btn-secondary" style="width: 100%;">Get Started</a>
+        </div>
+        <div class="pricing-card featured">
+          <div class="pricing-badge">Most Popular</div>
+          <div class="pricing-name">Growth</div>
+          <div class="pricing-price">$39<span>/permit</span></div>
+          <div class="pricing-volume">11–50 permits per month</div>
+          <ul class="pricing-features">
+            <li>Everything in Starter</li>
+            <li>Priority processing</li>
+            <li>Multi-county support</li>
+            <li>Team member accounts</li>
+            <li>Priority support</li>
+          </ul>
+          <a href="#demo" class="btn btn-primary" style="width: 100%;">Get Started</a>
+        </div>
+        <div class="pricing-card">
+          <div class="pricing-name">Enterprise</div>
+          <div class="pricing-price">Custom</div>
+          <div class="pricing-volume">50+ permits per month</div>
+          <ul class="pricing-features">
+            <li>Everything in Growth</li>
+            <li>Custom county onboarding</li>
+            <li>Dedicated account manager</li>
+            <li>SLA guarantees</li>
+            <li>Custom integrations</li>
+          </ul>
+          <a href="#demo" class="btn btn-secondary" style="width: 100%;">Contact Sales</a>
+        </div>
+      </div>
+      <p class="pricing-note"><strong>No monthly minimums.</strong> Pay per permit.</p>
+    </div>
+  </section>
+
+  <!-- Demo Form -->
+  <section id="demo">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Early Access</div>
+        <h2 class="section-title">Request a demo</h2>
+        <p class="section-desc">Join Florida contractors already on the waitlist.</p>
+      </div>
+      <div class="form-section">
+        <form id="demo-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="name">Full Name</label>
+              <input type="text" id="name" name="name" placeholder="John Smith" required>
+            </div>
+            <div class="form-group">
+              <label for="company">Company</label>
+              <input type="text" id="company" name="company" placeholder="ABC Roofing LLC" required>
+            </div>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" placeholder="john@abcroofing.com" required>
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone</label>
+              <input type="tel" id="phone" name="phone" placeholder="(555) 555-5555" required>
+            </div>
+            <div class="form-group full">
+              <label for="volume">Monthly Permit Volume</label>
+              <select id="volume" name="volume" required>
+                <option value="" disabled selected>Select volume...</option>
+                <option value="1-10">1–10 permits/month</option>
+                <option value="11-50">11–50 permits/month</option>
+                <option value="51-100">51–100 permits/month</option>
+                <option value="100+">100+ permits/month</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Get Early Access</button>
+        </form>
+        <div class="form-success" id="form-success">
+          <div class="icon">🎉</div>
+          <h3>You're on the list!</h3>
+          <p>Thanks for your interest in DartiQ. We'll be in touch shortly to schedule your demo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container footer-inner">
+      <div class="logo">
+        <div class="logo-icon">D</div>
+        DartiQ
+      </div>
+      <p class="footer-brand">© 2026 Lightsey Technologies, LLC</p>
+      <p class="footer-tagline">Built for Florida contractors</p>
+      <ul class="footer-links">
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms of Service</a></li>
+        <li><a href="mailto:hello@dartiq.com">Contact</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('demo-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      this.style.display = 'none';
+      document.getElementById('form-success').classList.add('visible');
+    });
+  </script>
+</body>
+</html>
