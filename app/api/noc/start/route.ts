@@ -1,6 +1,6 @@
 // app/api/noc/start/route.ts
-// Starts the NOC phase for a job after parcel_number has been saved
-import { runNocPhaseForJob } from '../../../../lib/noc/run-noc-phase.js'
+// Queues NOC generation — worker picks up the run and executes automation
+import { createClient } from '../../../../lib/supabase-server.js'
 import { authenticateRequest, assertJobAccess } from '../../../../lib/auth/session.js'
 import { isInternalApiRequest } from '../../../../lib/auth/internal-api.js'
 
@@ -16,7 +16,7 @@ function jsonResponse(body: unknown, status = 200) {
 
 async function authorizeNocStart(request: Request, jobId: string) {
   if (isInternalApiRequest(request)) {
-    return { ok: true as const }
+    return { ok: true as const, supabase: createClient() }
   }
 
   const context = await authenticateRequest(request)
@@ -24,16 +24,14 @@ async function authorizeNocStart(request: Request, jobId: string) {
     return { ok: false as const, status: context.status, error: context.error }
   }
 
-  if (context.isSuperAdmin) {
-    return { ok: true as const }
+  if (!context.isSuperAdmin) {
+    const access = await assertJobAccess(context.supabase, jobId, context.companyId)
+    if (access.error) {
+      return { ok: false as const, status: access.status, error: access.error }
+    }
   }
 
-  const access = await assertJobAccess(context.supabase, jobId, context.companyId)
-  if (access.error) {
-    return { ok: false as const, status: access.status, error: access.error }
-  }
-
-  return { ok: true as const }
+  return { ok: true as const, supabase: context.supabase }
 }
 
 export async function POST(request: Request) {
@@ -60,29 +58,51 @@ export async function POST(request: Request) {
       return jsonResponse({ error: auth.error }, auth.status)
     }
 
-    const phase = await runNocPhaseForJob(jobId)
-    const chainMod = await import('../../../../lib/automation/noc-after-noc-core.js')
-    const continueAfterNocGenerated =
-      chainMod.continueAfterNocGenerated ||
-      (chainMod.default && chainMod.default.continueAfterNocGenerated)
-    const chainResult = await continueAfterNocGenerated(jobId, { waitForProofCompletion: false })
+    const { data: job, error: jobError } = await auth.supabase
+      .from('jobs')
+      .select('id')
+      .eq('id', jobId)
+      .maybeSingle()
+
+    if (jobError) {
+      return jsonResponse({ error: 'Job lookup failed' }, 500)
+    }
+    if (!job) {
+      return jsonResponse({ error: 'Job not found' }, 404)
+    }
+
+    const { data: run, error: runError } = await auth.supabase
+      .from('automation_runs')
+      .insert({
+        job_id: jobId,
+        run_type: 'noc_generate',
+        run_status: 'queued',
+        started_at: new Date().toISOString(),
+        attempts: 0,
+      })
+      .select('id')
+      .single()
+
+    if (runError) {
+      console.error('NOC start queue error:', runError.message)
+      return jsonResponse({ error: 'Failed to queue NOC generation: ' + runError.message }, 500)
+    }
+
+    await auth.supabase
+      .from('jobs')
+      .update({ job_status: 'automation_running' })
+      .eq('id', jobId)
 
     return jsonResponse({
       success: true,
-      jobId: phase.jobId,
-      status: phase.status,
-      nocStatus: phase.nocStatus,
-      nocFilePath: phase.nocFilePath,
-      pipeline: phase.pipeline,
-      chain: chainResult,
+      jobId,
+      runId: run.id,
+      status: 'queued',
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
-    const statusCode = typeof err === 'object' && err !== null && 'statusCode' in err
-      ? Number((err as { statusCode?: number }).statusCode) || 500
-      : 500
     console.error('NOC start error:', message)
-    return jsonResponse({ error: message }, statusCode)
+    return jsonResponse({ error: message }, 500)
   }
 }
 
