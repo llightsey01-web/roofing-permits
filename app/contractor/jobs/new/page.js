@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../../../lib/supabase'
 import { safeGetSession, redirectIfStaleSession } from '../../../../lib/auth/safe-auth'
-import { contractorTheme, contractorCardStyle } from '../../../../lib/ui/contractor-theme'
+import { contractorTheme, contractorCardStyle, contractorPrimaryButtonStyle } from '../../../../lib/ui/contractor-theme'
 
 const emptyMaterial = { manufacturer: '', product_name: '', approval_number: '' }
 
@@ -12,6 +12,7 @@ export default function ContractorNewJobPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
   const [products, setProducts] = useState([])
   const [detectedAHJ, setDetectedAHJ] = useState(null)
   const [ahjLoading, setAhjLoading] = useState(false)
@@ -96,6 +97,7 @@ export default function ContractorNewJobPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setSuccess(false)
 
     const supabase = createClient()
     const { session, staleSession } = await safeGetSession(supabase)
@@ -121,31 +123,65 @@ export default function ContractorNewJobPage() {
 
     const result = await response.json()
     if (!response.ok) {
-      setError(result.error || 'Failed to save job')
+      setError(result.error || 'Failed to save application')
       setLoading(false)
     } else {
-      router.push('/contractor/jobs/' + result.job.id)
+      setSuccess(true)
+      setLoading(false)
+      setTimeout(() => router.push('/contractor/jobs/' + result.job.id), 1200)
     }
   }
 
   const inputStyle = {
-    width: '100%', padding: '11px 14px', border: '1px solid ' + contractorTheme.border,
-    borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box',
-    backgroundColor: 'white', color: contractorTheme.textBody,
+    width: '100%',
+    padding: '11px 14px',
+    border: '1px solid ' + contractorTheme.border,
+    borderRadius: '10px',
+    fontSize: '14px',
+    boxSizing: 'border-box',
+    backgroundColor: '#ffffff',
+    color: contractorTheme.textBody,
   }
   const labelStyle = { display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: contractorTheme.text }
   const sectionStyle = { ...contractorCardStyle(), padding: '24px', marginBottom: '20px' }
-  const sectionTitleStyle = { fontSize: '16px', fontWeight: '600', color: contractorTheme.text, marginBottom: '20px', marginTop: 0, paddingBottom: '12px', borderBottom: '1px solid ' + contractorTheme.border }
-  const gridStyle = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }
+  const sectionTitleStyle = {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: contractorTheme.text,
+    marginBottom: '8px',
+    marginTop: 0,
+  }
+  const sectionDescStyle = { fontSize: '13px', color: contractorTheme.textMuted, margin: '0 0 20px 0' }
+  const gridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }
 
   return (
-    <div style={{ maxWidth: '800px', margin: '32px auto', padding: '0 32px' }}>
-      <h1 style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: '0 0 8px 0' }}>Start a new job</h1>
-      <p style={{ fontSize: '15px', color: contractorTheme.textMuted, margin: '0 0 24px 0' }}>Tell us about the homeowner and property — we&apos;ll handle the rest</p>
+    <div style={{ maxWidth: '800px', margin: '28px auto', padding: '0 24px 48px' }}>
+      <h1 style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: '0 0 8px 0' }}>
+        New permit application
+      </h1>
+      <p style={{ fontSize: '15px', color: contractorTheme.textMuted, margin: '0 0 24px 0' }}>
+        DartiQ will handle parcel lookup, permit drafting, NOC, and county submission.
+      </p>
+
+      {success && (
+        <div style={{
+          padding: '14px 18px',
+          backgroundColor: contractorTheme.successSoft,
+          borderRadius: '10px',
+          marginBottom: '20px',
+          color: contractorTheme.success,
+          fontSize: '14px',
+          fontWeight: '600',
+          border: '1px solid #bbf7d0',
+        }}>
+          Application submitted successfully. Redirecting to your application...
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div style={sectionStyle}>
-          <h2 style={sectionTitleStyle}>Homeowner</h2>
+          <h2 style={sectionTitleStyle}>1. Homeowner information</h2>
+          <p style={sectionDescStyle}>Who owns the property and how can we reach them?</p>
           <div style={gridStyle}>
             <div>
               <label style={labelStyle}>Owner name *</label>
@@ -163,9 +199,10 @@ export default function ContractorNewJobPage() {
         </div>
 
         <div style={sectionStyle}>
-          <h2 style={sectionTitleStyle}>Property</h2>
+          <h2 style={sectionTitleStyle}>2. Property location</h2>
+          <p style={sectionDescStyle}>We use this address to detect the correct county AHJ.</p>
           <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Property address *</label>
+            <label style={labelStyle}>Street address *</label>
             <input style={inputStyle} name="property_address" value={form.property_address} onChange={handleChange} required />
           </div>
           <div style={gridStyle}>
@@ -179,17 +216,30 @@ export default function ContractorNewJobPage() {
             </div>
             <div>
               <label style={labelStyle}>Zip *</label>
-              <input style={inputStyle} name="property_zip" value={form.property_zip} onChange={handleChange} onBlur={handleAHJResolve} required />
+              <input
+                style={inputStyle}
+                name="property_zip"
+                value={form.property_zip}
+                onChange={handleChange}
+                onBlur={handleAHJResolve}
+                required
+              />
             </div>
           </div>
-          {ahjLoading && <p style={{ fontSize: '13px', color: '#64748b', marginTop: '12px' }}>Detecting AHJ...</p>}
+          {ahjLoading && <p style={{ fontSize: '13px', color: contractorTheme.textMuted, marginTop: '12px' }}>Detecting AHJ...</p>}
           {detectedAHJ && !ahjLoading && (
-            <p style={{ fontSize: '13px', marginTop: '12px', color: '#1d4ed8' }}>AHJ detected: <strong>{detectedAHJ.name}</strong></p>
+            <p style={{ fontSize: '13px', marginTop: '12px', color: contractorTheme.accent }}>
+              AHJ detected: <strong>{detectedAHJ.name}</strong>
+            </p>
           )}
           {!detectedAHJ && !ahjLoading && form.property_zip.length === 5 && (
             <div style={{ marginTop: '12px' }}>
               <label style={labelStyle}>Select AHJ manually</label>
-              <select style={inputStyle} value={form.ahj_id} onChange={e => setForm(prev => ({ ...prev, ahj_id: e.target.value }))}>
+              <select
+                style={inputStyle}
+                value={form.ahj_id}
+                onChange={e => setForm(prev => ({ ...prev, ahj_id: e.target.value }))}
+              >
                 <option value="">Select AHJ</option>
                 {allAHJs.map(ahj => <option key={ahj.id} value={ahj.id}>{ahj.name}</option>)}
               </select>
@@ -198,17 +248,25 @@ export default function ContractorNewJobPage() {
         </div>
 
         <div style={sectionStyle}>
-          <h2 style={sectionTitleStyle}>Job scope</h2>
+          <h2 style={sectionTitleStyle}>3. Job details</h2>
+          <p style={sectionDescStyle}>Scope, roof type, and contract value for the permit.</p>
           <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Scope of work</label>
-            <textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} name="scope_of_work" value={form.scope_of_work} onChange={handleChange} />
+            <textarea
+              style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
+              name="scope_of_work"
+              value={form.scope_of_work}
+              onChange={handleChange}
+            />
           </div>
           <div style={gridStyle}>
             <div>
               <label style={labelStyle}>Roof type</label>
               <select style={inputStyle} name="roof_type" value={form.roof_type} onChange={handleChange}>
                 <option value="">Select roof type</option>
-                {['Shingle', 'Tile', 'Metal', 'Flat', 'Modified Bitumen'].map(t => <option key={t} value={t}>{t}</option>)}
+                {['Shingle', 'Tile', 'Metal', 'Flat', 'Modified Bitumen'].map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -216,57 +274,95 @@ export default function ContractorNewJobPage() {
               <input style={inputStyle} type="number" name="squares" value={form.squares} onChange={handleChange} placeholder="e.g. 24" />
             </div>
             <div>
-              <label style={labelStyle}>Valuation ($)</label>
+              <label style={labelStyle}>Contract value ($)</label>
               <input style={inputStyle} type="number" name="valuation" value={form.valuation} onChange={handleChange} />
             </div>
           </div>
         </div>
 
         <div style={sectionStyle}>
-          <h2 style={sectionTitleStyle}>Product approval</h2>
+          <h2 style={sectionTitleStyle}>4. Product approval</h2>
+          <p style={sectionDescStyle}>Florida-approved roofing product for this job.</p>
           <div style={gridStyle}>
             <div>
               <label style={labelStyle}>Manufacturer</label>
-              <select style={inputStyle} value={primaryMaterial.manufacturer}
-                onChange={e => setPrimaryMaterial({ manufacturer: e.target.value, product_name: '', approval_number: '' })}>
+              <select
+                style={inputStyle}
+                value={primaryMaterial.manufacturer}
+                onChange={e => setPrimaryMaterial({ manufacturer: e.target.value, product_name: '', approval_number: '' })}
+              >
                 <option value="">Select manufacturer</option>
                 {getManufacturers().map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
             <div>
               <label style={labelStyle}>Product</label>
-              <select style={inputStyle} value={primaryMaterial.product_name} disabled={!primaryMaterial.manufacturer}
+              <select
+                style={inputStyle}
+                value={primaryMaterial.product_name}
+                disabled={!primaryMaterial.manufacturer}
                 onChange={e => {
-                  const match = products.find(p => p.layer_type === 'primary' && p.manufacturer === primaryMaterial.manufacturer && p.product_name === e.target.value)
-                  setPrimaryMaterial({ ...primaryMaterial, product_name: e.target.value, approval_number: match?.approval_number || '' })
-                }}>
+                  const match = products.find(
+                    p => p.layer_type === 'primary' && p.manufacturer === primaryMaterial.manufacturer && p.product_name === e.target.value
+                  )
+                  setPrimaryMaterial({
+                    ...primaryMaterial,
+                    product_name: e.target.value,
+                    approval_number: match?.approval_number || '',
+                  })
+                }}
+              >
                 <option value="">Select product</option>
-                {getProducts(primaryMaterial.manufacturer).map(p => <option key={p.id} value={p.product_name}>{p.product_name}</option>)}
+                {getProducts(primaryMaterial.manufacturer).map(p => (
+                  <option key={p.id} value={p.product_name}>{p.product_name}</option>
+                ))}
               </select>
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={labelStyle}>FL approval #</label>
-              <input style={inputStyle} value={primaryMaterial.approval_number}
-                onChange={e => setPrimaryMaterial({ ...primaryMaterial, approval_number: e.target.value })} />
+              <input
+                style={inputStyle}
+                value={primaryMaterial.approval_number}
+                onChange={e => setPrimaryMaterial({ ...primaryMaterial, approval_number: e.target.value })}
+              />
             </div>
           </div>
         </div>
 
         <div style={sectionStyle}>
-          <h2 style={sectionTitleStyle}>Notes</h2>
-          <textarea style={{ ...inputStyle, height: '80px', resize: 'vertical' }} name="notes" value={form.notes} onChange={handleChange} placeholder="Internal notes..." />
+          <h2 style={sectionTitleStyle}>5. Internal notes</h2>
+          <p style={sectionDescStyle}>Optional notes visible only to your team.</p>
+          <textarea
+            style={{ ...inputStyle, height: '80px', resize: 'vertical' }}
+            name="notes"
+            value={form.notes}
+            onChange={handleChange}
+            placeholder="Gate codes, special instructions, etc."
+          />
         </div>
 
-        {error && <p style={{ color: '#ef4444', fontSize: '14px', marginBottom: '16px' }}>{error}</p>}
+        {error && (
+          <p style={{ color: contractorTheme.error, fontSize: '14px', marginBottom: '16px' }}>{error}</p>
+        )}
 
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '48px' }}>
-          <button type="button" onClick={() => router.push('/contractor/dashboard')}
-            style={{ padding: '12px 24px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: 'white', fontSize: '14px', cursor: 'pointer', color: '#475569' }}>
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => router.push('/contractor/dashboard')}
+            style={{
+              padding: '12px 24px',
+              border: '1px solid ' + contractorTheme.border,
+              borderRadius: '10px',
+              backgroundColor: '#ffffff',
+              fontSize: '14px',
+              cursor: 'pointer',
+              color: contractorTheme.textBody,
+            }}
+          >
             Cancel
           </button>
-          <button type="submit" disabled={loading}
-            style={{ padding: '12px 24px', background: loading ? '#94a3b8' : 'linear-gradient(135deg, #0284c7, #059669)', color: 'white', border: 'none', borderRadius: '999px', fontSize: '15px', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: '600' }}>
-            {loading ? 'Submitting...' : 'Submit job'}
+          <button type="submit" disabled={loading || success} style={contractorPrimaryButtonStyle(loading || success)}>
+            {loading ? 'Submitting...' : 'Start Permit Application'}
           </button>
         </div>
       </form>

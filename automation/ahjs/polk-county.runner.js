@@ -5,7 +5,7 @@ const { chromium } = require('playwright')
 const { Solver } = require('2captcha')
 const { logStep } = require('../shared/screenshot')
 const { handleRunError } = require('../shared/errors')
-const config = require('./configs/polk-county.config')
+const defaultConfig = require('./configs/polk-county.config')
 const { createClient } = require('@supabase/supabase-js')
 const { resolvePolkLegalDescription } = require('../../lib/parcels/polk-legal-description')
 const { triggerNocAfterPhase1 } = require('../../lib/automation/noc-trigger')
@@ -237,9 +237,11 @@ function parseAddress(fullAddress) {
   return { streetNo: streetNo, streetName: streetName, suffix: normalizedSuffix }
 }
 
-async function runPolkCounty(jobData, runId, runnerOptions) {
+async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hooks) {
+  var config = portalConfig || defaultConfig
+  var resolveLegalDescription = (hooks && hooks.resolveLegalDescription) || resolvePolkLegalDescription
   var browserOpts = runnerOptions || {}
-  console.log('\nStarting Polk County automation')
+  console.log('\nStarting ' + config.name + ' automation')
   console.log('Job: ' + jobData.owner_name + ' — ' + jobData.property_address)
   console.log('Run ID: ' + runId + '\n')
 
@@ -981,7 +983,7 @@ async function runPolkCounty(jobData, runId, runnerOptions) {
         subdivision: config.selectors.parcelSubdivision,
         parcelSearchBtn: config.selectors.parcelSearchBtn,
       }
-      var legalResult = await resolvePolkLegalDescription(
+      var legalResult = await resolveLegalDescription(
         page,
         parcelNumber.trim(),
         legalSelectors
@@ -1064,4 +1066,10 @@ async function runPolkCounty(jobData, runId, runnerOptions) {
   }
 }
 
-module.exports = { runPolkCounty }
+async function runPolkCounty(jobData, runId, runnerOptions) {
+  return runAccelaPortal(jobData, runId, runnerOptions, defaultConfig, {
+    resolveLegalDescription: resolvePolkLegalDescription,
+  })
+}
+
+module.exports = { runPolkCounty, runAccelaPortal }

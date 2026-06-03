@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../../lib/supabase'
 import { safeGetSession, safeGetUser, redirectIfStaleSession } from '../../../lib/auth/safe-auth'
-import { contractorTheme, contractorCardStyle } from '../../../lib/ui/contractor-theme'
+import { contractorTheme, contractorCardStyle, contractorPrimaryButtonStyle } from '../../../lib/ui/contractor-theme'
 
 export default function ContractorSettingsPage() {
   const router = useRouter()
@@ -48,45 +48,45 @@ export default function ContractorSettingsPage() {
 
   async function loadAll() {
     try {
-    const supabase = createClient()
-    const { user, staleSession } = await safeGetUser(supabase)
-    if (redirectIfStaleSession(router, staleSession)) return
-    if (!user) { router.replace('/login'); return }
+      const supabase = createClient()
+      const { user, staleSession } = await safeGetUser(supabase)
+      if (redirectIfStaleSession(router, staleSession)) return
+      if (!user) { router.replace('/login'); return }
 
-    const token = await getToken()
-    if (!token) return
-    const [companyRes, credRes, gatesRes, ahjRes] = await Promise.all([
-      fetch('/api/contractor/company', { headers: { Authorization: 'Bearer ' + token } }),
-      fetch('/api/contractor/credentials', { headers: { Authorization: 'Bearer ' + token } }),
-      fetch('/api/contractor/company/review-gates', { headers: { Authorization: 'Bearer ' + token } }),
-      supabase.from('ahj_portals').select('id, name, county_or_city').eq('is_active', true),
-    ])
+      const token = await getToken()
+      if (!token) return
+      const [companyRes, credRes, gatesRes, ahjRes] = await Promise.all([
+        fetch('/api/contractor/company', { headers: { Authorization: 'Bearer ' + token } }),
+        fetch('/api/contractor/credentials', { headers: { Authorization: 'Bearer ' + token } }),
+        fetch('/api/contractor/company/review-gates', { headers: { Authorization: 'Bearer ' + token } }),
+        supabase.from('ahj_portals').select('id, name, county_or_city').eq('is_active', true),
+      ])
 
-    const companyData = await companyRes.json()
-    if (companyRes.ok && companyData.company) {
-      const c = companyData.company
-      setForm({
-        name: c.name || '', address: c.address || '', city: c.city || '',
-        state: c.state || 'FL', zip: c.zip || '', phone: c.phone || '',
-        primary_email: c.primary_email || '', license_number: c.license_number || '',
-        qualifer_name: c.qualifer_name || c.qualifier_name || '',
-        qualifer_license: c.qualifer_license || c.qualifier_license || '',
-      })
-    }
+      const companyData = await companyRes.json()
+      if (companyRes.ok && companyData.company) {
+        const c = companyData.company
+        setForm({
+          name: c.name || '', address: c.address || '', city: c.city || '',
+          state: c.state || 'FL', zip: c.zip || '', phone: c.phone || '',
+          primary_email: c.primary_email || '', license_number: c.license_number || '',
+          qualifer_name: c.qualifer_name || c.qualifier_name || '',
+          qualifer_license: c.qualifer_license || c.qualifier_license || '',
+        })
+      }
 
-    const credData = await credRes.json()
-    if (credRes.ok) {
-      setCredentials(credData.credentials || [])
-      setEncryptionConfigured(credData.encryptionConfigured !== false)
-    }
+      const credData = await credRes.json()
+      if (credRes.ok) {
+        setCredentials(credData.credentials || [])
+        setEncryptionConfigured(credData.encryptionConfigured !== false)
+      }
 
-    const gatesData = await gatesRes.json()
-    if (gatesRes.ok && gatesData.review_gates) {
-      setReviewGates(gatesData.review_gates)
-    }
+      const gatesData = await gatesRes.json()
+      if (gatesRes.ok && gatesData.review_gates) {
+        setReviewGates(gatesData.review_gates)
+      }
 
-    setAhjs(ahjRes.data || [])
-    setLoading(false)
+      setAhjs(ahjRes.data || [])
+      setLoading(false)
     } catch (err) {
       console.error('[auth] Contractor settings load failed:', err)
       router.replace('/login')
@@ -197,36 +197,73 @@ export default function ContractorSettingsPage() {
   }
 
   if (loading) {
-    return <div style={{ padding: '48px', textAlign: 'center' }}><p style={{ color: '#64748b' }}>Loading settings...</p></div>
+    return (
+      <div style={{ padding: '48px', textAlign: 'center' }}>
+        <p style={{ color: contractorTheme.textMuted }}>Loading settings...</p>
+      </div>
+    )
   }
 
   const inputStyle = {
-    width: '100%', padding: '11px 14px', border: '1px solid ' + contractorTheme.border,
-    borderRadius: '10px', fontSize: '14px', boxSizing: 'border-box', backgroundColor: 'white',
+    width: '100%',
+    padding: '11px 14px',
+    border: '1px solid ' + contractorTheme.border,
+    borderRadius: '10px',
+    fontSize: '14px',
+    boxSizing: 'border-box',
+    backgroundColor: '#ffffff',
   }
   const labelStyle = { display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: contractorTheme.text }
   const sectionStyle = { ...contractorCardStyle(), padding: '24px', marginBottom: '20px' }
-  const sectionTitleStyle = { fontSize: '16px', fontWeight: '600', color: contractorTheme.text, marginBottom: '20px', marginTop: 0, paddingBottom: '12px', borderBottom: '1px solid ' + contractorTheme.border }
-  const grid2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }
+  const sectionTitleStyle = {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: contractorTheme.text,
+    marginBottom: '20px',
+    marginTop: 0,
+    paddingBottom: '12px',
+    borderBottom: '1px solid ' + contractorTheme.border,
+  }
+  const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }
 
   const configuredAhjIds = new Set(credentials.map(c => c.ahj_id))
   const availableAhjs = ahjs.filter(a => !configuredAhjIds.has(a.id) || (editingCred && a.id === editingCred.ahj_id))
 
   return (
-    <div style={{ maxWidth: '800px', margin: '32px auto', padding: '0 32px 48px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+    <div style={{ maxWidth: '800px', margin: '28px auto', padding: '0 24px 48px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-            <h1 style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: 0 }}>Your company</h1>
-            <p style={{ fontSize: '15px', color: contractorTheme.textMuted, margin: '6px 0 0 0' }}>Profile info and permit portal logins</p>
+          <h1 style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: 0 }}>Settings</h1>
+          <p style={{ fontSize: '15px', color: contractorTheme.textMuted, margin: '6px 0 0 0' }}>
+            Company profile, review preferences, and county portal logins
+          </p>
         </div>
         {saved && (
-          <span style={{ padding: '8px 16px', backgroundColor: '#dcfce7', borderRadius: '8px', fontSize: '13px', color: '#15803d' }}>
+          <span style={{
+            padding: '8px 16px',
+            backgroundColor: contractorTheme.successSoft,
+            borderRadius: '8px',
+            fontSize: '13px',
+            color: contractorTheme.success,
+            fontWeight: '600',
+          }}>
             Saved
           </span>
         )}
       </div>
 
-      {error && <div style={{ padding: '12px', backgroundColor: '#fee2e2', borderRadius: '8px', marginBottom: '16px', color: '#b91c1c', fontSize: '14px' }}>{error}</div>}
+      {error && (
+        <div style={{
+          padding: '12px',
+          backgroundColor: contractorTheme.errorSoft,
+          borderRadius: '8px',
+          marginBottom: '16px',
+          color: contractorTheme.error,
+          fontSize: '14px',
+        }}>
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSaveCompany}>
         <div style={sectionStyle}>
@@ -254,22 +291,19 @@ export default function ContractorSettingsPage() {
             <div><label style={labelStyle}>Qualifier name</label><input style={inputStyle} value={form.qualifer_name} onChange={e => setForm(p => ({ ...p, qualifer_name: e.target.value }))} /></div>
             <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Qualifier license #</label><input style={inputStyle} value={form.qualifer_license} onChange={e => setForm(p => ({ ...p, qualifer_license: e.target.value }))} /></div>
           </div>
-          <p style={{ fontSize: '12px', color: '#94a3b8', margin: '16px 0 0 0' }}>Logo upload — coming soon</p>
+          <p style={{ fontSize: '12px', color: contractorTheme.textMuted, margin: '16px 0 0 0' }}>Logo upload — coming soon</p>
         </div>
 
-        <button type="submit" disabled={saving} style={{
-          padding: '12px 28px', backgroundColor: saving ? '#94a3b8' : '#2563eb',
-          color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', marginBottom: '32px',
-        }}>
+        <button type="submit" disabled={saving} style={{ ...contractorPrimaryButtonStyle(saving), marginBottom: '32px' }}>
           {saving ? 'Saving...' : 'Save company info'}
         </button>
       </form>
 
       <form onSubmit={handleSaveReviewGates}>
         <div style={sectionStyle}>
-          <h2 style={sectionTitleStyle}>Review Preferences</h2>
+          <h2 style={sectionTitleStyle}>Review preferences</h2>
           <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '0 0 16px 0' }}>
-            Choose which stages you want to review before automation continues.
+            Choose which stages DartiQ should pause for your approval.
           </p>
           <label style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '16px', cursor: 'pointer' }}>
             <input
@@ -281,7 +315,7 @@ export default function ContractorSettingsPage() {
             <span>
               <strong style={{ display: 'block', color: contractorTheme.text, fontSize: '14px' }}>Review NOC before sending to homeowner</strong>
               <span style={{ fontSize: '13px', color: contractorTheme.textMuted }}>
-                We&apos;ll pause and show you the NOC before sending it to your customer for signing.
+                Pause and show the NOC before it is sent for homeowner signature.
               </span>
             </span>
           </label>
@@ -293,18 +327,15 @@ export default function ContractorSettingsPage() {
               style={{ marginTop: '4px' }}
             />
             <span>
-              <strong style={{ display: 'block', color: contractorTheme.text, fontSize: '14px' }}>Review permit before submitting to county</strong>
+              <strong style={{ display: 'block', color: contractorTheme.text, fontSize: '14px' }}>Review permit before county submission</strong>
               <span style={{ fontSize: '13px', color: contractorTheme.textMuted }}>
-                We&apos;ll pause and show you all filled permit fields before submitting to Polk County.
+                Pause and show all filled permit fields before submitting to the county.
               </span>
             </span>
           </label>
-          {reviewError && <p style={{ color: '#b91c1c', fontSize: '13px', marginBottom: '12px' }}>{reviewError}</p>}
-          {reviewSaved && <p style={{ color: '#15803d', fontSize: '13px', marginBottom: '12px' }}>Review preferences saved</p>}
-          <button type="submit" disabled={reviewSaving} style={{
-            padding: '10px 20px', backgroundColor: reviewSaving ? '#94a3b8' : contractorTheme.accent,
-            color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer',
-          }}>
+          {reviewError && <p style={{ color: contractorTheme.error, fontSize: '13px', marginBottom: '12px' }}>{reviewError}</p>}
+          {reviewSaved && <p style={{ color: contractorTheme.success, fontSize: '13px', marginBottom: '12px' }}>Review preferences saved</p>}
+          <button type="submit" disabled={reviewSaving} style={contractorPrimaryButtonStyle(reviewSaving)}>
             {reviewSaving ? 'Saving...' : 'Save preferences'}
           </button>
         </div>
@@ -312,13 +343,19 @@ export default function ContractorSettingsPage() {
 
       <div style={sectionStyle}>
         <h2 style={sectionTitleStyle}>AHJ portal credentials</h2>
-        <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 20px 0' }}>
-          Securely store login credentials for county permit portals (Polk, Orange FastTrack, Hillsborough, Accela, etc.).
-          Passwords are encrypted server-side and never displayed.
+        <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '0 0 20px 0' }}>
+          Securely store login credentials for county permit portals. Passwords are encrypted server-side and never displayed.
         </p>
 
         {!encryptionConfigured && (
-          <div style={{ padding: '12px 16px', backgroundColor: '#fef3c7', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', color: '#92400e' }}>
+          <div style={{
+            padding: '12px 16px',
+            backgroundColor: contractorTheme.warningSoft,
+            borderRadius: '8px',
+            marginBottom: '16px',
+            fontSize: '13px',
+            color: '#92400e',
+          }}>
             Server encryption is not configured. Contact your administrator to set CREDENTIAL_ENCRYPTION_KEY.
           </div>
         )}
@@ -327,23 +364,37 @@ export default function ContractorSettingsPage() {
           <div style={{ marginBottom: '24px' }}>
             {credentials.map(cred => (
               <div key={cred.id} style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '14px 16px', border: '1px solid #e2e8f0', borderRadius: '10px', marginBottom: '10px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '14px 16px',
+                border: '1px solid ' + contractorTheme.border,
+                borderRadius: '10px',
+                marginBottom: '10px',
+                flexWrap: 'wrap',
+                gap: '12px',
               }}>
                 <div>
-                  <p style={{ fontSize: '14px', fontWeight: '600', margin: 0, color: '#0f172a' }}>
+                  <p style={{ fontSize: '14px', fontWeight: '600', margin: 0, color: contractorTheme.text }}>
                     {cred.ahj_name || 'AHJ portal'}
                   </p>
-                  <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
+                  <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '4px 0 0 0' }}>
                     User: {cred.username} · Password: {cred.password_masked}
                   </p>
-                  {cred.notes && <p style={{ fontSize: '12px', color: '#94a3b8', margin: '4px 0 0 0' }}>{cred.notes}</p>}
+                  {cred.notes && <p style={{ fontSize: '12px', color: contractorTheme.textMuted, margin: '4px 0 0 0' }}>{cred.notes}</p>}
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button type="button" onClick={() => startEdit(cred)} style={{ fontSize: '13px', padding: '6px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', backgroundColor: 'white', cursor: 'pointer' }}>
+                  <button type="button" onClick={() => startEdit(cred)} style={{
+                    fontSize: '13px', padding: '6px 12px', border: '1px solid ' + contractorTheme.border,
+                    borderRadius: '8px', backgroundColor: '#ffffff', cursor: 'pointer',
+                  }}>
                     Update
                   </button>
-                  <button type="button" onClick={() => handleDeleteCredential(cred.id)} style={{ fontSize: '13px', padding: '6px 12px', border: '1px solid #fecaca', borderRadius: '6px', backgroundColor: '#fef2f2', color: '#b91c1c', cursor: 'pointer' }}>
+                  <button type="button" onClick={() => handleDeleteCredential(cred.id)} style={{
+                    fontSize: '13px', padding: '6px 12px', border: '1px solid #fecaca',
+                    borderRadius: '8px', backgroundColor: contractorTheme.errorSoft,
+                    color: contractorTheme.error, cursor: 'pointer',
+                  }}>
                     Delete
                   </button>
                 </div>
@@ -352,8 +403,13 @@ export default function ContractorSettingsPage() {
           </div>
         )}
 
-        <form onSubmit={handleSaveCredential} style={{ border: '1px solid #f1f5f9', borderRadius: '10px', padding: '20px', backgroundColor: '#fafafa' }}>
-          <p style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 16px 0', color: '#0f172a' }}>
+        <form onSubmit={handleSaveCredential} style={{
+          border: '1px solid ' + contractorTheme.border,
+          borderRadius: '10px',
+          padding: '20px',
+          backgroundColor: '#f8fafc',
+        }}>
+          <p style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 16px 0', color: contractorTheme.text }}>
             {editingCred ? 'Update credential' : 'Add credential'}
           </p>
           <div style={grid2}>
@@ -380,27 +436,25 @@ export default function ContractorSettingsPage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', marginTop: '16px', alignItems: 'center' }}>
-            <button type="submit" disabled={credSaving || !encryptionConfigured} style={{
-              padding: '10px 20px', backgroundColor: credSaving || !encryptionConfigured ? '#94a3b8' : '#2563eb',
-              color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer',
-            }}>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button type="submit" disabled={credSaving || !encryptionConfigured} style={contractorPrimaryButtonStyle(credSaving || !encryptionConfigured)}>
               {credSaving ? 'Saving...' : editingCred ? 'Replace credential' : 'Add credential'}
             </button>
             {editingCred && (
-              <button type="button" onClick={cancelEdit} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: 'white', fontSize: '14px', cursor: 'pointer' }}>
+              <button type="button" onClick={cancelEdit} style={{
+                padding: '10px 20px', border: '1px solid ' + contractorTheme.border,
+                borderRadius: '10px', backgroundColor: '#ffffff', fontSize: '14px', cursor: 'pointer',
+              }}>
                 Cancel
               </button>
             )}
-            <button type="button" disabled title="Coming soon" style={{
-              padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: '8px',
-              backgroundColor: '#f8fafc', fontSize: '14px', color: '#94a3b8', cursor: 'not-allowed',
-            }}>
-              Test connection (soon)
-            </button>
           </div>
           {credMessage && (
-            <p style={{ fontSize: '13px', marginTop: '12px', color: credMessage.includes('Failed') || credMessage.includes('required') ? '#b91c1c' : '#15803d' }}>
+            <p style={{
+              fontSize: '13px',
+              marginTop: '12px',
+              color: credMessage.includes('Failed') || credMessage.includes('required') ? contractorTheme.error : contractorTheme.success,
+            }}>
               {credMessage}
             </p>
           )}
