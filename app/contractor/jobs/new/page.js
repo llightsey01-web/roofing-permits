@@ -34,7 +34,10 @@ export default function ContractorNewJobPage() {
     ahj_id: '',
   })
 
+  const [showVentilation, setShowVentilation] = useState(false)
   const [primaryMaterial, setPrimaryMaterial] = useState({ ...emptyMaterial })
+  const [underlayment, setUnderlayment] = useState({ ...emptyMaterial })
+  const [ventilation, setVentilation] = useState({ ...emptyMaterial })
 
   useEffect(() => {
     const supabase = createClient()
@@ -78,15 +81,30 @@ export default function ContractorNewJobPage() {
     setAhjLoading(false)
   }
 
-  function getManufacturers() {
-    const mfrs = products.filter(p => p.layer_type === 'primary').map(p => p.manufacturer)
+  function getManufacturers(layerType) {
+    const mfrs = products.filter(p => p.layer_type === layerType).map(p => p.manufacturer)
     return [...new Set(mfrs)].sort()
   }
 
-  function getProducts(manufacturer) {
+  function getProducts(layerType, manufacturer) {
     return products
-      .filter(p => p.layer_type === 'primary' && p.manufacturer === manufacturer)
+      .filter(p => p.layer_type === layerType && p.manufacturer === manufacturer)
       .sort((a, b) => a.product_name.localeCompare(b.product_name))
+  }
+
+  function handleMaterialChange(setter, field, value, layerType, currentState) {
+    if (field === 'manufacturer') {
+      setter({ manufacturer: value, product_name: '', approval_number: '' })
+    } else if (field === 'product_name') {
+      const match = products.find(
+        p => p.layer_type === layerType &&
+          p.manufacturer === currentState.manufacturer &&
+          p.product_name === value
+      )
+      setter({ ...currentState, product_name: value, approval_number: match ? match.approval_number : '' })
+    } else {
+      setter(prev => ({ ...prev, [field]: value }))
+    }
   }
 
   function handleChange(e) {
@@ -95,6 +113,14 @@ export default function ContractorNewJobPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (!primaryMaterial.manufacturer || !primaryMaterial.product_name) {
+      setError('Primary material is required.')
+      return
+    }
+    if (!underlayment.manufacturer || !underlayment.product_name) {
+      setError('Underlayment is required.')
+      return
+    }
     setLoading(true)
     setError('')
     setSuccess(false)
@@ -108,7 +134,11 @@ export default function ContractorNewJobPage() {
       ...form,
       ahj_id: form.ahj_id || null,
       valuation: form.valuation ? parseFloat(form.valuation) : null,
-      roof_specs: primaryMaterial.manufacturer ? { primary_material: primaryMaterial } : {},
+      roof_specs: {
+        primary_material: primaryMaterial,
+        underlayment: underlayment,
+        ventilation: showVentilation ? ventilation : null,
+      },
       job_specs: { squares: form.squares || null },
     }
 
@@ -153,6 +183,84 @@ export default function ContractorNewJobPage() {
   }
   const sectionDescStyle = { fontSize: '13px', color: contractorTheme.textMuted, margin: '0 0 20px 0' }
   const gridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }
+
+  const subSectionStyle = {
+    border: '1px solid ' + contractorTheme.border,
+    borderRadius: '10px',
+    padding: '16px',
+    marginBottom: '16px',
+    backgroundColor: contractorTheme.accentSoft || 'rgba(59, 130, 246, 0.08)',
+  }
+
+  const subLabelStyle = {
+    fontSize: '11px',
+    fontWeight: '600',
+    color: contractorTheme.textMuted,
+    marginBottom: '12px',
+    marginTop: 0,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+  }
+
+  function MaterialLayer({ title, layerType, values, setter }) {
+    const manufacturers = getManufacturers(layerType)
+    const productList = getProducts(layerType, values.manufacturer)
+    const approvalFilled = Boolean(values.approval_number)
+    return (
+      <div style={subSectionStyle}>
+        <p style={subLabelStyle}>{title}</p>
+        <div style={gridStyle}>
+          <div>
+            <label style={labelStyle}>Manufacturer *</label>
+            <select
+              style={inputStyle}
+              value={values.manufacturer}
+              onChange={e => handleMaterialChange(setter, 'manufacturer', e.target.value, layerType, values)}
+            >
+              <option value="">Select manufacturer</option>
+              {manufacturers.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>Product name *</label>
+            <select
+              style={{
+                ...inputStyle,
+                backgroundColor: values.manufacturer ? inputStyle.backgroundColor : contractorTheme.accentSoft,
+                opacity: values.manufacturer ? 1 : 0.85,
+              }}
+              value={values.product_name}
+              onChange={e => handleMaterialChange(setter, 'product_name', e.target.value, layerType, values)}
+              disabled={!values.manufacturer}
+            >
+              <option value="">{values.manufacturer ? 'Select product' : 'Select manufacturer first'}</option>
+              {productList.map(p => <option key={p.id} value={p.product_name}>{p.product_name}</option>)}
+            </select>
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={labelStyle}>
+              FL product approval #
+              {approvalFilled && (
+                <span style={{ marginLeft: '8px', fontSize: '11px', color: contractorTheme.success, fontWeight: '400' }}>
+                  auto-filled
+                </span>
+              )}
+            </label>
+            <input
+              style={{
+                ...inputStyle,
+                backgroundColor: approvalFilled ? contractorTheme.successSoft : inputStyle.backgroundColor,
+                borderColor: approvalFilled ? '#86efac' : contractorTheme.border,
+              }}
+              value={values.approval_number}
+              onChange={e => handleMaterialChange(setter, 'approval_number', e.target.value, layerType, values)}
+              placeholder="Auto-fills when product is selected"
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ maxWidth: '800px', margin: '28px auto', padding: '0 24px 48px' }}>
@@ -281,52 +389,50 @@ export default function ContractorNewJobPage() {
         </div>
 
         <div style={sectionStyle}>
-          <h2 style={sectionTitleStyle}>4. Product approval</h2>
-          <p style={sectionDescStyle}>Florida-approved roofing product for this job.</p>
-          <div style={gridStyle}>
+          <h2 style={sectionTitleStyle}>4. Materials and product approvals</h2>
+          <p style={sectionDescStyle}>Florida-approved products by layer. Approval numbers auto-fill from the database.</p>
+          <MaterialLayer title="Primary material" layerType="primary" values={primaryMaterial} setter={setPrimaryMaterial} />
+          <MaterialLayer title="Underlayment" layerType="underlayment" values={underlayment} setter={setUnderlayment} />
+          {showVentilation ? (
             <div>
-              <label style={labelStyle}>Manufacturer</label>
-              <select
-                style={inputStyle}
-                value={primaryMaterial.manufacturer}
-                onChange={e => setPrimaryMaterial({ manufacturer: e.target.value, product_name: '', approval_number: '' })}
-              >
-                <option value="">Select manufacturer</option>
-                {getManufacturers().map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Product</label>
-              <select
-                style={inputStyle}
-                value={primaryMaterial.product_name}
-                disabled={!primaryMaterial.manufacturer}
-                onChange={e => {
-                  const match = products.find(
-                    p => p.layer_type === 'primary' && p.manufacturer === primaryMaterial.manufacturer && p.product_name === e.target.value
-                  )
-                  setPrimaryMaterial({
-                    ...primaryMaterial,
-                    product_name: e.target.value,
-                    approval_number: match?.approval_number || '',
-                  })
+              <MaterialLayer title="Ventilation" layerType="ventilation" values={ventilation} setter={setVentilation} />
+              <button
+                type="button"
+                onClick={() => { setShowVentilation(false); setVentilation({ ...emptyMaterial }) }}
+                style={{
+                  fontSize: '13px',
+                  color: contractorTheme.error,
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0',
+                  marginBottom: '16px',
+                  display: 'block',
                 }}
               >
-                <option value="">Select product</option>
-                {getProducts(primaryMaterial.manufacturer).map(p => (
-                  <option key={p.id} value={p.product_name}>{p.product_name}</option>
-                ))}
-              </select>
+                Remove ventilation
+              </button>
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={labelStyle}>FL approval #</label>
-              <input
-                style={inputStyle}
-                value={primaryMaterial.approval_number}
-                onChange={e => setPrimaryMaterial({ ...primaryMaterial, approval_number: e.target.value })}
-              />
-            </div>
-          </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowVentilation(true)}
+              style={{
+                fontSize: '13px',
+                color: contractorTheme.accent,
+                background: 'transparent',
+                border: '1px dashed ' + contractorTheme.border,
+                borderRadius: '10px',
+                cursor: 'pointer',
+                padding: '12px 16px',
+                width: '100%',
+                textAlign: 'center',
+                fontWeight: '500',
+              }}
+            >
+              + Add Ventilation Product
+            </button>
+          )}
         </div>
 
         <div style={sectionStyle}>
