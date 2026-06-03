@@ -125,6 +125,31 @@
       transform: translateY(-1px);
     }
 
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-login {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.6rem 1.25rem;
+      background: transparent;
+      color: var(--white);
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      transition: border-color 0.2s, color 0.2s, transform 0.2s;
+    }
+
+    .nav-login:hover {
+      border-color: var(--blue-light);
+      color: var(--blue-light);
+      transform: translateY(-1px);
+    }
+
     /* Buttons */
     .btn {
       display: inline-flex;
@@ -170,6 +195,192 @@
       gap: 1rem;
     }
 
+    .hero-signin {
+      margin-top: 1.25rem;
+      font-size: 0.875rem;
+      color: var(--gray);
+    }
+
+    .hero-signin a {
+      color: var(--gray-light);
+      transition: color 0.2s;
+    }
+
+    .hero-signin a:hover {
+      color: var(--blue-light);
+    }
+
+    .hero-layout {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .hero-content {
+      position: relative;
+      max-width: 720px;
+    }
+
+    .hero-demo {
+      width: 100%;
+      max-width: 460px;
+      margin: 0 auto;
+    }
+
+    .demo-window {
+      background: var(--navy-light);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.45),
+        0 0 60px rgba(59, 130, 246, 0.18);
+    }
+
+    .demo-chrome {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #1a2332;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .demo-dots {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .demo-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .demo-dots span:nth-child(1) { background: #ff5f57; }
+    .demo-dots span:nth-child(2) { background: #febc2e; }
+    .demo-dots span:nth-child(3) { background: #28c840; }
+
+    .demo-url {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.28);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      color: var(--gray);
+      text-align: center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .demo-body {
+      padding: 1.5rem;
+      background: var(--navy);
+    }
+
+    .demo-progress {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+    }
+
+    .demo-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--blue), var(--blue-light));
+      border-radius: 4px;
+      transition: width 0.55s ease;
+    }
+
+    .demo-pipeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .demo-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0.65rem 0.75rem;
+      border-radius: 10px;
+      opacity: 0.4;
+      transition: opacity 0.35s ease, background 0.35s ease, box-shadow 0.35s ease;
+    }
+
+    .demo-step.active {
+      opacity: 1;
+      background: rgba(59, 130, 246, 0.12);
+      box-shadow: 0 0 24px rgba(59, 130, 246, 0.22);
+    }
+
+    .demo-step.complete {
+      opacity: 1;
+    }
+
+    .demo-step.celebrate {
+      background: rgba(34, 197, 94, 0.14);
+      box-shadow: 0 0 36px rgba(34, 197, 94, 0.35);
+    }
+
+    .demo-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.22);
+      flex-shrink: 0;
+      transition: border-color 0.3s, background 0.3s, box-shadow 0.3s, transform 0.3s;
+    }
+
+    .demo-step.active .demo-indicator {
+      border-color: var(--blue);
+      background: var(--blue);
+      box-shadow: 0 0 14px var(--blue-glow);
+      animation: demoPulse 1s ease-in-out infinite;
+    }
+
+    .demo-step.complete .demo-indicator {
+      border-color: var(--success);
+      background: var(--success);
+      box-shadow: none;
+      animation: none;
+    }
+
+    .demo-label {
+      flex: 1;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray);
+    }
+
+    .demo-step.active .demo-label,
+    .demo-step.complete .demo-label {
+      color: var(--white);
+    }
+
+    .demo-check {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--success);
+      opacity: 0;
+      transform: scale(0.6);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .demo-step.complete .demo-check {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    @keyframes demoPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.18); }
+    }
+
     /* Hero */
     .hero {
       position: relative;
@@ -200,9 +411,25 @@
       pointer-events: none;
     }
 
-    .hero-content {
-      position: relative;
-      max-width: 720px;
+    .hero-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2.5rem;
+      margin-top: 4rem;
+      padding-top: 2.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--blue-light);
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--gray);
+      margin-top: 0.25rem;
     }
 
     .badge {
@@ -253,27 +480,6 @@
       max-width: 580px;
       margin-bottom: 2.5rem;
       line-height: 1.7;
-    }
-
-    .hero-stats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 2.5rem;
-      margin-top: 4rem;
-      padding-top: 2.5rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .stat-value {
-      font-size: 1.75rem;
-      font-weight: 800;
-      color: var(--blue-light);
-    }
-
-    .stat-label {
-      font-size: 0.85rem;
-      color: var(--gray);
-      margin-top: 0.25rem;
     }
 
     /* Sections */
@@ -689,6 +895,18 @@
       }
     }
 
+    @media (min-width: 992px) {
+      .hero-layout {
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 3.5rem;
+      }
+
+      .hero-demo {
+        max-width: none;
+        margin: 0;
+      }
+    }
+
     @media (max-width: 767px) {
       .hero {
         padding: 8rem 0 5rem;
@@ -709,6 +927,16 @@
       .btn-group .btn {
         width: 100%;
       }
+
+      .nav-actions {
+        gap: 0.5rem;
+      }
+
+      .nav-login,
+      .nav-cta {
+        padding: 0.55rem 0.875rem;
+        font-size: 0.8rem;
+      }
     }
   </style>
 </head>
@@ -727,7 +955,10 @@
         <li><a href="#pricing">Pricing</a></li>
         <li><a href="#demo">Demo</a></li>
       </ul>
-      <a href="#demo" class="nav-cta">Request a Demo</a>
+      <div class="nav-actions">
+        <a href="https://portal.dartiq.dev/login" class="nav-login">Contractor Login</a>
+        <a href="#demo" class="nav-cta">Request a Demo</a>
+      </div>
     </div>
   </nav>
 
@@ -736,32 +967,58 @@
     <div class="hero-bg"></div>
     <div class="hero-grid"></div>
     <div class="container">
-      <div class="hero-content">
-        <div class="badge">
-          <span class="badge-dot"></span>
-          The Intelligent Permit Platform
+      <div class="hero-layout">
+        <div class="hero-content">
+          <div class="badge">
+            <span class="badge-dot"></span>
+            The Intelligent Permit Platform
+          </div>
+          <h1><span>Permits on Autopilot</span></h1>
+          <p class="hero-sub">
+            Dart iQ automates Florida roofing permits end-to-end. From parcel lookup to recorded NOC to permit submission — without touching a portal.
+          </p>
+          <div class="btn-group">
+            <a href="#demo" class="btn btn-primary">Request a Demo</a>
+            <a href="#how-it-works" class="btn btn-secondary">See How It Works</a>
+          </div>
+          <p class="hero-signin">Already a customer? <a href="https://portal.dartiq.dev/login">Sign in →</a></p>
         </div>
-        <h1><span>Permits on Autopilot</span></h1>
-        <p class="hero-sub">
-          Dart iQ automates Florida roofing permits end-to-end. From parcel lookup to recorded NOC to permit submission — without touching a portal.
-        </p>
-        <div class="btn-group">
-          <a href="#demo" class="btn btn-primary">Request a Demo</a>
-          <a href="#how-it-works" class="btn btn-secondary">See How It Works</a>
+        <div class="hero-demo" aria-hidden="true">
+          <div class="demo-window">
+            <div class="demo-chrome">
+              <div class="demo-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="demo-url">dartiq.dev</div>
+            </div>
+            <div class="demo-body">
+              <div class="demo-progress">
+                <div class="demo-progress-fill" id="demo-progress-fill"></div>
+              </div>
+              <div class="demo-pipeline" id="demo-pipeline">
+                <div class="demo-step"><span class="demo-indicator"></span><span class="demo-label">Job Submitted</span><span class="demo-check">✓</span></div>
+                <div class="demo-step"><span class="demo-indicator"></span><span class="demo-label">Parcel Retrieved</span><span class="demo-check">✓</span></div>
+                <div class="demo-step"><span class="demo-indicator"></span><span class="demo-label">NOC Generated</span><span class="demo-check">✓</span></div>
+                <div class="demo-step"><span class="demo-indicator"></span><span class="demo-label">Sent to Homeowner</span><span class="demo-check">✓</span></div>
+                <div class="demo-step"><span class="demo-indicator"></span><span class="demo-label">Recorded with County</span><span class="demo-check">✓</span></div>
+                <div class="demo-step"><span class="demo-indicator"></span><span class="demo-label">Permit Packet Ready</span><span class="demo-check">✓</span></div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="hero-stats">
-          <div>
-            <div class="stat-value">6</div>
-            <div class="stat-label">Automated permit steps</div>
-          </div>
-          <div>
-            <div class="stat-value">24/7</div>
-            <div class="stat-label">Permit processing</div>
-          </div>
-          <div>
-            <div class="stat-value">FL</div>
-            <div class="stat-label">Built for Florida contractors</div>
-          </div>
+      </div>
+      <div class="hero-stats">
+        <div>
+          <div class="stat-value">6</div>
+          <div class="stat-label">Automated permit steps</div>
+        </div>
+        <div>
+          <div class="stat-value">24/7</div>
+          <div class="stat-label">Permit processing</div>
+        </div>
+        <div>
+          <div class="stat-value">FL</div>
+          <div class="stat-label">Built for Florida contractors</div>
         </div>
       </div>
     </div>
@@ -1038,6 +1295,57 @@
       this.style.display = 'none';
       document.getElementById('form-success').classList.add('visible');
     });
+
+    (function runHeroDemo() {
+      var steps = document.querySelectorAll('#demo-pipeline .demo-step');
+      var progress = document.getElementById('demo-progress-fill');
+      if (!steps.length || !progress) return;
+
+      var stepMs = 1000;
+      var loopMs = 8000;
+      var timers = [];
+
+      function clearTimers() {
+        timers.forEach(function(t) { clearTimeout(t); });
+        timers = [];
+      }
+
+      function resetDemo() {
+        steps.forEach(function(step) {
+          step.classList.remove('active', 'complete', 'celebrate');
+        });
+        progress.style.width = '0%';
+      }
+
+      function playDemo() {
+        clearTimers();
+        resetDemo();
+
+        steps.forEach(function(step, index) {
+          timers.push(setTimeout(function() {
+            if (index > 0) {
+              steps[index - 1].classList.remove('active', 'celebrate');
+              steps[index - 1].classList.add('complete');
+            }
+
+            step.classList.add('active');
+            progress.style.width = (((index + 1) / steps.length) * 100) + '%';
+
+            if (index === steps.length - 1) {
+              step.classList.add('celebrate');
+              timers.push(setTimeout(function() {
+                step.classList.remove('active');
+                step.classList.add('complete');
+              }, 700));
+            }
+          }, index * stepMs));
+        });
+
+        timers.push(setTimeout(playDemo, loopMs));
+      }
+
+      playDemo();
+    })();
   </script>
 </body>
 </html>
