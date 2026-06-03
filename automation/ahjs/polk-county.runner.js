@@ -695,8 +695,9 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
     await logStep(page, runId, stepNumber, 'login', async function() {
       await page.goto(config.portalUrl, { waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(3000)
-      var frameHandle = await page.$('iframe:not(.mask_iframe)')
+      var frameHandle = await page.waitForSelector('iframe:not(.mask_iframe)', { timeout: 15000 })
       var frame = await frameHandle.contentFrame()
+      if (!frame) throw new Error('Login iframe not found after waiting')
       await (await frame.waitForSelector(config.selectors.loginUsername)).fill(credentials.username)
       await (await frame.waitForSelector(config.selectors.loginPassword)).fill(credentials.password)
       var result = await solver.recaptcha(config.selectors.loginSiteKey, config.portalUrl)
