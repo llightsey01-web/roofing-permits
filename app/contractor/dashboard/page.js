@@ -187,7 +187,7 @@ export default function ContractorDashboardPage() {
             marginLeft: 'auto',
             marginRight: 'auto',
           }}>
-            Start your first permit application and DartiQ will guide it from intake through county submission.
+            Start your first permit application and Dart iQ will guide it from intake through county submission.
           </p>
           <button
             type="button"

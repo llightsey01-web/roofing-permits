@@ -259,7 +259,7 @@ export default function ContractorJobDetailPage({ params }) {
       }}>
         <div>
           <p style={{ fontSize: '13px', color: contractorTheme.accent, fontWeight: '600', margin: '0 0 4px 0' }}>
-            DartiQ application
+            Dart iQ application
           </p>
           <h1 style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: 0 }}>{job.owner_name}</h1>
           <p style={{ fontSize: '15px', color: contractorTheme.textMuted, margin: '6px 0 0 0' }}>

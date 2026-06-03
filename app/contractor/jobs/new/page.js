@@ -160,7 +160,7 @@ export default function ContractorNewJobPage() {
         New permit application
       </h1>
       <p style={{ fontSize: '15px', color: contractorTheme.textMuted, margin: '0 0 24px 0' }}>
-        DartiQ will handle parcel lookup, permit drafting, NOC, and county submission.
+        Dart iQ will handle parcel lookup, permit drafting, NOC, and county submission.
       </p>
 
       {success && (

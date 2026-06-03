@@ -72,7 +72,7 @@ export default function ContractorLayout({ children }) {
         justifyContent: 'center',
         fontFamily: contractorTheme.fontFamily,
       }}>
-        <p style={{ color: contractorTheme.textMuted, fontSize: '15px' }}>Loading DartiQ...</p>
+        <p style={{ color: contractorTheme.textMuted, fontSize: '15px' }}>Loading Dart iQ...</p>
       </div>
     )
   }
@@ -124,7 +124,7 @@ export default function ContractorLayout({ children }) {
             </div>
             <div style={{ textAlign: 'left' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: contractorTheme.text, fontSize: '18px', fontWeight: '700' }}>DartiQ</span>
+                <span style={{ color: contractorTheme.text, fontSize: '18px', fontWeight: '700' }}>Dart iQ</span>
                 <EnvironmentBadge label="Contractor" variant="contractor" />
               </div>
               <span style={{ color: contractorTheme.textMuted, fontSize: '12px' }}>

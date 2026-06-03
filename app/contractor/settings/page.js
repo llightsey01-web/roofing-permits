@@ -303,7 +303,7 @@ export default function ContractorSettingsPage() {
         <div style={sectionStyle}>
           <h2 style={sectionTitleStyle}>Review preferences</h2>
           <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '0 0 16px 0' }}>
-            Choose which stages DartiQ should pause for your approval.
+            Choose which stages Dart iQ should pause for your approval.
           </p>
           <label style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '16px', cursor: 'pointer' }}>
             <input

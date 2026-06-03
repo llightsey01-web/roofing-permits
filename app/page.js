@@ -3,9 +3,9 @@ import { join } from 'path'
 import DartiqMarketingScripts from './components/DartiqMarketingScripts'
 
 export const metadata = {
-  title: 'DartiQ — The Intelligent Permit Platform',
+  title: 'Dart iQ — The Intelligent Permit Platform',
   description:
-    'DartiQ automates Florida roofing permits end-to-end, from parcel lookup to recorded NOC to permit submission.',
+    'Dart iQ automates Florida roofing permits end-to-end, from parcel lookup to recorded NOC to permit submission.',
 }
 
 function getMarketingContent() {
