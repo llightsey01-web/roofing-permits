@@ -3,14 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="dark">
-  <meta name="description" content="Dart iQ — The Intelligent Permit Platform. Automate Florida roofing permits end-to-end, from parcel lookup to recorded NOC to permit submission.">
-  <title>Dart iQ — The Intelligent Permit Platform</title>
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="DART iQ — Built for Florida roofing contractors. Automate permits from parcel lookup through NOC generation, notarization, recording, and submission.">
+  <title>DART iQ — Permits on Autopilot for Florida Roofers</title>
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('dartiq-theme');
+        var theme = stored || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+    function toggleTheme() {
+      var html = document.documentElement;
+      var next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      try { localStorage.setItem('dartiq-theme', next); } catch (e) {}
+      var btn = document.getElementById('theme-toggle');
+      if (btn) btn.setAttribute('aria-label', next === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+    }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root {
+    :root,
+    html[data-theme="dark"] {
       color-scheme: dark;
       --navy: #0f172a;
       --navy-light: #1e293b;
@@ -22,6 +42,56 @@
       --gray: #94a3b8;
       --gray-light: #cbd5e1;
       --success: #22c55e;
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-elevated: rgba(30, 41, 59, 0.3);
+      --bg-card: #1e293b;
+      --bg-input: #0f172a;
+      --text-primary: #ffffff;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-medium: rgba(255, 255, 255, 0.12);
+      --nav-bg: rgba(15, 23, 42, 0.85);
+      --hero-grid-line: rgba(255, 255, 255, 0.03);
+      --hero-gradient-1: rgba(59, 130, 246, 0.18);
+      --hero-gradient-2: rgba(59, 130, 246, 0.08);
+      --shadow-card: 0 24px 80px rgba(0, 0, 0, 0.45);
+      --demo-chrome-bg: #1a2332;
+      --icon-color: #60a5fa;
+      --btn-on-primary: #ffffff;
+    }
+
+    html[data-theme="light"] {
+      color-scheme: light;
+      --navy: #ffffff;
+      --navy-light: #f8fafc;
+      --navy-lighter: #f1f5f9;
+      --blue: #2563eb;
+      --blue-light: #3b82f6;
+      --blue-glow: rgba(37, 99, 235, 0.2);
+      --white: #0f172a;
+      --gray: #64748b;
+      --gray-light: #475569;
+      --success: #16a34a;
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8fafc;
+      --bg-elevated: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-input: #ffffff;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-muted: #64748b;
+      --border-subtle: rgba(15, 23, 42, 0.06);
+      --border-medium: rgba(15, 23, 42, 0.12);
+      --nav-bg: rgba(255, 255, 255, 0.92);
+      --hero-grid-line: rgba(15, 23, 42, 0.04);
+      --hero-gradient-1: rgba(37, 99, 235, 0.08);
+      --hero-gradient-2: rgba(37, 99, 235, 0.04);
+      --shadow-card: 0 24px 64px rgba(15, 23, 42, 0.08);
+      --demo-chrome-bg: #f1f5f9;
+      --icon-color: #2563eb;
+      --btn-on-primary: #ffffff;
     }
 
     *, *::before, *::after {
@@ -32,23 +102,25 @@
 
     html {
       scroll-behavior: smooth;
-      color-scheme: dark;
-      background-color: #0f172a;
+      background-color: var(--bg-primary);
     }
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background-color: #0f172a;
-      color: #ffffff;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
       line-height: 1.6;
       overflow-x: hidden;
-      color-scheme: dark;
     }
 
     nav,
     section,
     footer {
-      background-color: #0f172a;
+      background-color: var(--bg-primary);
+    }
+
+    .section-alt {
+      background-color: var(--bg-elevated) !important;
     }
 
     a {
@@ -70,9 +142,9 @@
       left: 0;
       right: 0;
       z-index: 100;
-      background: rgba(15, 23, 42, 0.85);
+      background: var(--nav-bg);
       backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid var(--border-subtle);
     }
 
     .nav-inner {
@@ -80,15 +152,31 @@
       align-items: center;
       justify-content: space-between;
       height: 72px;
+      gap: 0.75rem;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+      flex-shrink: 0;
     }
 
     .logo {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.45rem;
       font-weight: 800;
-      font-size: 1.35rem;
-      letter-spacing: -0.02em;
+      font-size: clamp(0.95rem, 3.2vw, 1.35rem);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      min-width: 0;
+    }
+
+    .logo-text {
+      white-space: nowrap;
+      line-height: 1;
     }
 
     .logo-icon {
@@ -111,12 +199,12 @@
 
     .nav-links a {
       font-size: 0.9rem;
-      color: var(--gray-light);
+      color: var(--text-secondary);
       transition: color 0.2s;
     }
 
     .nav-links a:hover {
-      color: var(--white);
+      color: var(--text-primary);
     }
 
     .nav-cta {
@@ -124,7 +212,7 @@
       align-items: center;
       padding: 0.6rem 1.25rem;
       background: var(--blue);
-      color: var(--white);
+      color: var(--btn-on-primary);
       font-size: 0.875rem;
       font-weight: 600;
       border-radius: 8px;
@@ -147,11 +235,11 @@
       align-items: center;
       padding: 0.6rem 1.25rem;
       background: transparent;
-      color: var(--white);
+      color: var(--text-primary);
       font-size: 0.875rem;
       font-weight: 600;
       border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.25);
+      border: 1px solid var(--border-medium);
       transition: border-color 0.2s, color 0.2s, transform 0.2s;
     }
 
@@ -159,6 +247,63 @@
       border-color: var(--blue-light);
       color: var(--blue-light);
       transform: translateY(-1px);
+    }
+
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      border: 1px solid var(--border-medium);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--blue);
+      color: var(--blue-light);
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .theme-toggle svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    html[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+    html[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+    html[data-theme="light"] .theme-toggle .icon-sun { display: none; }
+    html[data-theme="light"] .theme-toggle .icon-moon { display: block; }
+
+    .theme-toggle.mobile-only { display: inline-flex; }
+    .theme-toggle.desktop-only { display: none; }
+
+    .svg-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--icon-color);
+    }
+
+    .svg-icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     /* Buttons */
@@ -178,7 +323,7 @@
 
     .btn-primary {
       background: var(--blue);
-      color: var(--white);
+      color: var(--btn-on-primary);
       box-shadow: 0 4px 24px var(--blue-glow);
     }
 
@@ -190,8 +335,8 @@
 
     .btn-secondary {
       background: transparent;
-      color: var(--white);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text-primary);
+      border: 1px solid var(--border-medium);
     }
 
     .btn-secondary:hover {
@@ -209,11 +354,11 @@
     .hero-signin {
       margin-top: 1.25rem;
       font-size: 0.875rem;
-      color: var(--gray);
+      color: var(--text-muted);
     }
 
     .hero-signin a {
-      color: var(--gray-light);
+      color: var(--text-secondary);
       transition: color 0.2s;
     }
 
@@ -241,13 +386,11 @@
     }
 
     .demo-window {
-      background: var(--navy-light);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--bg-card);
+      border: 1px solid var(--border-medium);
       border-radius: 16px;
       overflow: hidden;
-      box-shadow:
-        0 24px 80px rgba(0, 0, 0, 0.45),
-        0 0 60px rgba(59, 130, 246, 0.18);
+      box-shadow: var(--shadow-card), 0 0 60px rgba(59, 130, 246, 0.12);
     }
 
     .demo-chrome {
@@ -255,8 +398,8 @@
       align-items: center;
       gap: 12px;
       padding: 12px 16px;
-      background: #1a2332;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      background: var(--demo-chrome-bg);
+      border-bottom: 1px solid var(--border-subtle);
     }
 
     .demo-dots {
@@ -288,7 +431,7 @@
 
     .demo-body {
       padding: 1.5rem;
-      background: var(--navy);
+      background: var(--bg-primary);
     }
 
     .demo-progress {
@@ -492,12 +635,12 @@
       flex: 1;
       font-size: 0.875rem;
       font-weight: 500;
-      color: var(--gray);
+      color: var(--text-muted);
     }
 
     .demo-step.active .demo-label,
     .demo-step.complete .demo-label {
-      color: var(--white);
+      color: var(--text-primary);
     }
 
     .demo-check {
@@ -522,15 +665,15 @@
       align-items: center;
       padding: 8rem 0 5rem;
       overflow: hidden;
-      background-color: #0f172a;
+      background-color: var(--bg-primary);
     }
 
     .hero-bg {
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(59, 130, 246, 0.18), transparent),
-        radial-gradient(ellipse 50% 40% at 80% 60%, rgba(59, 130, 246, 0.08), transparent);
+        radial-gradient(ellipse 80% 60% at 50% -10%, var(--hero-gradient-1), transparent),
+        radial-gradient(ellipse 50% 40% at 80% 60%, var(--hero-gradient-2), transparent);
       pointer-events: none;
     }
 
@@ -538,8 +681,8 @@
       position: absolute;
       inset: 0;
       background-image:
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        linear-gradient(var(--hero-grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--hero-grid-line) 1px, transparent 1px);
       background-size: 60px 60px;
       mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, black, transparent);
       pointer-events: none;
@@ -551,7 +694,7 @@
       gap: 2.5rem;
       margin-top: 4rem;
       padding-top: 2.5rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 1px solid var(--border-subtle);
     }
 
     .stat-value {
@@ -562,7 +705,7 @@
 
     .stat-label {
       font-size: 0.85rem;
-      color: var(--gray);
+      color: var(--text-muted);
       margin-top: 0.25rem;
     }
 
@@ -602,7 +745,7 @@
     }
 
     .hero h1 span {
-      background: linear-gradient(135deg, var(--white), var(--blue-light));
+      background: linear-gradient(135deg, var(--text-primary), var(--blue-light));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -610,8 +753,8 @@
 
     .hero-sub {
       font-size: clamp(1.05rem, 2.5vw, 1.25rem);
-      color: var(--gray-light);
-      max-width: 580px;
+      color: var(--text-secondary);
+      max-width: 620px;
       margin-bottom: 2.5rem;
       line-height: 1.7;
     }
@@ -644,7 +787,7 @@
     }
 
     .section-desc {
-      color: var(--gray-light);
+      color: var(--text-secondary);
       font-size: 1.05rem;
     }
 
@@ -681,16 +824,20 @@
     .step-icon {
       width: 64px;
       height: 64px;
-      background: var(--navy-light);
+      background: var(--bg-card);
       border: 2px solid rgba(59, 130, 246, 0.3);
       border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.5rem;
       position: relative;
       z-index: 1;
       flex-shrink: 0;
+    }
+
+    .step-icon .svg-icon {
+      width: 28px;
+      height: 28px;
     }
 
     .step-content {
@@ -713,7 +860,7 @@
     }
 
     .step-desc {
-      color: var(--gray-light);
+      color: var(--text-secondary);
       font-size: 0.95rem;
     }
 
@@ -725,11 +872,15 @@
     }
 
     .feature-card {
-      background: var(--navy-light);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
       border-radius: 16px;
       padding: 2rem;
-      transition: border-color 0.2s, transform 0.2s;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+
+    html[data-theme="light"] .feature-card {
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
     }
 
     .feature-card:hover {
@@ -745,8 +896,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.35rem;
       margin-bottom: 1.25rem;
+    }
+
+    .feature-icon .svg-icon {
+      width: 24px;
+      height: 24px;
     }
 
     .feature-card h3 {
@@ -756,7 +911,7 @@
     }
 
     .feature-card p {
-      color: var(--gray-light);
+      color: var(--text-secondary);
       font-size: 0.9rem;
       line-height: 1.6;
     }
@@ -769,16 +924,27 @@
     }
 
     .audience-card {
-      background: linear-gradient(135deg, var(--navy-light), rgba(30, 41, 59, 0.5));
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+      border: 1px solid var(--border-subtle);
       border-radius: 16px;
       padding: 2rem;
       text-align: center;
     }
 
-    .audience-card .emoji {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
+    .audience-card .audience-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 1rem;
+      background: rgba(59, 130, 246, 0.12);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .audience-card .audience-icon .svg-icon {
+      width: 28px;
+      height: 28px;
     }
 
     .audience-card h3 {
@@ -788,8 +954,314 @@
     }
 
     .audience-card p {
-      color: var(--gray-light);
+      color: var(--text-secondary);
       font-size: 0.9rem;
+    }
+
+    /* Credibility */
+    .credibility-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      max-width: 880px;
+      margin: 0 auto;
+    }
+
+    .credibility-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.875rem;
+      padding: 1.125rem 1.25rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+    }
+
+    html[data-theme="light"] .credibility-item {
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .credibility-check {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .credibility-check svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.5;
+    }
+
+    .credibility-item p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    /* ROI */
+    .roi-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+      align-items: center;
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    .roi-before h3,
+    .roi-after h3 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1rem;
+    }
+
+    .roi-before h3 { color: var(--text-muted); }
+    .roi-after h3 { color: var(--blue); }
+
+    .roi-list {
+      list-style: none;
+    }
+
+    .roi-list li {
+      position: relative;
+      padding-left: 1.5rem;
+      margin-bottom: 0.75rem;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .roi-before .roi-list li::before {
+      content: '—';
+      position: absolute;
+      left: 0;
+      color: var(--text-muted);
+    }
+
+    .roi-after .roi-list li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .roi-after {
+      padding: 2rem;
+      background: var(--bg-card);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 16px;
+    }
+
+    html[data-theme="light"] .roi-after {
+      box-shadow: 0 4px 24px rgba(37, 99, 235, 0.08);
+    }
+
+    .roi-after p {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      margin-top: 1rem;
+    }
+
+    /* Product showcase */
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .showcase-card {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      box-shadow: var(--shadow-card);
+    }
+
+    html[data-theme="light"] .showcase-card {
+      box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+    }
+
+    .showcase-label {
+      padding: 0.875rem 1.25rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-secondary);
+    }
+
+    .mock-ui {
+      padding: 1rem;
+      background: var(--bg-primary);
+      min-height: 220px;
+    }
+
+    .mock-sidebar {
+      display: flex;
+      gap: 0.75rem;
+      min-height: 200px;
+    }
+
+    .mock-nav-col {
+      width: 52px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 0.5rem 0.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .mock-nav-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--border-subtle);
+    }
+
+    .mock-nav-dot.active {
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    .mock-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .mock-header-bar {
+      height: 28px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding: 0 0.75rem;
+      gap: 0.5rem;
+    }
+
+    .mock-header-bar span {
+      font-size: 9px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .mock-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.65rem;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .mock-row.highlight {
+      border-color: rgba(59, 130, 246, 0.35);
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .mock-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .mock-status.green { background: var(--success); }
+    .mock-status.blue { background: var(--blue); }
+    .mock-status.amber { background: #f59e0b; }
+
+    .mock-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .mock-text strong {
+      display: block;
+      font-size: 10px;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mock-text small {
+      display: block;
+      font-size: 8px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .mock-badge {
+      font-size: 8px;
+      font-weight: 600;
+      padding: 0.15rem 0.4rem;
+      border-radius: 100px;
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+      white-space: nowrap;
+    }
+
+    .mock-badge.blue {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--blue-light);
+    }
+
+    .mock-progress-track {
+      height: 4px;
+      background: var(--border-subtle);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 0.35rem;
+    }
+
+    .mock-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--blue), var(--blue-light));
+      border-radius: 4px;
+    }
+
+    .mock-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .mock-step {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    .mock-step.done { color: var(--success); }
+    .mock-step.active { color: var(--blue-light); font-weight: 600; }
+
+    .mock-step-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
     }
 
     /* Pricing */
@@ -801,16 +1273,20 @@
     }
 
     .pricing-card {
-      background: var(--navy-light);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
       border-radius: 20px;
       padding: 2.5rem 2rem;
       position: relative;
     }
 
+    html[data-theme="light"] .pricing-card {
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    }
+
     .pricing-card.featured {
       border-color: var(--blue);
-      background: linear-gradient(180deg, rgba(59, 130, 246, 0.12), var(--navy-light));
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.12), var(--bg-card));
       box-shadow: 0 0 60px rgba(59, 130, 246, 0.15);
     }
 
@@ -820,7 +1296,7 @@
       left: 50%;
       transform: translateX(-50%);
       background: var(--blue);
-      color: var(--white);
+      color: var(--btn-on-primary);
       font-size: 0.75rem;
       font-weight: 600;
       padding: 0.35rem 1rem;
@@ -831,7 +1307,7 @@
     .pricing-name {
       font-size: 1rem;
       font-weight: 600;
-      color: var(--gray-light);
+      color: var(--text-muted);
       margin-bottom: 0.5rem;
     }
 
@@ -864,7 +1340,7 @@
       align-items: flex-start;
       gap: 0.6rem;
       font-size: 0.9rem;
-      color: var(--gray-light);
+      color: var(--text-secondary);
       margin-bottom: 0.75rem;
     }
 
@@ -879,11 +1355,11 @@
       text-align: center;
       margin-top: 2.5rem;
       font-size: 1rem;
-      color: var(--gray-light);
+      color: var(--text-secondary);
     }
 
     .pricing-note strong {
-      color: var(--white);
+      color: var(--text-primary);
     }
 
     .pricing-disclaimer {
@@ -897,10 +1373,10 @@
 
     /* Form */
     .form-section {
-      background: var(--navy-light);
+      background: var(--bg-card);
       border-radius: 24px;
       padding: 3rem;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-subtle);
     }
 
     .form-grid {
@@ -923,15 +1399,15 @@
     label {
       font-size: 0.85rem;
       font-weight: 500;
-      color: var(--gray-light);
+      color: var(--text-secondary);
     }
 
     input, select {
       padding: 0.8rem 1rem;
-      background: var(--navy);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: var(--bg-input);
+      border: 1px solid var(--border-medium);
       border-radius: 10px;
-      color: var(--white);
+      color: var(--text-primary);
       font-size: 0.95rem;
       font-family: inherit;
       transition: border-color 0.2s;
@@ -943,11 +1419,11 @@
     }
 
     input::placeholder {
-      color: var(--gray);
+      color: var(--text-muted);
     }
 
     select option {
-      background: var(--navy);
+      background: var(--bg-input);
     }
 
     .form-success {
@@ -961,8 +1437,18 @@
     }
 
     .form-success .icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 1rem;
+      color: var(--success);
+    }
+
+    .form-success .icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.75;
     }
 
     .form-success h3 {
@@ -972,12 +1458,12 @@
     }
 
     .form-success p {
-      color: var(--gray-light);
+      color: var(--text-secondary);
     }
 
     /* Footer */
     footer {
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 1px solid var(--border-subtle);
       padding: 3rem 0 2rem;
     }
 
@@ -989,14 +1475,10 @@
       text-align: center;
     }
 
-    .footer-brand {
-      font-size: 0.9rem;
-      color: var(--gray);
-    }
-
+    .footer-brand,
     .footer-tagline {
       font-size: 0.85rem;
-      color: var(--gray);
+      color: var(--text-muted);
     }
 
     .footer-links {
@@ -1009,7 +1491,7 @@
 
     .footer-links a {
       font-size: 0.85rem;
-      color: var(--gray-light);
+      color: var(--text-secondary);
       transition: color 0.2s;
     }
 
@@ -1023,9 +1505,17 @@
         display: flex;
       }
 
+      .theme-toggle.mobile-only { display: none; }
+      .theme-toggle.desktop-only { display: inline-flex; }
+
       .pipeline {
         max-width: 640px;
         margin: 0 auto;
+      }
+
+      .roi-layout {
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
       }
     }
 
@@ -1071,14 +1561,10 @@
         padding: 0.55rem 0.875rem;
         font-size: 0.8rem;
       }
-    }
 
-    /* Force dark mode regardless of OS / framework light-mode defaults */
-    html,
-    body {
-      background-color: #0f172a !important;
-      color: #ffffff !important;
-      color-scheme: dark !important;
+      .nav-login {
+        padding: 0.55rem 0.65rem;
+      }
     }
   </style>
 </head>
@@ -1087,17 +1573,28 @@
   <!-- Nav -->
   <nav class="nav">
     <div class="container nav-inner">
-      <a href="#" class="logo">
-        <div class="logo-icon">D</div>
-        Dart iQ
-      </a>
+      <div class="nav-left">
+        <a href="#" class="logo">
+          <div class="logo-icon">D</div>
+          <span class="logo-text">DART iQ</span>
+        </a>
+        <button type="button" id="theme-toggle-mobile" class="theme-toggle mobile-only" onclick="toggleTheme()" aria-label="Switch theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
+      </div>
       <ul class="nav-links">
         <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#platform">Platform</a></li>
         <li><a href="#features">Features</a></li>
         <li><a href="#pricing">Pricing</a></li>
         <li><a href="#demo">Demo</a></li>
       </ul>
       <div class="nav-actions">
+        <button type="button" id="theme-toggle" class="theme-toggle desktop-only" onclick="toggleTheme()" aria-label="Switch theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
         <a href="https://portal.dartiq.dev/login" class="nav-login">Contractor Login</a>
         <a href="#demo" class="nav-cta">Request a Demo</a>
       </div>
@@ -1113,11 +1610,11 @@
         <div class="hero-content">
           <div class="badge">
             <span class="badge-dot"></span>
-            The Intelligent Permit Platform
+            Built for Florida Roofing Contractors
           </div>
           <h1><span>Permits on Autopilot</span></h1>
           <p class="hero-sub">
-            Dart iQ automates Florida roofing permits end-to-end. From parcel lookup to recorded NOC to permit submission — without touching a portal.
+            DART iQ automates Florida roofing permits from parcel lookup through permit submission. Generate NOCs, coordinate notarization, record documents, and submit permits without logging into county portals.
           </p>
           <div class="btn-group">
             <a href="#demo" class="btn btn-primary">Request a Demo</a>
@@ -1152,15 +1649,15 @@
       <div class="hero-stats">
         <div>
           <div class="stat-value">6</div>
-          <div class="stat-label">Automated permit steps</div>
+          <div class="stat-label">Automated workflow stages</div>
         </div>
         <div>
-          <div class="stat-value">24/7</div>
-          <div class="stat-label">Permit processing</div>
+          <div class="stat-value">100%</div>
+          <div class="stat-label">Digital permit process</div>
         </div>
         <div>
           <div class="stat-value">FL</div>
-          <div class="stat-label">Built for Florida contractors</div>
+          <div class="stat-label">Built for Florida roofing contractors</div>
         </div>
       </div>
     </div>
@@ -1176,23 +1673,23 @@
       </div>
       <div class="pipeline">
         <div class="pipeline-step">
-          <div class="step-icon">📋</div>
+          <div class="step-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg></span></div>
           <div class="step-content">
             <div class="step-number">Step 1</div>
             <div class="step-title">Submit job details</div>
-            <p class="step-desc">Enter the property address and job scope. Dart iQ handles everything from there.</p>
+            <p class="step-desc">Enter the property address and job scope. DART iQ handles everything from there.</p>
           </div>
         </div>
         <div class="pipeline-step">
-          <div class="step-icon">🔍</div>
+          <div class="step-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></div>
           <div class="step-content">
             <div class="step-number">Step 2</div>
             <div class="step-title">Parcel &amp; legal description retrieved</div>
-            <p class="step-desc">Dart iQ automatically pulls parcel data and legal descriptions from county records.</p>
+            <p class="step-desc">DART iQ automatically pulls parcel data and legal descriptions from county records.</p>
           </div>
         </div>
         <div class="pipeline-step">
-          <div class="step-icon">📄</div>
+          <div class="step-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></span></div>
           <div class="step-content">
             <div class="step-number">Step 3</div>
             <div class="step-title">NOC generated &amp; sent for signing</div>
@@ -1200,7 +1697,7 @@
           </div>
         </div>
         <div class="pipeline-step">
-          <div class="step-icon">🏛️</div>
+          <div class="step-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M3 21h18M6 21V7l6-4 6 4v14M10 21v-6h4v6"/></svg></span></div>
           <div class="step-content">
             <div class="step-number">Step 4</div>
             <div class="step-title">NOC recorded with county</div>
@@ -1208,15 +1705,15 @@
           </div>
         </div>
         <div class="pipeline-step">
-          <div class="step-icon">✅</div>
+          <div class="step-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m22 4-10 10-3-3"/></svg></span></div>
           <div class="step-content">
             <div class="step-number">Step 5</div>
             <div class="step-title">Permit submitted &amp; approved</div>
-            <p class="step-desc">Dart iQ navigates the AHJ portal, submits the permit application, and tracks approval status in real time.</p>
+            <p class="step-desc">DART iQ navigates the AHJ portal, submits the permit application, and tracks approval status in real time.</p>
           </div>
         </div>
         <div class="pipeline-step">
-          <div class="step-icon">📦</div>
+          <div class="step-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12"/></svg></span></div>
           <div class="step-content">
             <div class="step-number">Step 6</div>
             <div class="step-title">Permit Packet Ready</div>
@@ -1228,43 +1725,160 @@
   </section>
 
   <!-- Features -->
-  <section id="features" style="background: rgba(30, 41, 59, 0.3);">
+  <section id="features" class="section-alt">
     <div class="container">
       <div class="section-header">
         <div class="section-label">Features</div>
-        <h2 class="section-title">Everything you need to scale permits</h2>
-        <p class="section-desc">Purpose-built automation for Florida roofing workflows.</p>
+        <h2 class="section-title">Permit Workflows, Fully Automated</h2>
+        <p class="section-desc">DART iQ handles portal navigation, document generation, notarization, recording, and permit submission so your team can focus on roofing.</p>
       </div>
       <div class="features-grid">
         <div class="feature-card">
-          <div class="feature-icon">🤖</div>
+          <div class="feature-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4M8 16h.01M16 16h.01"/></svg></span></div>
           <h3>Automated Portal Navigation</h3>
-          <p>Dart iQ logs into county portals, fills forms, uploads documents, and submits applications — hands-free.</p>
+          <p>DART iQ logs into county portals, fills forms, uploads documents, and submits applications — hands-free.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">📝</div>
+          <div class="feature-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg></span></div>
           <h3>Digital NOC Generation</h3>
           <p>Automatically generate compliant Notice of Commencement documents from parcel and job data.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">✍️</div>
+          <div class="feature-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span></div>
           <h3>Remote Online Notarization</h3>
           <p>Homeowners sign and notarize NOCs remotely — no in-person appointments required.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">📡</div>
+          <div class="feature-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9M19.1 4.9C23 8.8 23 15.1 19.1 19.1M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span></div>
           <h3>eRecording Integration</h3>
           <p>Notarized documents are electronically recorded with the county clerk automatically.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">🗺️</div>
+          <div class="feature-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span></div>
           <h3>Multi-County Support</h3>
           <p>Polk County, Lee County, and expanding — one platform for all your Florida jobs.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">📊</div>
+          <div class="feature-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16V9M12 16V5M17 16v-3"/></svg></span></div>
           <h3>Contractor Portal</h3>
           <p>Real-time job status, document access, and permit tracking in one dashboard.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Credibility -->
+  <section id="why-us">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Why DART iQ</div>
+        <h2 class="section-title">Why Contractors Choose DART iQ</h2>
+        <p class="section-desc">Built specifically for Florida roofing contractors who want to eliminate permit bottlenecks and scale operations without adding administrative overhead.</p>
+      </div>
+      <div class="credibility-grid">
+        <div class="credibility-item">
+          <div class="credibility-check"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <p>Eliminate repetitive permit entry</p>
+        </div>
+        <div class="credibility-item">
+          <div class="credibility-check"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <p>Generate compliant NOCs automatically</p>
+        </div>
+        <div class="credibility-item">
+          <div class="credibility-check"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <p>Coordinate signatures and notarization</p>
+        </div>
+        <div class="credibility-item">
+          <div class="credibility-check"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <p>Record documents with the county</p>
+        </div>
+        <div class="credibility-item">
+          <div class="credibility-check"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <p>Submit permits without logging into county portals</p>
+        </div>
+        <div class="credibility-item">
+          <div class="credibility-check"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <p>Track every permit from one dashboard</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Product Showcase -->
+  <section id="platform" class="section-alt">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Platform</div>
+        <h2 class="section-title">See DART iQ in Action</h2>
+        <p class="section-desc">A real working platform — not a concept. Track jobs, monitor workflow progress, and manage every permit from one place.</p>
+      </div>
+      <div class="showcase-grid">
+        <div class="showcase-card">
+          <div class="showcase-label">Job Dashboard</div>
+          <div class="mock-ui">
+            <div class="mock-sidebar">
+              <div class="mock-nav-col">
+                <div class="mock-nav-dot active"></div>
+                <div class="mock-nav-dot"></div>
+                <div class="mock-nav-dot"></div>
+              </div>
+              <div class="mock-main">
+                <div class="mock-header-bar"><span>Active Jobs</span></div>
+                <div class="mock-row highlight">
+                  <div class="mock-status green"></div>
+                  <div class="mock-text"><strong>1428 Oak Ridge Dr, Lakeland</strong><small>Polk County · Re-roof</small></div>
+                  <span class="mock-badge">Approved</span>
+                </div>
+                <div class="mock-row">
+                  <div class="mock-status blue"></div>
+                  <div class="mock-text"><strong>8801 Palm Ave, Tampa</strong><small>Lee County · Re-roof</small></div>
+                  <span class="mock-badge blue">In Progress</span>
+                </div>
+                <div class="mock-row">
+                  <div class="mock-status amber"></div>
+                  <div class="mock-text"><strong>220 S Florida Ave, Winter Haven</strong><small>Polk County · Re-roof</small></div>
+                  <span class="mock-badge blue">NOC Pending</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="showcase-card">
+          <div class="showcase-label">Permit Workflow Status</div>
+          <div class="mock-ui">
+            <div class="mock-main">
+              <div class="mock-header-bar"><span>1428 Oak Ridge Dr — Workflow</span></div>
+              <div class="mock-steps">
+                <div class="mock-step done"><span class="mock-step-dot"></span> Parcel retrieved</div>
+                <div class="mock-step done"><span class="mock-step-dot"></span> NOC generated</div>
+                <div class="mock-step done"><span class="mock-step-dot"></span> Homeowner signed</div>
+                <div class="mock-step active"><span class="mock-step-dot"></span> Recording with county</div>
+                <div class="mock-step"><span class="mock-step-dot"></span> Permit submission</div>
+                <div class="mock-step"><span class="mock-step-dot"></span> Packet ready</div>
+              </div>
+              <div class="mock-progress-track" style="margin-top: 1rem;"><div class="mock-progress-fill" style="width: 58%;"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="showcase-card">
+          <div class="showcase-label">NOC &amp; Submission Tracking</div>
+          <div class="mock-ui">
+            <div class="mock-main">
+              <div class="mock-header-bar"><span>Document Status</span></div>
+              <div class="mock-row">
+                <div class="mock-text"><strong>Notice of Commencement</strong><small>Generated · Sent to homeowner</small></div>
+                <span class="mock-badge">Signed</span>
+              </div>
+              <div class="mock-row highlight">
+                <div class="mock-text"><strong>County Recording</strong><small>Polk County Clerk · eRecorded</small></div>
+                <span class="mock-badge">Recorded</span>
+              </div>
+              <div class="mock-row">
+                <div class="mock-text"><strong>Permit Application</strong><small>AHJ portal · Submitted</small></div>
+                <span class="mock-badge blue">Tracking</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1276,30 +1890,63 @@
       <div class="section-header">
         <div class="section-label">Who It's For</div>
         <h2 class="section-title">Built for Florida roofing professionals</h2>
-        <p class="section-desc">Whether you're a solo operator or scaling a team, Dart iQ removes the permit bottleneck.</p>
+        <p class="section-desc">Whether you're a solo operator or scaling a team, DART iQ removes the permit bottleneck.</p>
       </div>
       <div class="audience-grid">
         <div class="audience-card">
-          <div class="emoji">🏠</div>
+          <div class="audience-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span></div>
           <h3>Florida Roofing Contractors</h3>
           <p>Stop spending hours on portals. Focus on roofs, not paperwork.</p>
         </div>
         <div class="audience-card">
-          <div class="emoji">⚡</div>
+          <div class="audience-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></span></div>
           <h3>Permit Expeditors</h3>
           <p>Automate repetitive workflows and handle more clients without adding headcount.</p>
         </div>
         <div class="audience-card">
-          <div class="emoji">📈</div>
+          <div class="audience-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16V9M12 16V5M17 16v-3"/></svg></span></div>
           <h3>Scaling Roofing Companies</h3>
-          <p>Processing 10+ jobs per month? Dart iQ keeps permit throughput from becoming your ceiling.</p>
+          <p>Processing 10+ jobs per month? DART iQ keeps permit throughput from becoming your ceiling.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROI -->
+  <section id="roi" class="section-alt">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Value</div>
+        <h2 class="section-title">Stop Spending Hours Managing Permits</h2>
+      </div>
+      <div class="roi-layout">
+        <div class="roi-before">
+          <h3>Instead of</h3>
+          <ul class="roi-list">
+            <li>Logging into county portals</li>
+            <li>Generating NOCs manually</li>
+            <li>Coordinating signatures</li>
+            <li>Recording documents</li>
+            <li>Tracking permit statuses across systems</li>
+          </ul>
+        </div>
+        <div class="roi-after">
+          <h3>With DART iQ</h3>
+          <ul class="roi-list">
+            <li>End-to-end permit automation</li>
+            <li>Compliant NOC generation</li>
+            <li>Remote notarization coordination</li>
+            <li>Automatic county recording</li>
+            <li>Single dashboard for every job</li>
+          </ul>
+          <p>DART iQ automates the entire process so your team can focus on production, sales, and customers.</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Pricing -->
-  <section id="pricing" style="background: rgba(30, 41, 59, 0.3);">
+  <section id="pricing">
     <div class="container">
       <div class="section-header">
         <div class="section-label">Pricing</div>
@@ -1361,7 +2008,7 @@
           <a href="#demo" class="btn btn-secondary" style="width: 100%;">Contact Sales</a>
         </div>
       </div>
-      <p class="pricing-disclaimer">* Monthly subscription covers Dart iQ software and automation services only. Permit application fees, notarization fees, county recording fees, and any other government or third-party fees are not included and are billed separately or passed through at cost.</p>
+      <p class="pricing-disclaimer">* Monthly subscription covers DART iQ software and automation services only. Permit application fees, notarization fees, county recording fees, and any other government or third-party fees are not included and are billed separately or passed through at cost.</p>
     </div>
   </section>
 
@@ -1393,7 +2040,7 @@
               <input type="tel" id="phone" name="phone" placeholder="(555) 555-5555" required>
             </div>
             <div class="form-group full">
-              <label for="volume">Monthly Permit Volume</label>
+              <label for="volume">Average permits submitted monthly</label>
               <select id="volume" name="volume" required>
                 <option value="" disabled selected>Select volume...</option>
                 <option value="1-10">1–10 permits/month</option>
@@ -1406,9 +2053,9 @@
           <button type="submit" class="btn btn-primary" style="width: 100%;">Get Early Access</button>
         </form>
         <div class="form-success" id="form-success">
-          <div class="icon">🎉</div>
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m22 4-10 10-3-3"/></svg></div>
           <h3>You're on the list!</h3>
-          <p>Thanks for your interest in Dart iQ. We'll be in touch shortly to schedule your demo.</p>
+          <p>Thanks for your interest in DART iQ. We'll be in touch shortly to schedule your demo.</p>
         </div>
       </div>
     </div>
@@ -1419,10 +2066,10 @@
     <div class="container footer-inner">
       <div class="logo">
         <div class="logo-icon">D</div>
-        Dart iQ
+        <span class="logo-text">DART iQ</span>
       </div>
       <p class="footer-brand">© 2026 Lightsey Technologies, LLC</p>
-      <p class="footer-tagline">Built for Florida contractors</p>
+      <p class="footer-tagline">Built for Florida roofing contractors</p>
       <ul class="footer-links">
         <li><a href="#">Privacy Policy</a></li>
         <li><a href="#">Terms of Service</a></li>
