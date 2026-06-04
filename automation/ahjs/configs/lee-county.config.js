@@ -1,11 +1,16 @@
 module.exports = {
   id: 'lee-county',
   name: 'Lee County Building Department',
+  state: 'FL',
   portalUrl: 'https://aca-prod.accela.com/LEECO/Login.aspx',
+  loginType: 'accela_angular',
+  captchaType: 'none',
+  workflowFile: 'lee-county.runner.js',
   workflowType: 'portal',
   credentialKey: 'LEE_COUNTY',
-  version: '1.1',
-  lastVerified: '2026-06-02',
+  permitType: 'Re-Roof Permit',
+  version: 1,
+  lastVerified: '2026-06-03',
   loginWaitMs: 3000,
 
   selectors: {

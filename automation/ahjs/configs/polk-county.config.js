@@ -1,11 +1,17 @@
 module.exports = {
   id: 'polk-county',
   name: 'Polk County Building Department',
+  state: 'FL',
   portalUrl: 'https://aca-prod.accela.com/POLKCO/Login.aspx',
+  loginType: 'accela_legacy',
+  captchaType: 'recaptcha_v2',
+  captchaSiteKey: '6LcsG08UAAAAANjzx4qNeHD3__8lwLWcwfnrpWln',
+  workflowFile: 'polk-county.runner.js',
   workflowType: 'portal',
   credentialKey: 'POLK_COUNTY',
-  version: '2.0',
-  lastVerified: '2026-05-27',
+  permitType: 'Re-Roof Permit',
+  version: 1,
+  lastVerified: '2026-06-03',
 
   selectors: {
     // Login
