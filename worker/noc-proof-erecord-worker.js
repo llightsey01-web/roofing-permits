@@ -12,8 +12,13 @@ const supabase = createClient(
   { realtime: { transport: ws } }
 )
 
-const { sendAlert } = require('../lib/monitoring/alert-service')
-const { recordWorkerPoll } = require('../lib/monitoring/worker-heartbeat')
+function requireMonitoring(mod) {
+  try { return require(path.join(__dirname, mod)) } catch (e) {}
+  try { return require(path.join(__dirname, '..', mod)) } catch (e) {}
+  throw new Error('Cannot resolve monitoring module: ' + mod)
+}
+const { sendAlert } = requireMonitoring('lib/monitoring/alert-service')
+const { recordWorkerPoll } = requireMonitoring('lib/monitoring/worker-heartbeat')
 
 const POLL_INTERVAL_MS = 30000
 
