@@ -9,6 +9,8 @@ const defaultConfig = require('./configs/polk-county.config')
 const { createClient } = require('@supabase/supabase-js')
 const { resolvePolkLegalDescription } = require('../../lib/parcels/polk-legal-description')
 const { triggerNocAfterPhase1 } = require('../../lib/automation/noc-trigger')
+const { saveCheckpoint, shouldSkipStep } = require('../shared/checkpoint.js')
+const { logRecoveryStart } = require('../shared/recovery.js')
 
 function getSupabase() {
   const ws = require('ws')
@@ -689,9 +691,14 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
     return searchWaitReason
   }
 
+  var resume = await logRecoveryStart(runId)
+  var startFromStep = resume.isResume ? resume.stepNumber : 0
+  console.log('[recovery] Starting from step:', startFromStep)
+
   try {
     // Step 1 — Login
     stepNumber++
+    if (!(await shouldSkipStep(runId, stepNumber))) {
     await logStep(page, runId, stepNumber, 'login', async function() {
       await page.goto(config.portalUrl, { waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(3000)
@@ -731,16 +738,20 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
       await page.waitForURL('**/Dashboard.aspx**', { timeout: 15000 })
       await page.waitForTimeout(2000)
     })
+    }
 
     // Step 2 — Navigate to disclaimer
     stepNumber++
+    if (!(await shouldSkipStep(runId, stepNumber))) {
     await logStep(page, runId, stepNumber, 'navigate_to_disclaimer', async function() {
       await page.goto(config.selectors.disclaimerUrl, { waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(2000)
     })
+    }
 
     // Step 3 — Accept disclaimer
     stepNumber++
+    if (!(await shouldSkipStep(runId, stepNumber))) {
     await logStep(page, runId, stepNumber, 'accept_disclaimer', async function() {
       await (await page.waitForSelector(config.selectors.disclaimerCheckbox)).check()
       await page.waitForTimeout(500)
@@ -748,9 +759,11 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
       await page.waitForURL('**/CapType.aspx**', { timeout: 15000 })
       await page.waitForTimeout(2000)
     })
+    }
 
     // Step 4 — Select Re-Roof permit type
     stepNumber++
+    if (!(await shouldSkipStep(runId, stepNumber))) {
     await logStep(page, runId, stepNumber, 'select_reroof_permit', async function() {
       await page.click(config.selectors.permitTypeReRoof)
       await page.waitForTimeout(500)
@@ -758,9 +771,12 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
       await page.waitForURL('**/CapEdit.aspx**', { timeout: 15000 })
       await page.waitForTimeout(2000)
     })
+    }
 
     // Step 5 — Fill address search with parsed components
     stepNumber++
+    if (!(await shouldSkipStep(runId, stepNumber))) {
+    var step5Checkpoint = {}
     await logStep(page, runId, stepNumber, 'fill_address_search', async function() {
       var parsed = parseAddress(jobData.property_address)
       var streetName = parsed.streetName.toUpperCase()
@@ -818,10 +834,14 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
       if (searchWaitReason === 'postback_finished_no_result' || searchWaitReason === 'timeout') {
         console.log('  Step 5 search did not populate parcel — continuing to Step 6 for grid fallback.')
       }
-    })
+      step5Checkpoint.parcel = parcelAfterWait || ''
+    }, step5Checkpoint)
+    }
 
     // Step 6 — Select address result
     stepNumber++
+    if (!(await shouldSkipStep(runId, stepNumber))) {
+    var step6Checkpoint = {}
     await logStep(page, runId, stepNumber, 'select_address_result', async function() {
       await removeOverlay()
 
@@ -847,6 +867,12 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
         console.log('[results] auto-fill detected: true')
         console.log('[results] parcel: ' + fields.parcel + ', city: ' + fields.city + ', zip: ' + fields.zip)
         console.log('  Address selected — portal populating fields...')
+        step6Checkpoint.parcel = fields.parcel
+        var ownerEarly = await page.$eval(
+          config.selectors.ownerName,
+          function(el) { return el.value || el.innerText || '' }
+        ).catch(function() { return '' })
+        step6Checkpoint.owner = (ownerEarly || '').trim()
         return
       }
 
@@ -863,6 +889,12 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
         console.log('[results] auto-fill detected: true')
         console.log('[results] parcel: ' + fields.parcel + ', city: ' + fields.city + ', zip: ' + fields.zip)
         console.log('  Address selected — portal populating fields...')
+        step6Checkpoint.parcel = fields.parcel
+        var ownerRetry = await page.$eval(
+          config.selectors.ownerName,
+          function(el) { return el.value || el.innerText || '' }
+        ).catch(function() { return '' })
+        step6Checkpoint.owner = (ownerRetry || '').trim()
         return
       }
 
@@ -933,10 +965,19 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
 
       console.log('[results] parcel populated after grid selection: ' + fields.parcel)
       console.log('  Address selected — portal populating fields...')
-    })
+      step6Checkpoint.parcel = fields.parcel
+      var ownerGrid = await page.$eval(
+        config.selectors.ownerName,
+        function(el) { return el.value || el.innerText || '' }
+      ).catch(function() { return '' })
+      step6Checkpoint.owner = (ownerGrid || '').trim()
+    }, step6Checkpoint)
+    }
 
     // Step 7 — Phase 1 stop point
     stepNumber++
+    if (!(await shouldSkipStep(runId, stepNumber))) {
+    var step7Checkpoint = {}
     await logStep(page, runId, stepNumber, 'phase1_save_parcel_and_stop', async function() {
       var supabase = getSupabase()
       await page.waitForTimeout(2000)
@@ -1020,10 +1061,15 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
         console.log('  Portal application id: ' + saveResult.portalApplicationId)
       }
 
+      var confirmationData = buildPortalConfirmationPayload(saveResult)
       assertSupabaseOk(await supabase.from('jobs').update({
-        portal_confirmation: buildPortalConfirmationPayload(saveResult),
+        portal_confirmation: confirmationData,
       }).eq('id', jobData.id), 'Store portal save metadata on job')
       console.log('  ✓ Portal confirmation stored')
+
+      step7Checkpoint.parcel = parcelNumber.trim()
+      step7Checkpoint.owner = (portalOwnerName || '').trim()
+      step7Checkpoint.portal_confirmation = confirmationData
 
       assertSupabaseOk(await supabase.from('automation_runs').update({
         run_status: RUN_STATUS_PHASE1_SUCCESS,
@@ -1053,7 +1099,8 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
       } else {
         console.log('  Post-Phase 1 chain skipped (skipPostPhase1Chain=true)')
       }
-    })
+    }, step7Checkpoint)
+    }
 
     console.log('\n========================================')
     console.log('PHASE 1 COMPLETE — POST-PHASE 1 CHAIN')
