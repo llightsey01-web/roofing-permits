@@ -4,7 +4,8 @@
 
 - `ahjs/` — AHJ-specific runners and configs
 - `ahjs/configs/` — Config files per county
-- `ahjs/shared/` — Shared utilities
+- `ahjs/shared/` — Base runners and shared portal abstractions
+- `shared/` — Cross-cutting utilities (screenshot, checkpoint, recovery, errors)
 - `logs/` — Local debug logs (not committed)
 - `test-*.js` — Diagnostic scripts (see below)
 
@@ -29,11 +30,30 @@
 6. Add county to `worker/runner.js` routing
 7. Test login: `node automation/test-[county]-login.js`
 
+## Base Runner Architecture
+
+County runners should eventually extend the base layer instead of duplicating lifecycle code.
+
+| Module | Portal type | Purpose |
+|--------|-------------|---------|
+| `ahjs/shared/base-runner.js` | All | Config validation, `logRecoveryStart`, preflight, credentials, browser launch/close, `logStep` + checkpoint skips, `handleRunError` |
+| `ahjs/shared/accela-base-runner.js` | Accela | Scaffold for login → disclaimer → permit type → address → parcel → legal description → save & resume (config selectors) |
+| `ahjs/shared/citizenserve-base-runner.js` | CitizenServe | Scaffold for CitizenServe login and address search (different from Accela) |
+| `ahjs/shared/custom-base-runner.js` | Custom | Minimal logging/checkpoint/recovery pattern for bespoke portals |
+
+**Today:** `polk-county.runner.js` and `lee-county.runner.js` still contain full county logic. New counties should start from the matching base runner + `configs/template.config.js`.
+
+```javascript
+const { runAccelaBasePortal } = require('./ahjs/shared/accela-base-runner')
+// await runAccelaBasePortal(jobData, runId, runnerOptions, config, hooks)
+```
+
 ## AHJ Login Types
 
-- `accela_legacy` — Traditional Accela with reCAPTCHA (Polk County)
-- `accela_angular` — Angular CommunityView iframe, no CAPTCHA (Lee County)
-- `custom` — Custom portal, needs bespoke runner
+- `accela_legacy` — Traditional Accela with reCAPTCHA (Polk County) → `accela-base-runner`
+- `accela_angular` — Angular CommunityView iframe, no CAPTCHA (Lee County) → `accela-base-runner`
+- `custom` — Custom portal, needs bespoke runner → `custom-base-runner`
+- CitizenServe portals → `citizenserve-base-runner`
 
 ## Config Versioning
 
