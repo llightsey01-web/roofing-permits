@@ -12,6 +12,9 @@ const supabase = createClient(
   { realtime: { transport: ws } }
 )
 
+const { sendAlert } = require('../lib/monitoring/alert-service')
+const { recordWorkerPoll } = require('../lib/monitoring/worker-heartbeat')
+
 const POLL_INTERVAL_MS = 30000
 
 const HANDLED_RUN_TYPES = [
@@ -277,12 +280,29 @@ async function claimAndRun() {
     return result
   } catch (err) {
     console.error('[noc-worker] Run failed:', err.message)
+    var attemptCount = (run.attempts || 0) + 1
     await markRunError(run.id, job.id, err)
+    if (attemptCount >= 3) {
+      await sendAlert({
+        type: 'automation_failed',
+        severity: 'critical',
+        jobId: job.id,
+        companyId: job.company_id,
+        message: 'NOC/Proof automation failed after ' + attemptCount + ' attempts',
+        details: {
+          runId: run.id,
+          runType: run.run_type,
+          errorMessage: err.message,
+          worker: 'nocProof',
+        },
+      })
+    }
   }
 }
 
 async function poll() {
   try {
+    await recordWorkerPoll('nocProof')
     await claimAndRun()
   } catch (err) {
     console.error('[noc-worker] Poll error:', err.message)

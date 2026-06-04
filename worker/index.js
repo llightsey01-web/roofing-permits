@@ -10,6 +10,9 @@ const supabase = createClient(
   { realtime: { transport: ws } }
 )
 
+const { sendAlert } = require('../lib/monitoring/alert-service')
+const { recordWorkerPoll } = require('../lib/monitoring/worker-heartbeat')
+
 const POLL_INTERVAL_MS = 30000
 const PROOF_POLL_INTERVAL_MS = 30 * 60 * 1000
 const PROOF_POLL_START_DELAY_MS = 5 * 60 * 1000
@@ -107,10 +110,37 @@ async function claimAndRun() {
 
   const { executeRun } = require('./runner')
   await executeRun(jobWithDocs, run)
+
+  var { data: finishedRun } = await supabase
+    .from('automation_runs')
+    .select('run_status, attempts, error_message, run_type')
+    .eq('id', run.id)
+    .single()
+
+  if (
+    finishedRun &&
+    finishedRun.run_status === 'error' &&
+    (finishedRun.attempts || 0) >= 3
+  ) {
+    await sendAlert({
+      type: 'automation_failed',
+      severity: 'critical',
+      jobId: job.id,
+      companyId: job.company_id,
+      message: 'Permit automation failed after ' + finishedRun.attempts + ' attempts',
+      details: {
+        runId: run.id,
+        runType: finishedRun.run_type,
+        errorMessage: finishedRun.error_message,
+        worker: 'permit',
+      },
+    })
+  }
 }
 
 async function poll() {
   try {
+    await recordWorkerPoll('permit')
     await claimAndRun()
   } catch (err) {
     console.error('[worker] Poll error:', err.message)
