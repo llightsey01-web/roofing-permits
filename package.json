@@ -3,13 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "dev": "node scripts/validate-dev-env.js && next dev",
-  "dev:stable": "node scripts/start-dev-stable.js",
-  "health": "node scripts/check-local-health.js",
-  "build": "next build",
-  "start": "next start",
-  "lint": "eslint"
-},
+    "dev": "node scripts/validate-dev-env.js && next dev",
+    "dev:stable": "node scripts/start-dev-stable.js",
+    "health": "node scripts/check-local-health.js",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "jest",
+    "test:unit": "jest tests/unit",
+    "test:integration": "jest tests/integration",
+    "test:ci": "jest --ci --forceExit"
+  },
   "dependencies": {
     "@antiadmin/anticaptchaofficial": "^1.0.55",
     "@dropbox/sign": "^1.11.0",
@@ -32,6 +36,7 @@
     "@types/react": "19.2.15",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "jest": "^30.4.2",
     "tailwindcss": "^4"
   }
 }
