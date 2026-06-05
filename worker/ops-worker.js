@@ -12,6 +12,13 @@ const supabase = createClient(
   { realtime: { transport: ws } }
 )
 
+function requireMonitoring(mod) {
+  try { return require(path.join(__dirname, mod)) } catch (e) {}
+  try { return require(path.join(__dirname, '..', mod)) } catch (e) {}
+  throw new Error('Cannot resolve monitoring module: ' + mod)
+}
+const { recordWorkerPoll } = requireMonitoring('lib/monitoring/worker-heartbeat')
+
 const POLL_INTERVAL_MS = 30000
 
 const HANDLED_RUN_TYPES = [
@@ -130,6 +137,7 @@ async function claimAndRun() {
 
 async function poll() {
   try {
+    await recordWorkerPoll('ops')
     await claimAndRun()
   } catch (err) {
     console.error('[ops-worker] Poll error:', err.message)
