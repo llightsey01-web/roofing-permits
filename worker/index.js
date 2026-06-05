@@ -10,13 +10,20 @@ const supabase = createClient(
   { realtime: { transport: ws } }
 )
 
-function requireMonitoring(mod) {
+function requireLib(mod) {
   try { return require(path.join(__dirname, mod)) } catch (e) {}
   try { return require(path.join(__dirname, '..', mod)) } catch (e) {}
-  throw new Error('Cannot resolve monitoring module: ' + mod)
+  throw new Error('Cannot resolve lib module: ' + mod)
 }
+function requireMonitoring(mod) {
+  return requireLib(mod)
+}
+const { validateEnvironment, getEnvironment } = requireLib('lib/env/environment.js')
 const { sendAlert } = requireMonitoring('lib/monitoring/alert-service')
 const { recordWorkerPoll } = requireMonitoring('lib/monitoring/worker-heartbeat')
+
+validateEnvironment()
+console.log('[worker] Environment:', getEnvironment())
 
 const POLL_INTERVAL_MS = 30000
 const PROOF_POLL_INTERVAL_MS = 30 * 60 * 1000

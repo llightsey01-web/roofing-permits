@@ -12,13 +12,20 @@ const supabase = createClient(
   { realtime: { transport: ws } }
 )
 
-function requireMonitoring(mod) {
+function requireLib(mod) {
   try { return require(path.join(__dirname, mod)) } catch (e) {}
   try { return require(path.join(__dirname, '..', mod)) } catch (e) {}
-  throw new Error('Cannot resolve monitoring module: ' + mod)
+  throw new Error('Cannot resolve lib module: ' + mod)
 }
+function requireMonitoring(mod) {
+  return requireLib(mod)
+}
+const { validateEnvironment, getEnvironment } = requireLib('lib/env/environment.js')
 const { sendAlert } = requireMonitoring('lib/monitoring/alert-service')
 const { recordWorkerPoll } = requireMonitoring('lib/monitoring/worker-heartbeat')
+
+validateEnvironment()
+console.log('[noc-worker] Environment:', getEnvironment())
 
 const POLL_INTERVAL_MS = 30000
 
@@ -31,14 +38,7 @@ const HANDLED_RUN_TYPES = [
 ]
 
 function resolveLib(relativePath) {
-  var candidates = [
-    path.join(__dirname, relativePath),
-    path.join(__dirname, '..', relativePath),
-  ]
-  for (var i = 0; i < candidates.length; i++) {
-    try { return require(candidates[i]) } catch (e) {}
-  }
-  throw new Error('Cannot resolve lib module: ' + relativePath)
+  return requireLib(relativePath)
 }
 
 async function markRunComplete(runId, extra) {
