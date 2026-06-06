@@ -6,74 +6,53 @@
   <meta name="color-scheme" content="dark light">
   <meta name="description" content="DART iQ — Built for Florida roofing contractors. Automate permits from parcel lookup through NOC generation, notarization, recording, and submission.">
   <title>DART iQ — Permits on Autopilot for Florida Roofers</title>
-  <script>
-    (function () {
-      try {
-        var stored = localStorage.getItem('dartiq-theme');
-        var theme = stored || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-        document.documentElement.setAttribute('data-theme', theme);
-      } catch (e) {
-        document.documentElement.setAttribute('data-theme', 'dark');
-      }
-    })();
-    function toggleTheme() {
-      var html = document.documentElement;
-      var next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-      html.setAttribute('data-theme', next);
-      try { localStorage.setItem('dartiq-theme', next); } catch (e) {}
-      var btn = document.getElementById('theme-toggle');
-      if (btn) btn.setAttribute('aria-label', next === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
-    }
-  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root,
     html[data-theme="dark"] {
       color-scheme: dark;
       --navy: #0f172a;
       --navy-light: #1e293b;
-      --navy-lighter: #334155;
+      --orange: #f97316;
+      --orange-light: #fb923c;
+      --orange-glow: rgba(249, 115, 22, 0.4);
       --blue: #3b82f6;
       --blue-light: #60a5fa;
-      --blue-glow: rgba(59, 130, 246, 0.35);
+      --emerald: #10b981;
       --white: #ffffff;
       --gray: #94a3b8;
-      --gray-light: #cbd5e1;
-      --success: #22c55e;
       --bg-primary: #0f172a;
       --bg-secondary: #1e293b;
-      --bg-elevated: rgba(30, 41, 59, 0.3);
+      --bg-elevated: rgba(30, 41, 59, 0.5);
       --bg-card: #1e293b;
       --bg-input: #0f172a;
       --text-primary: #ffffff;
       --text-secondary: #cbd5e1;
       --text-muted: #94a3b8;
-      --border-subtle: rgba(255, 255, 255, 0.06);
-      --border-medium: rgba(255, 255, 255, 0.12);
-      --nav-bg: rgba(15, 23, 42, 0.85);
-      --hero-grid-line: rgba(255, 255, 255, 0.03);
-      --hero-gradient-1: rgba(59, 130, 246, 0.18);
-      --hero-gradient-2: rgba(59, 130, 246, 0.08);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-medium: rgba(255, 255, 255, 0.14);
+      --nav-bg: rgba(15, 23, 42, 0.92);
+      --hero-grid-line: rgba(255, 255, 255, 0.04);
       --shadow-card: 0 24px 80px rgba(0, 0, 0, 0.45);
       --demo-chrome-bg: #1a2332;
-      --icon-color: #60a5fa;
+      --icon-color: #f97316;
       --btn-on-primary: #ffffff;
     }
 
     html[data-theme="light"] {
       color-scheme: light;
-      --navy: #ffffff;
+      --navy: #0f172a;
       --navy-light: #f8fafc;
-      --navy-lighter: #f1f5f9;
-      --blue: #2563eb;
-      --blue-light: #3b82f6;
-      --blue-glow: rgba(37, 99, 235, 0.2);
-      --white: #0f172a;
+      --orange: #f97316;
+      --orange-light: #ea580c;
+      --orange-glow: rgba(249, 115, 22, 0.25);
+      --blue: #3b82f6;
+      --blue-light: #2563eb;
+      --emerald: #10b981;
+      --white: #ffffff;
       --gray: #64748b;
-      --gray-light: #475569;
-      --success: #16a34a;
       --bg-primary: #ffffff;
       --bg-secondary: #f8fafc;
       --bg-elevated: #f1f5f9;
@@ -82,28 +61,26 @@
       --text-primary: #0f172a;
       --text-secondary: #334155;
       --text-muted: #64748b;
-      --border-subtle: rgba(15, 23, 42, 0.06);
-      --border-medium: rgba(15, 23, 42, 0.12);
-      --nav-bg: rgba(255, 255, 255, 0.92);
-      --hero-grid-line: rgba(15, 23, 42, 0.04);
-      --hero-gradient-1: rgba(37, 99, 235, 0.08);
-      --hero-gradient-2: rgba(37, 99, 235, 0.04);
-      --shadow-card: 0 24px 64px rgba(15, 23, 42, 0.08);
+      --border-subtle: rgba(15, 23, 42, 0.08);
+      --border-medium: rgba(15, 23, 42, 0.14);
+      --nav-bg: rgba(255, 255, 255, 0.94);
+      --hero-grid-line: rgba(15, 23, 42, 0.05);
+      --shadow-card: 0 24px 64px rgba(15, 23, 42, 0.1);
       --demo-chrome-bg: #f1f5f9;
-      --icon-color: #2563eb;
+      --icon-color: #f97316;
       --btn-on-primary: #ffffff;
-    }
-
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
     }
 
     html {
       scroll-behavior: smooth;
-      background-color: var(--bg-primary);
+      background-color: #0f172a;
     }
+
+    html[data-theme="light"] {
+      background-color: #ffffff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -113,24 +90,17 @@
       overflow-x: hidden;
     }
 
-    nav,
-    section,
-    footer {
+    nav, section:not(.credibility-section), footer {
       background-color: var(--bg-primary);
     }
 
-    .section-alt {
-      background-color: var(--bg-elevated) !important;
-    }
+    .section-alt { background-color: var(--bg-elevated) !important; }
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
+    a { color: inherit; text-decoration: none; }
 
     .container {
       width: 100%;
-      max-width: 1120px;
+      max-width: 1140px;
       margin: 0 auto;
       padding: 0 1.5rem;
     }
@@ -138,12 +108,10 @@
     /* Nav */
     .nav {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 0; left: 0; right: 0;
       z-index: 100;
       background: var(--nav-bg);
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--border-subtle);
     }
 
@@ -160,35 +128,29 @@
       align-items: center;
       gap: 0.5rem;
       min-width: 0;
-      flex-shrink: 0;
     }
 
     .logo {
       display: flex;
       align-items: center;
-      gap: 0.45rem;
-      font-weight: 800;
+      gap: 0.5rem;
+      font-weight: 900;
       font-size: clamp(0.95rem, 3.2vw, 1.35rem);
-      letter-spacing: 0.04em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      min-width: 0;
-    }
-
-    .logo-text {
-      white-space: nowrap;
-      line-height: 1;
     }
 
     .logo-icon {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, var(--blue), var(--blue-light));
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--orange), var(--orange-light));
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 800;
+      font-weight: 900;
       font-size: 1.1rem;
+      color: #fff;
     }
 
     .nav-links {
@@ -199,53 +161,51 @@
 
     .nav-links a {
       font-size: 0.9rem;
+      font-weight: 500;
       color: var(--text-secondary);
       transition: color 0.2s;
     }
 
-    .nav-links a:hover {
-      color: var(--text-primary);
+    .nav-links a:hover { color: var(--orange); }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
     }
 
     .nav-cta {
       display: inline-flex;
       align-items: center;
-      padding: 0.6rem 1.25rem;
-      background: var(--blue);
-      color: var(--btn-on-primary);
-      font-size: 0.875rem;
-      font-weight: 600;
+      padding: 0.6rem 1.15rem;
+      background: var(--orange);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 700;
       border-radius: 8px;
       transition: background 0.2s, transform 0.2s;
     }
 
     .nav-cta:hover {
-      background: var(--blue-light);
+      background: var(--orange-light);
       transform: translateY(-1px);
-    }
-
-    .nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
     }
 
     .nav-login {
       display: inline-flex;
       align-items: center;
-      padding: 0.6rem 1.25rem;
+      padding: 0.55rem 1rem;
       background: transparent;
-      color: var(--text-primary);
-      font-size: 0.875rem;
+      color: var(--blue);
+      font-size: 0.85rem;
       font-weight: 600;
       border-radius: 8px;
-      border: 1px solid var(--border-medium);
-      transition: border-color 0.2s, color 0.2s, transform 0.2s;
+      border: 2px solid var(--blue);
+      transition: all 0.2s;
     }
 
     .nav-login:hover {
-      border-color: var(--blue-light);
-      color: var(--blue-light);
+      background: rgba(59, 130, 246, 0.08);
       transform: translateY(-1px);
     }
 
@@ -255,20 +215,18 @@
       justify-content: center;
       width: 38px;
       height: 38px;
-      padding: 0;
       border: 1px solid var(--border-medium);
       border-radius: 8px;
       background: transparent;
       color: var(--text-secondary);
       cursor: pointer;
-      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      transition: all 0.2s;
       flex-shrink: 0;
     }
 
     .theme-toggle:hover {
-      border-color: var(--blue);
-      color: var(--blue-light);
-      background: rgba(59, 130, 246, 0.08);
+      border-color: var(--orange);
+      color: var(--orange);
     }
 
     .theme-toggle svg {
@@ -311,9 +269,9 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0.875rem 1.75rem;
+      padding: 0.9rem 1.85rem;
       font-size: 1rem;
-      font-weight: 600;
+      font-weight: 700;
       border-radius: 10px;
       border: none;
       cursor: pointer;
@@ -322,27 +280,31 @@
     }
 
     .btn-primary {
-      background: var(--blue);
-      color: var(--btn-on-primary);
-      box-shadow: 0 4px 24px var(--blue-glow);
+      background: var(--orange);
+      color: #fff;
+      box-shadow: 0 4px 24px var(--orange-glow);
     }
 
     .btn-primary:hover {
-      background: var(--blue-light);
+      background: var(--orange-light);
       transform: translateY(-2px);
-      box-shadow: 0 8px 32px var(--blue-glow);
+      box-shadow: 0 8px 32px var(--orange-glow);
     }
 
     .btn-secondary {
       background: transparent;
       color: var(--text-primary);
-      border: 1px solid var(--border-medium);
+      border: 2px solid rgba(255, 255, 255, 0.35);
+    }
+
+    html[data-theme="light"] .btn-secondary {
+      border-color: var(--navy);
+      color: var(--navy);
     }
 
     .btn-secondary:hover {
-      border-color: var(--blue);
-      color: var(--blue-light);
-      background: rgba(59, 130, 246, 0.08);
+      border-color: var(--orange);
+      color: var(--orange);
     }
 
     .btn-group {
@@ -351,19 +313,48 @@
       gap: 1rem;
     }
 
-    .hero-signin {
-      margin-top: 1.25rem;
-      font-size: 0.875rem;
-      color: var(--text-muted);
+    /* Hero */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 8rem 0 5rem;
+      overflow: hidden;
+      background-color: var(--bg-primary);
     }
 
-    .hero-signin a {
-      color: var(--text-secondary);
-      transition: color 0.2s;
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, transparent 45%),
+        radial-gradient(ellipse 70% 50% at 20% 0%, rgba(59, 130, 246, 0.15), transparent),
+        radial-gradient(ellipse 50% 40% at 90% 80%, rgba(249, 115, 22, 0.08), transparent);
+      pointer-events: none;
     }
 
-    .hero-signin a:hover {
-      color: var(--blue-light);
+    .hero-angle {
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: linear-gradient(to top right, var(--bg-primary) 49%, transparent 50%),
+                  linear-gradient(to top left, var(--bg-elevated) 49%, transparent 50%);
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--hero-grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--hero-grid-line) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse 80% 70% at 40% 30%, black, transparent);
+      pointer-events: none;
     }
 
     .hero-layout {
@@ -374,23 +365,112 @@
       align-items: center;
     }
 
-    .hero-content {
-      position: relative;
-      max-width: 720px;
-    }
+    .hero-content { max-width: 640px; }
 
     .hero-demo {
       width: 100%;
-      max-width: 460px;
+      max-width: 480px;
       margin: 0 auto;
     }
 
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 1rem;
+      background: rgba(249, 115, 22, 0.12);
+      border: 1px solid rgba(249, 115, 22, 0.35);
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 1.5rem;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--emerald);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.9); }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.75rem, 7vw, 4.5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      margin-bottom: 1.25rem;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--text-primary) 30%, var(--orange) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    html[data-theme="light"] .hero h1 span {
+      background: linear-gradient(135deg, var(--navy) 20%, var(--orange) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(1.05rem, 2.5vw, 1.2rem);
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin-bottom: 2.25rem;
+      line-height: 1.75;
+    }
+
+    .hero-signin {
+      margin-top: 1.25rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .hero-signin a {
+      color: var(--blue);
+      font-weight: 600;
+    }
+
+    .hero-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2.5rem;
+      margin-top: 3.5rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--orange);
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+      font-weight: 500;
+    }
+
+    /* Demo window */
     .demo-window {
       background: var(--bg-card);
       border: 1px solid var(--border-medium);
       border-radius: 16px;
       overflow: hidden;
-      box-shadow: var(--shadow-card), 0 0 60px rgba(59, 130, 246, 0.12);
+      box-shadow: var(--shadow-card), 0 0 48px rgba(249, 115, 22, 0.1);
     }
 
     .demo-chrome {
@@ -402,37 +482,24 @@
       border-bottom: 1px solid var(--border-subtle);
     }
 
-    .demo-dots {
-      display: flex;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    .demo-dots span {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
-
+    .demo-dots { display: flex; gap: 6px; }
+    .demo-dots span { width: 10px; height: 10px; border-radius: 50%; }
     .demo-dots span:nth-child(1) { background: #ff5f57; }
     .demo-dots span:nth-child(2) { background: #febc2e; }
     .demo-dots span:nth-child(3) { background: #28c840; }
 
     .demo-url {
       flex: 1;
-      background: rgba(0, 0, 0, 0.28);
+      background: rgba(0, 0, 0, 0.2);
       border-radius: 6px;
       padding: 6px 12px;
       font-size: 12px;
       color: var(--gray);
       text-align: center;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-family: ui-monospace, monospace;
     }
 
-    .demo-body {
-      padding: 1.5rem;
-      background: var(--bg-primary);
-    }
+    .demo-body { padding: 1.5rem; background: var(--bg-primary); }
 
     .demo-progress {
       height: 4px;
@@ -442,19 +509,19 @@
       overflow: hidden;
     }
 
+    html[data-theme="light"] .demo-progress {
+      background: rgba(15, 23, 42, 0.08);
+    }
+
     .demo-progress-fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, var(--blue), var(--blue-light));
+      background: linear-gradient(90deg, var(--orange), var(--orange-light));
       border-radius: 4px;
       animation: demoProgressFill 8s linear infinite;
     }
 
-    .demo-pipeline {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-    }
+    .demo-pipeline { display: flex; flex-direction: column; gap: 0.35rem; }
 
     .demo-step {
       display: flex;
@@ -489,86 +556,80 @@
       75%, 100% { width: 100%; }
     }
 
+    @keyframes demoRowActive {
+      0%, 100% { opacity: 1; background: transparent; box-shadow: none; }
+      50% { opacity: 1; background: rgba(249, 115, 22, 0.14); box-shadow: 0 0 24px rgba(249, 115, 22, 0.25); }
+    }
+
     @keyframes demoRow1 {
-      0%, 12.499% { opacity: 1; background: rgba(59, 130, 246, 0.12); box-shadow: 0 0 24px rgba(59, 130, 246, 0.22); }
+      0%, 12.499% { opacity: 1; background: rgba(249, 115, 22, 0.14); box-shadow: 0 0 24px rgba(249, 115, 22, 0.25); }
       12.5%, 100% { opacity: 1; background: transparent; box-shadow: none; }
     }
 
     @keyframes demoRow2 {
       0%, 12.499% { opacity: 0.4; background: transparent; box-shadow: none; }
-      12.5%, 24.999% { opacity: 1; background: rgba(59, 130, 246, 0.12); box-shadow: 0 0 24px rgba(59, 130, 246, 0.22); }
+      12.5%, 24.999% { opacity: 1; background: rgba(249, 115, 22, 0.14); box-shadow: 0 0 24px rgba(249, 115, 22, 0.25); }
       25%, 100% { opacity: 1; background: transparent; box-shadow: none; }
     }
 
     @keyframes demoRow3 {
-      0%, 24.999% { opacity: 0.4; background: transparent; box-shadow: none; }
-      25%, 37.499% { opacity: 1; background: rgba(59, 130, 246, 0.12); box-shadow: 0 0 24px rgba(59, 130, 246, 0.22); }
+      0%, 24.999% { opacity: 0.4; }
+      25%, 37.499% { opacity: 1; background: rgba(249, 115, 22, 0.14); box-shadow: 0 0 24px rgba(249, 115, 22, 0.25); }
       37.5%, 100% { opacity: 1; background: transparent; box-shadow: none; }
     }
 
     @keyframes demoRow4 {
-      0%, 37.499% { opacity: 0.4; background: transparent; box-shadow: none; }
-      37.5%, 49.999% { opacity: 1; background: rgba(59, 130, 246, 0.12); box-shadow: 0 0 24px rgba(59, 130, 246, 0.22); }
+      0%, 37.499% { opacity: 0.4; }
+      37.5%, 49.999% { opacity: 1; background: rgba(249, 115, 22, 0.14); box-shadow: 0 0 24px rgba(249, 115, 22, 0.25); }
       50%, 100% { opacity: 1; background: transparent; box-shadow: none; }
     }
 
     @keyframes demoRow5 {
-      0%, 49.999% { opacity: 0.4; background: transparent; box-shadow: none; }
-      50%, 62.499% { opacity: 1; background: rgba(59, 130, 246, 0.12); box-shadow: 0 0 24px rgba(59, 130, 246, 0.22); }
+      0%, 49.999% { opacity: 0.4; }
+      50%, 62.499% { opacity: 1; background: rgba(249, 115, 22, 0.14); box-shadow: 0 0 24px rgba(249, 115, 22, 0.25); }
       62.5%, 100% { opacity: 1; background: transparent; box-shadow: none; }
     }
 
     @keyframes demoRow6 {
-      0%, 62.499% { opacity: 0.4; background: transparent; box-shadow: none; }
-      62.5%, 74.999% { opacity: 1; background: rgba(34, 197, 94, 0.14); box-shadow: 0 0 36px rgba(34, 197, 94, 0.35); }
+      0%, 62.499% { opacity: 0.4; }
+      62.5%, 74.999% { opacity: 1; background: rgba(16, 185, 129, 0.16); box-shadow: 0 0 36px rgba(16, 185, 129, 0.35); }
       75%, 100% { opacity: 1; background: transparent; box-shadow: none; }
     }
 
     @keyframes demoInd1 {
-      0% { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 14px var(--blue-glow); transform: scale(1); }
-      6.25% { transform: scale(1.18); }
-      12.499% { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 14px var(--blue-glow); transform: scale(1); }
-      12.5%, 100% { border-color: var(--success); background: var(--success); box-shadow: none; transform: scale(1); }
+      0% { border-color: var(--orange); background: var(--orange); box-shadow: 0 0 14px var(--orange-glow); }
+      12.499% { border-color: var(--orange); background: var(--orange); }
+      12.5%, 100% { border-color: var(--emerald); background: var(--emerald); box-shadow: none; }
     }
 
     @keyframes demoInd2 {
-      0%, 12.499% { border-color: rgba(255, 255, 255, 0.22); background: transparent; box-shadow: none; transform: scale(1); }
-      12.5% { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 14px var(--blue-glow); transform: scale(1); }
-      18.75% { transform: scale(1.18); }
-      24.999% { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 14px var(--blue-glow); transform: scale(1); }
-      25%, 100% { border-color: var(--success); background: var(--success); box-shadow: none; transform: scale(1); }
+      0%, 12.499% { border-color: rgba(255,255,255,0.2); background: transparent; }
+      12.5%, 24.999% { border-color: var(--orange); background: var(--orange); box-shadow: 0 0 14px var(--orange-glow); }
+      25%, 100% { border-color: var(--emerald); background: var(--emerald); box-shadow: none; }
     }
 
     @keyframes demoInd3 {
-      0%, 24.999% { border-color: rgba(255, 255, 255, 0.22); background: transparent; box-shadow: none; transform: scale(1); }
-      25% { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 14px var(--blue-glow); transform: scale(1); }
-      31.25% { transform: scale(1.18); }
-      37.499% { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 14px var(--blue-glow); transform: scale(1); }
-      37.5%, 100% { border-color: var(--success); background: var(--success); box-shadow: none; transform: scale(1); }
+      0%, 24.999% { border-color: rgba(255,255,255,0.2); background: transparent; }
+      25%, 37.499% { border-color: var(--orange); background: var(--orange); box-shadow: 0 0 14px var(--orange-glow); }
+      37.5%, 100% { border-color: var(--emerald); background: var(--emerald); box-shadow: none; }
     }
 
     @keyframes demoInd4 {
-      0%, 37.499% { border-color: rgba(255, 255, 255, 0.22); background: transparent; box-shadow: none; transform: scale(1); }
-      37.5% { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 14px var(--blue-glow); transform: scale(1); }
-      43.75% { transform: scale(1.18); }
-      49.999% { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 14px var(--blue-glow); transform: scale(1); }
-      50%, 100% { border-color: var(--success); background: var(--success); box-shadow: none; transform: scale(1); }
+      0%, 37.499% { border-color: rgba(255,255,255,0.2); background: transparent; }
+      37.5%, 49.999% { border-color: var(--orange); background: var(--orange); box-shadow: 0 0 14px var(--orange-glow); }
+      50%, 100% { border-color: var(--emerald); background: var(--emerald); box-shadow: none; }
     }
 
     @keyframes demoInd5 {
-      0%, 49.999% { border-color: rgba(255, 255, 255, 0.22); background: transparent; box-shadow: none; transform: scale(1); }
-      50% { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 14px var(--blue-glow); transform: scale(1); }
-      56.25% { transform: scale(1.18); }
-      62.499% { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 14px var(--blue-glow); transform: scale(1); }
-      62.5%, 100% { border-color: var(--success); background: var(--success); box-shadow: none; transform: scale(1); }
+      0%, 49.499% { border-color: rgba(255,255,255,0.2); background: transparent; }
+      50%, 62.499% { border-color: var(--orange); background: var(--orange); box-shadow: 0 0 14px var(--orange-glow); }
+      62.5%, 100% { border-color: var(--emerald); background: var(--emerald); box-shadow: none; }
     }
 
     @keyframes demoInd6 {
-      0%, 62.499% { border-color: rgba(255, 255, 255, 0.22); background: transparent; box-shadow: none; transform: scale(1); }
-      62.5% { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 14px var(--blue-glow); transform: scale(1); }
-      68.75% { transform: scale(1.18); }
-      74.999% { border-color: var(--blue); background: var(--blue); box-shadow: 0 0 14px var(--blue-glow); transform: scale(1); }
-      75%, 100% { border-color: var(--success); background: var(--success); box-shadow: none; transform: scale(1); }
+      0%, 62.499% { border-color: rgba(255,255,255,0.2); background: transparent; }
+      62.5%, 74.999% { border-color: var(--orange); background: var(--orange); box-shadow: 0 0 14px var(--orange-glow); }
+      75%, 100% { border-color: var(--emerald); background: var(--emerald); box-shadow: none; }
     }
 
     .demo-step:nth-child(1) .demo-indicator { animation: demoInd1 8s linear infinite; }
@@ -578,50 +639,12 @@
     .demo-step:nth-child(5) .demo-indicator { animation: demoInd5 8s linear infinite; }
     .demo-step:nth-child(6) .demo-indicator { animation: demoInd6 8s linear infinite; }
 
-    @keyframes demoCheck1 {
-      0%, 12.499% { opacity: 0; transform: scale(0.6); }
-      12.5%, 100% { opacity: 1; transform: scale(1); }
-    }
-
-    @keyframes demoCheck2 {
-      0%, 24.999% { opacity: 0; transform: scale(0.6); }
-      25%, 100% { opacity: 1; transform: scale(1); }
-    }
-
-    @keyframes demoCheck3 {
-      0%, 37.499% { opacity: 0; transform: scale(0.6); }
-      37.5%, 100% { opacity: 1; transform: scale(1); }
-    }
-
-    @keyframes demoCheck4 {
-      0%, 49.999% { opacity: 0; transform: scale(0.6); }
-      50%, 100% { opacity: 1; transform: scale(1); }
-    }
-
-    @keyframes demoCheck5 {
-      0%, 62.499% { opacity: 0; transform: scale(0.6); }
-      62.5%, 100% { opacity: 1; transform: scale(1); }
-    }
-
-    @keyframes demoCheck6 {
-      0%, 74.999% { opacity: 0; transform: scale(0.6); }
-      75%, 100% { opacity: 1; transform: scale(1); }
-    }
-
-    .demo-step.active {
-      opacity: 1;
-      background: rgba(59, 130, 246, 0.12);
-      box-shadow: 0 0 24px rgba(59, 130, 246, 0.22);
-    }
-
-    .demo-step.complete {
-      opacity: 1;
-    }
-
-    .demo-step.celebrate {
-      background: rgba(34, 197, 94, 0.14);
-      box-shadow: 0 0 36px rgba(34, 197, 94, 0.35);
-    }
+    @keyframes demoCheck1 { 0%, 12.499% { opacity: 0; } 12.5%, 100% { opacity: 1; } }
+    @keyframes demoCheck2 { 0%, 24.999% { opacity: 0; } 25%, 100% { opacity: 1; } }
+    @keyframes demoCheck3 { 0%, 37.499% { opacity: 0; } 37.5%, 100% { opacity: 1; } }
+    @keyframes demoCheck4 { 0%, 49.999% { opacity: 0; } 50%, 100% { opacity: 1; } }
+    @keyframes demoCheck5 { 0%, 62.499% { opacity: 0; } 62.5%, 100% { opacity: 1; } }
+    @keyframes demoCheck6 { 0%, 74.999% { opacity: 0; } 75%, 100% { opacity: 1; } }
 
     .demo-indicator {
       width: 12px;
@@ -634,289 +657,134 @@
     .demo-label {
       flex: 1;
       font-size: 0.875rem;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--text-muted);
-    }
-
-    .demo-step.active .demo-label,
-    .demo-step.complete .demo-label {
-      color: var(--text-primary);
     }
 
     .demo-check {
       font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--success);
+      font-weight: 800;
+      color: var(--emerald);
       opacity: 0;
-      transform: scale(0.6);
-      transition: opacity 0.3s ease, transform 0.3s ease;
-    }
-
-    .demo-step.complete .demo-check {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    /* Hero */
-    .hero {
-      position: relative;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      padding: 8rem 0 5rem;
-      overflow: hidden;
-      background-color: var(--bg-primary);
-    }
-
-    .hero-bg {
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 80% 60% at 50% -10%, var(--hero-gradient-1), transparent),
-        radial-gradient(ellipse 50% 40% at 80% 60%, var(--hero-gradient-2), transparent);
-      pointer-events: none;
-    }
-
-    .hero-grid {
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(var(--hero-grid-line) 1px, transparent 1px),
-        linear-gradient(90deg, var(--hero-grid-line) 1px, transparent 1px);
-      background-size: 60px 60px;
-      mask-image: radial-gradient(ellipse 70% 70% at 50% 40%, black, transparent);
-      pointer-events: none;
-    }
-
-    .hero-stats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 2.5rem;
-      margin-top: 4rem;
-      padding-top: 2.5rem;
-      border-top: 1px solid var(--border-subtle);
-    }
-
-    .stat-value {
-      font-size: 1.75rem;
-      font-weight: 800;
-      color: var(--blue-light);
-    }
-
-    .stat-label {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-top: 0.25rem;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 0.875rem;
-      background: rgba(59, 130, 246, 0.12);
-      border: 1px solid rgba(59, 130, 246, 0.25);
-      border-radius: 100px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--blue-light);
-      margin-bottom: 1.5rem;
-    }
-
-    .badge-dot {
-      width: 6px;
-      height: 6px;
-      background: var(--success);
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    .hero h1 {
-      font-size: clamp(2.5rem, 6vw, 4rem);
-      font-weight: 800;
-      line-height: 1.1;
-      letter-spacing: -0.03em;
-      margin-bottom: 1.25rem;
-    }
-
-    .hero h1 span {
-      background: linear-gradient(135deg, var(--text-primary), var(--blue-light));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .hero-sub {
-      font-size: clamp(1.05rem, 2.5vw, 1.25rem);
-      color: var(--text-secondary);
-      max-width: 620px;
-      margin-bottom: 2.5rem;
-      line-height: 1.7;
     }
 
     /* Sections */
-    section {
-      padding: 6rem 0;
-    }
+    section { padding: 5.5rem 0; }
 
     .section-header {
       text-align: center;
-      max-width: 640px;
-      margin: 0 auto 4rem;
+      max-width: 680px;
+      margin: 0 auto 3.5rem;
     }
 
     .section-label {
-      font-size: 0.8rem;
-      font-weight: 600;
+      font-size: 0.72rem;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--blue);
+      letter-spacing: 0.14em;
+      color: var(--orange);
       margin-bottom: 0.75rem;
     }
 
     .section-title {
-      font-size: clamp(1.75rem, 4vw, 2.5rem);
-      font-weight: 800;
-      letter-spacing: -0.02em;
+      font-size: clamp(1.85rem, 4.5vw, 2.75rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
       margin-bottom: 1rem;
-    }
-
-    #why-us .section-title {
-      font-size: clamp(1.5rem, 3.2vw, 2.15rem);
-      max-width: 18ch;
-      margin-left: auto;
-      margin-right: auto;
-      line-height: 1.2;
-      text-wrap: balance;
+      line-height: 1.15;
     }
 
     .section-desc {
       color: var(--text-secondary);
       font-size: 1.05rem;
+      line-height: 1.7;
     }
 
-    /* Pipeline */
-    .pipeline {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .pipeline-step {
+    /* How It Works — horizontal on desktop */
+    .steps-grid {
       display: grid;
-      grid-template-columns: 64px 1fr;
+      grid-template-columns: 1fr;
       gap: 1.5rem;
-      position: relative;
-      padding-bottom: 2.5rem;
     }
 
-    .pipeline-step:last-child {
-      padding-bottom: 0;
-    }
-
-    .pipeline-step:not(:last-child)::before {
-      content: '';
-      position: absolute;
-      left: 31px;
-      top: 64px;
-      bottom: 0;
-      width: 2px;
-      background: linear-gradient(to bottom, var(--blue), rgba(59, 130, 246, 0.2));
-    }
-
-    .step-icon {
-      width: 64px;
-      height: 64px;
-      background: var(--bg-card);
-      border: 2px solid rgba(59, 130, 246, 0.3);
-      border-radius: 16px;
+    .step-card {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      z-index: 1;
+      gap: 1.25rem;
+      padding: 1.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .step-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(249, 115, 22, 0.35);
+    }
+
+    .step-num {
+      font-size: 2.5rem;
+      font-weight: 900;
+      line-height: 1;
+      color: var(--orange);
       flex-shrink: 0;
+      min-width: 3rem;
     }
 
-    .step-icon .svg-icon {
-      width: 28px;
-      height: 28px;
-    }
-
-    .step-content {
-      padding-top: 0.5rem;
-    }
-
-    .step-number {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--blue);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+    .step-card h3 {
+      font-size: 1.05rem;
+      font-weight: 800;
       margin-bottom: 0.35rem;
     }
 
-    .step-title {
-      font-size: 1.15rem;
-      font-weight: 700;
-      margin-bottom: 0.35rem;
-    }
-
-    .step-desc {
+    .step-card p {
+      font-size: 0.9rem;
       color: var(--text-secondary);
-      font-size: 0.95rem;
+      line-height: 1.55;
     }
 
     /* Features */
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.5rem;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
     }
 
     .feature-card {
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
-      border-radius: 16px;
-      padding: 2rem;
-      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      border-radius: 14px;
+      padding: 1.75rem;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     }
 
     html[data-theme="light"] .feature-card {
-      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
     }
 
     .feature-card:hover {
-      border-color: rgba(59, 130, 246, 0.3);
-      transform: translateY(-4px);
+      transform: translateY(-5px);
+      border-color: rgba(249, 115, 22, 0.3);
+      box-shadow: 0 12px 32px rgba(249, 115, 22, 0.08);
     }
 
     .feature-icon {
       width: 48px;
       height: 48px;
-      background: rgba(59, 130, 246, 0.12);
+      background: rgba(249, 115, 22, 0.12);
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1rem;
     }
 
-    .feature-icon .svg-icon {
-      width: 24px;
-      height: 24px;
-    }
+    .feature-icon .svg-icon { width: 24px; height: 24px; }
 
     .feature-card h3 {
       font-size: 1.05rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
+      font-weight: 800;
+      margin-bottom: 0.45rem;
     }
 
     .feature-card p {
@@ -925,82 +793,42 @@
       line-height: 1.6;
     }
 
-    /* Audience */
-    .audience-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
+    /* Credibility — always dark navy */
+    .credibility-section {
+      background: #0f172a !important;
+      color: #ffffff;
     }
 
-    .audience-card {
-      background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
-      border: 1px solid var(--border-subtle);
-      border-radius: 16px;
-      padding: 2rem;
-      text-align: center;
-    }
+    .credibility-section .section-label { color: var(--orange); }
+    .credibility-section .section-title { color: #ffffff; }
+    .credibility-section .section-desc { color: #94a3b8; }
 
-    .audience-card .audience-icon {
-      width: 56px;
-      height: 56px;
-      margin: 0 auto 1rem;
-      background: rgba(59, 130, 246, 0.12);
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .audience-card .audience-icon .svg-icon {
-      width: 28px;
-      height: 28px;
-    }
-
-    .audience-card h3 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-
-    .audience-card p {
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-    }
-
-    /* Credibility */
     .credibility-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: 1fr;
       gap: 1rem;
-      max-width: 880px;
-      margin: 0 auto;
     }
 
     .credibility-item {
       display: flex;
       align-items: flex-start;
-      gap: 0.875rem;
-      padding: 1.125rem 1.25rem;
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
+      gap: 1rem;
+      padding: 1.25rem;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 12px;
     }
 
-    html[data-theme="light"] .credibility-item {
-      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-    }
-
     .credibility-check {
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
-      background: rgba(34, 197, 94, 0.15);
-      color: var(--success);
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--emerald);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      margin-top: 0.1rem;
     }
 
     .credibility-check svg {
@@ -1008,12 +836,15 @@
       height: 14px;
       stroke: currentColor;
       fill: none;
-      stroke-width: 2.5;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .credibility-item p {
-      color: var(--text-secondary);
       font-size: 0.95rem;
+      font-weight: 600;
+      color: #e2e8f0;
       line-height: 1.5;
     }
 
@@ -1021,418 +852,118 @@
     .roi-layout {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 2.5rem;
-      align-items: center;
-      max-width: 920px;
+      gap: 2rem;
+      max-width: 900px;
       margin: 0 auto;
     }
 
-    .roi-before h3,
+    .roi-before, .roi-after {
+      padding: 2rem;
+      border-radius: 16px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+    }
+
+    .roi-before h3 {
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+
     .roi-after h3 {
       font-size: 0.8rem;
-      font-weight: 600;
+      font-weight: 800;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 1rem;
+      color: var(--orange);
+      margin-bottom: 1.25rem;
     }
 
-    .roi-before h3 { color: var(--text-muted); }
-    .roi-after h3 { color: var(--blue); }
-
-    .roi-list {
-      list-style: none;
-    }
+    .roi-list { list-style: none; }
 
     .roi-list li {
-      position: relative;
+      padding: 0.55rem 0;
       padding-left: 1.5rem;
-      margin-bottom: 0.75rem;
+      position: relative;
       color: var(--text-secondary);
       font-size: 0.95rem;
     }
 
     .roi-before .roi-list li::before {
-      content: '—';
+      content: '×';
       position: absolute;
       left: 0;
-      color: var(--text-muted);
+      color: #ef4444;
+      font-weight: 700;
     }
 
     .roi-after .roi-list li::before {
       content: '✓';
       position: absolute;
       left: 0;
-      color: var(--blue);
-      font-weight: 700;
+      color: var(--emerald);
+      font-weight: 800;
     }
 
     .roi-after {
-      padding: 2rem;
-      background: var(--bg-card);
-      border: 1px solid rgba(59, 130, 246, 0.2);
-      border-radius: 16px;
-    }
-
-    html[data-theme="light"] .roi-after {
-      box-shadow: 0 4px 24px rgba(37, 99, 235, 0.08);
+      border-color: rgba(249, 115, 22, 0.25);
+      background: linear-gradient(135deg, var(--bg-card), rgba(249, 115, 22, 0.06));
     }
 
     .roi-after p {
+      margin-top: 1.25rem;
       color: var(--text-secondary);
-      font-size: 1.05rem;
-      line-height: 1.7;
-      margin-top: 1rem;
-    }
-
-    /* Product showcase */
-    .showcase-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .showcase-card {
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid var(--border-subtle);
-      background: var(--bg-card);
-      box-shadow: var(--shadow-card);
-    }
-
-    html[data-theme="light"] .showcase-card {
-      box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
-    }
-
-    .showcase-label {
-      padding: 0.875rem 1.25rem;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      border-bottom: 1px solid var(--border-subtle);
-      background: var(--bg-secondary);
-    }
-
-    .mock-ui {
-      padding: 1rem;
-      background: var(--bg-primary);
-      min-height: 220px;
-    }
-
-    .mock-sidebar {
-      display: flex;
-      gap: 0.75rem;
-      min-height: 200px;
-    }
-
-    .mock-nav-col {
-      width: 52px;
-      background: var(--bg-secondary);
-      border-radius: 8px;
-      padding: 0.5rem 0.35rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      align-items: center;
-    }
-
-    .mock-nav-dot {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      background: var(--border-subtle);
-    }
-
-    .mock-nav-dot.active {
-      background: rgba(59, 130, 246, 0.2);
-      border: 1px solid rgba(59, 130, 246, 0.4);
-    }
-
-    .mock-main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .mock-header-bar {
-      height: 28px;
-      background: var(--bg-secondary);
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      padding: 0 0.75rem;
-      gap: 0.5rem;
-    }
-
-    .mock-header-bar span {
-      font-size: 9px;
-      color: var(--text-muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    .mock-row {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 0.65rem;
-      background: var(--bg-secondary);
-      border-radius: 8px;
-      border: 1px solid var(--border-subtle);
-    }
-
-    .mock-row.highlight {
-      border-color: rgba(59, 130, 246, 0.35);
-      background: rgba(59, 130, 246, 0.08);
-    }
-
-    .mock-status {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .mock-status.green { background: var(--success); }
-    .mock-status.blue { background: var(--blue); }
-    .mock-status.amber { background: #f59e0b; }
-
-    .mock-text {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .mock-text strong {
-      display: block;
-      font-size: 10px;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .mock-text small {
-      display: block;
-      font-size: 8px;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    .mock-badge {
-      font-size: 8px;
-      font-weight: 600;
-      padding: 0.15rem 0.4rem;
-      border-radius: 100px;
-      background: rgba(34, 197, 94, 0.15);
-      color: var(--success);
-      white-space: nowrap;
-    }
-
-    .mock-badge.blue {
-      background: rgba(59, 130, 246, 0.15);
-      color: var(--blue-light);
-    }
-
-    .mock-progress-track {
-      height: 4px;
-      background: var(--border-subtle);
-      border-radius: 4px;
-      overflow: hidden;
-      margin-top: 0.35rem;
-    }
-
-    .mock-progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--blue), var(--blue-light));
-      border-radius: 4px;
-    }
-
-    .mock-steps {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-    }
-
-    .mock-step {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 9px;
-      color: var(--text-muted);
-    }
-
-    .mock-step.done { color: var(--success); }
-    .mock-step.active { color: var(--blue-light); font-weight: 600; }
-
-    .mock-step-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: currentColor;
-      flex-shrink: 0;
-    }
-
-    /* Pricing */
-    .pricing-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-      align-items: start;
-    }
-
-    .pricing-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: 20px;
-      padding: 2.5rem 2rem;
-      position: relative;
-    }
-
-    html[data-theme="light"] .pricing-card {
-      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
-    }
-
-    .pricing-card.featured {
-      border-color: var(--blue);
-      background: linear-gradient(180deg, rgba(59, 130, 246, 0.12), var(--bg-card));
-      box-shadow: 0 0 60px rgba(59, 130, 246, 0.15);
-    }
-
-    .pricing-badge {
-      position: absolute;
-      top: -12px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--blue);
-      color: var(--btn-on-primary);
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 0.35rem 1rem;
-      border-radius: 100px;
-      white-space: nowrap;
-    }
-
-    .pricing-name {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 0.5rem;
-    }
-
-    .pricing-price {
-      font-size: 2.5rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      margin-bottom: 0.25rem;
-    }
-
-    .pricing-price span {
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--gray);
-    }
-
-    .pricing-volume {
-      font-size: 0.85rem;
-      color: var(--gray);
-      margin-bottom: 1.5rem;
-    }
-
-    .pricing-features {
-      list-style: none;
-      margin-bottom: 2rem;
-    }
-
-    .pricing-features li {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.6rem;
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      margin-bottom: 0.75rem;
-    }
-
-    .pricing-features li::before {
-      content: '✓';
-      color: var(--blue);
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-
-    .pricing-note {
-      text-align: center;
-      margin-top: 2.5rem;
-      font-size: 1rem;
-      color: var(--text-secondary);
-    }
-
-    .pricing-note strong {
-      color: var(--text-primary);
-    }
-
-    .pricing-disclaimer {
-      text-align: center;
-      max-width: 720px;
-      margin: 1.5rem auto 0;
-      font-size: 12px;
-      line-height: 1.6;
-      color: var(--gray);
+      font-size: 0.95rem;
     }
 
     /* Form */
     .form-section {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 2.5rem;
       background: var(--bg-card);
-      border-radius: 24px;
-      padding: 3rem;
       border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      box-shadow: var(--shadow-card);
     }
 
     .form-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: 1fr;
       gap: 1.25rem;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1.5rem;
     }
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
     }
 
-    .form-group.full {
-      grid-column: 1 / -1;
-    }
-
-    label {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-
-    input, select {
+    .form-group input,
+    .form-group select {
+      width: 100%;
       padding: 0.8rem 1rem;
       background: var(--bg-input);
       border: 1px solid var(--border-medium);
       border-radius: 10px;
       color: var(--text-primary);
-      font-size: 0.95rem;
+      font-size: 1rem;
       font-family: inherit;
-      transition: border-color 0.2s;
     }
 
-    input:focus, select:focus {
+    .form-group input:focus,
+    .form-group select:focus {
       outline: none;
-      border-color: var(--blue);
-    }
-
-    input::placeholder {
-      color: var(--text-muted);
-    }
-
-    select option {
-      background: var(--bg-input);
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
     }
 
     .form-success {
@@ -1441,91 +972,102 @@
       padding: 2rem;
     }
 
-    .form-success.visible {
-      display: block;
-    }
+    .form-success.visible { display: block; }
 
     .form-success .icon {
       width: 56px;
       height: 56px;
       margin: 0 auto 1rem;
-      color: var(--success);
+      background: rgba(16, 185, 129, 0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--emerald);
     }
 
     .form-success .icon svg {
-      width: 100%;
-      height: 100%;
+      width: 28px;
+      height: 28px;
       stroke: currentColor;
       fill: none;
-      stroke-width: 1.75;
+      stroke-width: 2;
     }
 
     .form-success h3 {
-      font-size: 1.5rem;
-      font-weight: 700;
+      font-size: 1.35rem;
+      font-weight: 800;
       margin-bottom: 0.5rem;
     }
 
-    .form-success p {
-      color: var(--text-secondary);
-    }
+    .form-success p { color: var(--text-secondary); }
 
     /* Footer */
     footer {
-      border-top: 1px solid var(--border-subtle);
-      padding: 3rem 0 2rem;
+      background: #0f172a !important;
+      color: #94a3b8;
+      padding: 4rem 0 2.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
 
-    .footer-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1.5rem;
-      text-align: center;
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+      margin-bottom: 3rem;
     }
 
-    .footer-brand,
+    .footer-brand-block .logo { margin-bottom: 1rem; }
+    .footer-brand-block .logo-text { color: #fff; }
+
     .footer-tagline {
-      font-size: 0.85rem;
-      color: var(--text-muted);
+      font-size: 0.9rem;
+      color: #64748b;
+      max-width: 260px;
+      line-height: 1.6;
     }
 
-    .footer-links {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1.5rem;
-      list-style: none;
+    .footer-col h4 {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 1rem;
     }
 
-    .footer-links a {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
+    .footer-col ul { list-style: none; }
+    .footer-col li { margin-bottom: 0.6rem; }
+
+    .footer-col a {
+      font-size: 0.9rem;
+      color: #94a3b8;
       transition: color 0.2s;
     }
 
-    .footer-links a:hover {
-      color: var(--blue-light);
+    .footer-col a:hover { color: #fff; }
+
+    .footer-bottom {
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.85rem;
+      color: #64748b;
     }
 
-    /* Responsive — layout-only overrides; colors, gradients, and contrast match desktop */
-    @media (min-width: 768px) {
-      .nav-links {
-        display: flex;
-      }
+    /* Responsive */
+    @media (min-width: 640px) {
+      .form-grid { grid-template-columns: 1fr 1fr; }
+      .form-group.full { grid-column: 1 / -1; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .credibility-grid { grid-template-columns: repeat(2, 1fr); }
+    }
 
+    @media (min-width: 768px) {
+      .nav-links { display: flex; }
       .theme-toggle.mobile-only { display: none; }
       .theme-toggle.desktop-only { display: inline-flex; }
-
-      .pipeline {
-        max-width: 640px;
-        margin: 0 auto;
-      }
-
-      .roi-layout {
-        grid-template-columns: 1fr 1fr;
-        gap: 3rem;
-      }
+      .footer-grid { grid-template-columns: 1.4fr 1fr 1fr 1fr; }
+      .roi-layout { grid-template-columns: 1fr 1fr; gap: 2.5rem; }
     }
 
     @media (min-width: 992px) {
@@ -1533,53 +1075,32 @@
         grid-template-columns: 1.05fr 0.95fr;
         gap: 3.5rem;
       }
-
-      .hero-demo {
-        max-width: none;
-        margin: 0;
+      .hero-demo { margin: 0; max-width: none; }
+      .steps-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
       }
+      .steps-grid .step-card:nth-child(4),
+      .steps-grid .step-card:nth-child(5),
+      .steps-grid .step-card:nth-child(6) {
+        grid-column: span 1;
+      }
+      .features-grid { grid-template-columns: repeat(3, 1fr); }
+      .credibility-grid { grid-template-columns: repeat(3, 1fr); }
     }
 
     @media (max-width: 767px) {
-      .hero {
-        padding: 8rem 0 5rem;
-      }
-
-      .hero-stats {
-        gap: 2.5rem;
-      }
-
-      .form-section {
-        padding: 3rem;
-      }
-
-      .btn-group {
-        flex-direction: column;
-      }
-
-      .btn-group .btn {
-        width: 100%;
-      }
-
-      .nav-actions {
-        gap: 0.5rem;
-      }
-
-      .nav-login,
-      .nav-cta {
-        padding: 0.55rem 0.875rem;
-        font-size: 0.8rem;
-      }
-
-      .nav-login {
-        padding: 0.55rem 0.65rem;
-      }
+      .hero { padding: 7.5rem 0 4rem; }
+      .btn-group { flex-direction: column; }
+      .btn-group .btn { width: 100%; }
+      .nav-login { padding: 0.5rem 0.65rem; font-size: 0.78rem; }
+      .nav-cta { padding: 0.5rem 0.75rem; font-size: 0.78rem; }
+      .form-section { padding: 1.75rem; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Nav -->
   <nav class="nav">
     <div class="container nav-inner">
       <div class="nav-left">
@@ -1587,7 +1108,7 @@
           <div class="logo-icon">D</div>
           <span class="logo-text">DART iQ</span>
         </a>
-        <button type="button" id="theme-toggle-mobile" class="theme-toggle mobile-only" onclick="toggleTheme()" aria-label="Switch theme">
+        <button type="button" id="theme-toggle-mobile" class="theme-toggle mobile-only" aria-label="Switch theme">
           <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
           <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
         </button>
@@ -1595,24 +1116,24 @@
       <ul class="nav-links">
         <li><a href="#how-it-works">How It Works</a></li>
         <li><a href="#features">Features</a></li>
-        <li><a href="#pricing">Pricing</a></li>
-        <li><a href="#demo">Demo</a></li>
+        <li><a href="#why-us">Why DART iQ</a></li>
+        <li><a href="#demo">Early Access</a></li>
       </ul>
       <div class="nav-actions">
-        <button type="button" id="theme-toggle" class="theme-toggle desktop-only" onclick="toggleTheme()" aria-label="Switch theme">
+        <button type="button" id="theme-toggle" class="theme-toggle desktop-only" aria-label="Switch theme">
           <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
           <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
         </button>
         <a href="https://portal.dartiq.dev/login" class="nav-login">Contractor Login</a>
-        <a href="#demo" class="nav-cta">Request a Demo</a>
+        <a href="#demo" class="nav-cta">Request Access</a>
       </div>
     </div>
   </nav>
 
-  <!-- Hero -->
   <section class="hero">
     <div class="hero-bg"></div>
     <div class="hero-grid"></div>
+    <div class="hero-angle"></div>
     <div class="container">
       <div class="hero-layout">
         <div class="hero-content">
@@ -1622,10 +1143,10 @@
           </div>
           <h1><span>Permits on Autopilot</span></h1>
           <p class="hero-sub">
-            DART iQ automates Florida roofing permits from parcel lookup through permit submission. Generate NOCs, coordinate notarization, record documents, and submit permits without logging into county portals.
+            DART iQ automates Florida roofing permits from parcel lookup through permit submission. Generate NOCs, coordinate notarization, record documents, and submit permits — without logging into county portals.
           </p>
           <div class="btn-group">
-            <a href="#demo" class="btn btn-primary">Request a Demo</a>
+            <a href="#demo" class="btn btn-primary">Request Access</a>
             <a href="#how-it-works" class="btn btn-secondary">See How It Works</a>
           </div>
           <p class="hero-signin">Already a customer? <a href="https://portal.dartiq.dev/login">Sign in →</a></p>
@@ -1633,16 +1154,12 @@
         <div class="hero-demo" aria-hidden="true">
           <div class="demo-window">
             <div class="demo-chrome">
-              <div class="demo-dots">
-                <span></span><span></span><span></span>
-              </div>
+              <div class="demo-dots"><span></span><span></span><span></span></div>
               <div class="demo-url">dartiq.dev</div>
             </div>
             <div class="demo-body">
-              <div class="demo-progress">
-                <div class="demo-progress-fill" id="demo-progress-fill"></div>
-              </div>
-              <div class="demo-pipeline" id="demo-pipeline">
+              <div class="demo-progress"><div class="demo-progress-fill"></div></div>
+              <div class="demo-pipeline">
                 <div class="demo-step"><span class="demo-indicator"></span><span class="demo-label">Job Submitted</span><span class="demo-check">✓</span></div>
                 <div class="demo-step"><span class="demo-indicator"></span><span class="demo-label">Parcel Retrieved</span><span class="demo-check">✓</span></div>
                 <div class="demo-step"><span class="demo-indicator"></span><span class="demo-label">NOC Generated</span><span class="demo-check">✓</span></div>
@@ -1665,101 +1182,93 @@
         </div>
         <div>
           <div class="stat-value">FL</div>
-          <div class="stat-label">Built for Florida roofing contractors</div>
+          <div class="stat-label">Built for Florida roofers</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- How It Works -->
   <section id="how-it-works">
     <div class="container">
       <div class="section-header">
         <div class="section-label">How It Works</div>
         <h2 class="section-title">From job details to approved permit</h2>
-        <p class="section-desc">Six automated steps. You never touch a portal.</p>
+        <p class="section-desc">Six automated steps. Your team never touches a county portal.</p>
       </div>
-      <div class="pipeline">
-        <div class="pipeline-step">
-          <div class="step-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 12h6M9 16h6"/></svg></span></div>
-          <div class="step-content">
-            <div class="step-number">Step 1</div>
-            <div class="step-title">Submit job details</div>
-            <p class="step-desc">Enter the property address and job scope. DART iQ handles everything from there.</p>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">01</div>
+          <div>
+            <h3>Submit job details</h3>
+            <p>Enter the property address and scope. DART iQ handles everything from there.</p>
           </div>
         </div>
-        <div class="pipeline-step">
-          <div class="step-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></div>
-          <div class="step-content">
-            <div class="step-number">Step 2</div>
-            <div class="step-title">Parcel &amp; legal description retrieved</div>
-            <p class="step-desc">DART iQ automatically pulls parcel data and legal descriptions from county records.</p>
+        <div class="step-card">
+          <div class="step-num">02</div>
+          <div>
+            <h3>Parcel &amp; legal description</h3>
+            <p>Parcel data and legal descriptions are pulled automatically from county records.</p>
           </div>
         </div>
-        <div class="pipeline-step">
-          <div class="step-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></span></div>
-          <div class="step-content">
-            <div class="step-number">Step 3</div>
-            <div class="step-title">NOC generated &amp; sent for signing</div>
-            <p class="step-desc">Notice of Commencement is generated and sent to the homeowner for remote digital notarization.</p>
+        <div class="step-card">
+          <div class="step-num">03</div>
+          <div>
+            <h3>NOC generated &amp; signed</h3>
+            <p>Notice of Commencement is generated and sent to the homeowner for remote notarization.</p>
           </div>
         </div>
-        <div class="pipeline-step">
-          <div class="step-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M3 21h18M6 21V7l6-4 6 4v14M10 21v-6h4v6"/></svg></span></div>
-          <div class="step-content">
-            <div class="step-number">Step 4</div>
-            <div class="step-title">NOC recorded with county</div>
-            <p class="step-desc">The notarized NOC is eRecorded with the county clerk automatically — no trips to the courthouse.</p>
+        <div class="step-card">
+          <div class="step-num">04</div>
+          <div>
+            <h3>NOC recorded</h3>
+            <p>The notarized NOC is eRecorded with the county clerk — no courthouse trips.</p>
           </div>
         </div>
-        <div class="pipeline-step">
-          <div class="step-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m22 4-10 10-3-3"/></svg></span></div>
-          <div class="step-content">
-            <div class="step-number">Step 5</div>
-            <div class="step-title">Permit submitted &amp; approved</div>
-            <p class="step-desc">DART iQ navigates the AHJ portal, submits the permit application, and tracks approval status in real time.</p>
+        <div class="step-card">
+          <div class="step-num">05</div>
+          <div>
+            <h3>Permit submitted</h3>
+            <p>DART iQ navigates the AHJ portal, submits the application, and tracks approval status.</p>
           </div>
         </div>
-        <div class="pipeline-step">
-          <div class="step-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12"/></svg></span></div>
-          <div class="step-content">
-            <div class="step-number">Step 6</div>
-            <div class="step-title">Permit Packet Ready</div>
-            <p class="step-desc">Your complete permit packet — all documents compiled into one PDF — ready to print and bring to the job site.</p>
+        <div class="step-card">
+          <div class="step-num">06</div>
+          <div>
+            <h3>Permit packet ready</h3>
+            <p>Your complete permit packet — all documents in one PDF — ready for the job site.</p>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Features -->
   <section id="features" class="section-alt">
     <div class="container">
       <div class="section-header">
         <div class="section-label">Features</div>
-        <h2 class="section-title">Permit Workflows, Fully Automated</h2>
-        <p class="section-desc">DART iQ handles portal navigation, document generation, notarization, recording, and permit submission so your team can focus on roofing.</p>
+        <h2 class="section-title">Permit workflows, fully automated</h2>
+        <p class="section-desc">Portal navigation, document generation, notarization, recording, and submission — so your crew stays on the roof.</p>
       </div>
       <div class="features-grid">
         <div class="feature-card">
           <div class="feature-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4M8 16h.01M16 16h.01"/></svg></span></div>
           <h3>Automated Portal Navigation</h3>
-          <p>DART iQ logs into county portals, fills forms, uploads documents, and submits applications — hands-free.</p>
+          <p>Logs into county portals, fills forms, uploads documents, and submits applications hands-free.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg></span></div>
           <h3>Digital NOC Generation</h3>
-          <p>Automatically generate compliant Notice of Commencement documents from parcel and job data.</p>
+          <p>Compliant Notice of Commencement documents generated from parcel and job data.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span></div>
           <h3>Remote Online Notarization</h3>
-          <p>Homeowners sign and notarize NOCs remotely — no in-person appointments required.</p>
+          <p>Homeowners sign and notarize NOCs remotely — no in-person appointments.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9M19.1 4.9C23 8.8 23 15.1 19.1 19.1M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span></div>
           <h3>eRecording Integration</h3>
-          <p>Notarized documents are electronically recorded with the county clerk automatically.</p>
+          <p>Notarized documents electronically recorded with the county clerk automatically.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon"><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span></div>
@@ -1775,13 +1284,12 @@
     </div>
   </section>
 
-  <!-- Credibility -->
-  <section id="why-us">
+  <section id="why-us" class="credibility-section">
     <div class="container">
       <div class="section-header">
         <div class="section-label">Why DART iQ</div>
-        <h2 class="section-title">Why Contractors Choose DART iQ</h2>
-        <p class="section-desc">Built specifically for Florida roofing contractors who want to eliminate permit bottlenecks and scale operations without adding administrative overhead.</p>
+        <h2 class="section-title">Built for contractors who scale</h2>
+        <p class="section-desc">Eliminate permit bottlenecks without adding administrative overhead.</p>
       </div>
       <div class="credibility-grid">
         <div class="credibility-item">
@@ -1802,7 +1310,7 @@
         </div>
         <div class="credibility-item">
           <div class="credibility-check"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
-          <p>Submit permits without logging into county portals</p>
+          <p>Submit permits without county portal logins</p>
         </div>
         <div class="credibility-item">
           <div class="credibility-check"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div>
@@ -1812,12 +1320,11 @@
     </div>
   </section>
 
-  <!-- ROI -->
   <section id="roi" class="section-alt">
     <div class="container">
       <div class="section-header">
         <div class="section-label">Value</div>
-        <h2 class="section-title">Stop Spending Hours Managing Permits</h2>
+        <h2 class="section-title">Stop spending hours on permits</h2>
       </div>
       <div class="roi-layout">
         <div class="roi-before">
@@ -1827,7 +1334,7 @@
             <li>Generating NOCs manually</li>
             <li>Coordinating signatures</li>
             <li>Recording documents</li>
-            <li>Tracking permit statuses across systems</li>
+            <li>Tracking statuses across systems</li>
           </ul>
         </div>
         <div class="roi-after">
@@ -1839,86 +1346,18 @@
             <li>Automatic county recording</li>
             <li>Single dashboard for every job</li>
           </ul>
-          <p>DART iQ automates the entire process so your team can focus on production, sales, and customers.</p>
+          <p>Your team focuses on production, sales, and customers — not paperwork.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Pricing -->
-  <section id="pricing">
-    <div class="container">
-      <div class="section-header">
-        <div class="section-label">Pricing</div>
-        <h2 class="section-title">Simple Monthly Pricing</h2>
-        <p class="section-desc">No per-permit fees. No surprises. Cancel anytime.</p>
-      </div>
-      <div class="pricing-grid">
-        <div class="pricing-card">
-          <div class="pricing-name">Starter</div>
-          <div class="pricing-price">$750<span>/month</span></div>
-          <div class="pricing-volume">Up to 10 permits/month</div>
-          <ul class="pricing-features">
-            <li>Full permit automation</li>
-            <li>NOC generation &amp; notarization</li>
-            <li>eRecording included</li>
-            <li>Contractor portal access</li>
-            <li>Email support</li>
-          </ul>
-          <a href="#demo" class="btn btn-secondary" style="width: 100%;">Get Started</a>
-        </div>
-        <div class="pricing-card featured">
-          <div class="pricing-badge">Most Popular</div>
-          <div class="pricing-name">Growth</div>
-          <div class="pricing-price">$1,875<span>/month</span></div>
-          <div class="pricing-volume">11–25 permits/month</div>
-          <ul class="pricing-features">
-            <li>Everything in Starter</li>
-            <li>Priority processing</li>
-            <li>Multi-county support</li>
-            <li>Team member accounts</li>
-            <li>Priority support</li>
-          </ul>
-          <a href="#demo" class="btn btn-primary" style="width: 100%;">Get Started</a>
-        </div>
-        <div class="pricing-card">
-          <div class="pricing-name">Scale</div>
-          <div class="pricing-price">$3,750<span>/month</span></div>
-          <div class="pricing-volume">25–50 permits/month</div>
-          <ul class="pricing-features">
-            <li>Everything in Growth</li>
-            <li>Dedicated processing queue</li>
-            <li>Advanced reporting</li>
-            <li>Multiple team roles</li>
-            <li>Phone &amp; email support</li>
-          </ul>
-          <a href="#demo" class="btn btn-secondary" style="width: 100%;">Get Started</a>
-        </div>
-        <div class="pricing-card">
-          <div class="pricing-name">Enterprise</div>
-          <div class="pricing-price">Contact Sales</div>
-          <div class="pricing-volume">50+ permits/month</div>
-          <ul class="pricing-features">
-            <li>Everything in Scale</li>
-            <li>Custom county onboarding</li>
-            <li>Dedicated account manager</li>
-            <li>SLA guarantees</li>
-            <li>Custom integrations</li>
-          </ul>
-          <a href="#demo" class="btn btn-secondary" style="width: 100%;">Contact Sales</a>
-        </div>
-      </div>
-      <p class="pricing-disclaimer">* Monthly subscription covers DART iQ software and automation services only. Permit application fees, notarization fees, county recording fees, and any other government or third-party fees are not included and are billed separately or passed through at cost.</p>
-    </div>
-  </section>
-
-  <!-- Demo Form -->
   <section id="demo">
     <div class="container">
       <div class="section-header">
         <div class="section-label">Early Access</div>
-        <h2 class="section-title">Request a demo</h2>
-        <p class="section-desc">Join Florida contractors already on the waitlist.</p>
+        <h2 class="section-title">Request Early Access</h2>
+        <p class="section-desc">DART iQ is currently in private beta with a limited number of Florida roofing contractors.</p>
       </div>
       <div class="form-section">
         <form id="demo-form">
@@ -1950,40 +1389,54 @@
               </select>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%;">Get Early Access</button>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Request Access</button>
         </form>
         <div class="form-success" id="form-success">
           <div class="icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m22 4-10 10-3-3"/></svg></div>
           <h3>You're on the list!</h3>
-          <p>Thanks for your interest in DART iQ. We'll be in touch shortly to schedule your demo.</p>
+          <p>Thanks for your interest in DART iQ. We'll be in touch shortly.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
   <footer>
-    <div class="container footer-inner">
-      <div class="logo">
-        <div class="logo-icon">D</div>
-        <span class="logo-text">DART iQ</span>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-block">
+          <div class="logo">
+            <div class="logo-icon">D</div>
+            <span class="logo-text">DART iQ</span>
+          </div>
+          <p class="footer-tagline">The intelligent permit platform built specifically for Florida roofing contractors.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#roi">Value</a></li>
+            <li><a href="#demo">Early Access</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="mailto:hello@dartiq.com">Contact</a></li>
+            <li><a href="https://portal.dartiq.dev/login">Contractor Login</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
       </div>
-      <p class="footer-brand">© 2026 Lightsey Technologies, LLC</p>
-      <p class="footer-tagline">Built for Florida roofing contractors</p>
-      <ul class="footer-links">
-        <li><a href="#">Privacy Policy</a></li>
-        <li><a href="#">Terms of Service</a></li>
-        <li><a href="mailto:hello@dartiq.com">Contact</a></li>
-      </ul>
+      <div class="footer-bottom">© 2026 Lightsey Technologies, LLC. All rights reserved.</div>
     </div>
   </footer>
 
-  <script>
-    document.getElementById('demo-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      this.style.display = 'none';
-      document.getElementById('form-success').classList.add('visible');
-    });
-  </script>
 </body>
 </html>
