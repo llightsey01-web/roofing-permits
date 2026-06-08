@@ -32,6 +32,41 @@ function toggleTheme() {
   } catch (_) {}
 }
 
+async function handleFormSubmit(e) {
+  e.preventDefault()
+  const form = e.target
+  const submitBtn = form.querySelector('button[type="submit"]')
+
+  const data = {
+    name: form.querySelector('[name="name"]').value,
+    company: form.querySelector('[name="company"]').value,
+    email: form.querySelector('[name="email"]').value,
+    phone: form.querySelector('[name="phone"]').value,
+    monthly_volume: form.querySelector('[name="monthly_volume"]').value,
+  }
+
+  submitBtn.disabled = true
+  submitBtn.textContent = 'Submitting...'
+
+  try {
+    const response = await fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+
+    if (response.ok) {
+      form.innerHTML = '<div class="success-message"><h3>You\'re on the list!</h3><p>We\'ll be in touch soon.</p></div>'
+    } else {
+      throw new Error('Failed')
+    }
+  } catch (err) {
+    submitBtn.disabled = false
+    submitBtn.textContent = 'Request Access'
+    alert('Something went wrong. Please try again.')
+  }
+}
+
 if (typeof window !== 'undefined') {
   applyTheme(getPreferredTheme())
 }
@@ -50,19 +85,16 @@ export default function DartiqMarketingScripts() {
     }
 
     const form = document.getElementById('demo-form')
-    function handleSubmit(e) {
-      e.preventDefault()
-      if (form) form.style.display = 'none'
-      const success = document.getElementById('form-success')
-      if (success) success.classList.add('visible')
+    function onSubmit(e) {
+      handleFormSubmit(e)
     }
 
     document.addEventListener('click', onThemeClick)
-    if (form) form.addEventListener('submit', handleSubmit)
+    if (form) form.addEventListener('submit', onSubmit)
 
     return function () {
       document.removeEventListener('click', onThemeClick)
-      if (form) form.removeEventListener('submit', handleSubmit)
+      if (form) form.removeEventListener('submit', onSubmit)
     }
   }, [])
 
