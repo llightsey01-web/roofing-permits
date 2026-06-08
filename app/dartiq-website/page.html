@@ -883,6 +883,7 @@
     .screenshot-image-wrap {
       background: #f8fafc;
       line-height: 0;
+      cursor: zoom-in;
     }
 
     .screenshot-image-wrap img {
@@ -890,6 +891,104 @@
       width: 100%;
       height: auto;
     }
+
+    .screenshot-lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .screenshot-lightbox.is-open {
+      display: flex;
+    }
+
+    .lightbox-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      cursor: zoom-out;
+    }
+
+    .lightbox-stage {
+      position: relative;
+      z-index: 1;
+      max-width: 90vw;
+      max-height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .lightbox-image {
+      max-width: 90vw;
+      max-height: 90vh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      border-radius: 8px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 2;
+      width: 44px;
+      height: 44px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      background: rgba(30, 41, 59, 0.9);
+      color: #ffffff;
+      font-size: 1.75rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .lightbox-close:hover {
+      background: rgba(51, 65, 85, 0.95);
+      border-color: rgba(249, 115, 22, 0.35);
+    }
+
+    .lightbox-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(30, 41, 59, 0.9);
+      color: #ffffff;
+      font-size: 1.35rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .lightbox-arrow:hover {
+      background: rgba(51, 65, 85, 0.95);
+      border-color: rgba(249, 115, 22, 0.35);
+    }
+
+    .lightbox-arrow--prev { left: 1rem; }
+    .lightbox-arrow--next { right: 1rem; }
 
     .carousel-arrow {
       flex-shrink: 0;
@@ -1362,6 +1461,20 @@
         height: 32px;
         font-size: 0.95rem;
       }
+      .lightbox-arrow {
+        width: 38px;
+        height: 38px;
+        font-size: 1.1rem;
+      }
+      .lightbox-arrow--prev { left: 0.5rem; }
+      .lightbox-arrow--next { right: 0.5rem; }
+      .lightbox-close {
+        top: 0.75rem;
+        right: 0.75rem;
+        width: 38px;
+        height: 38px;
+        font-size: 1.5rem;
+      }
       .form-section { padding: 1.75rem; }
     }
   </style>
@@ -1613,6 +1726,16 @@
     </div>
   </section>
 
+  <div class="screenshot-lightbox" id="screenshot-lightbox" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Screenshot preview">
+    <div class="lightbox-backdrop" data-lightbox-close></div>
+    <button type="button" class="lightbox-close" aria-label="Close lightbox" data-lightbox-close>&times;</button>
+    <button type="button" class="lightbox-arrow lightbox-arrow--prev" aria-label="Previous screenshot">&larr;</button>
+    <button type="button" class="lightbox-arrow lightbox-arrow--next" aria-label="Next screenshot">&rarr;</button>
+    <div class="lightbox-stage">
+      <img class="lightbox-image" src="" alt="">
+    </div>
+  </div>
+
   <section id="features" class="section-alt">
     <div class="container">
       <div class="section-header">
@@ -1815,6 +1938,11 @@
       var carousel = document.getElementById('screenshot-carousel');
       if (!carousel) return;
 
+      var lightbox = document.getElementById('screenshot-lightbox');
+      var lightboxImg = lightbox ? lightbox.querySelector('.lightbox-image') : null;
+      var lightboxPrev = lightbox ? lightbox.querySelector('.lightbox-arrow--prev') : null;
+      var lightboxNext = lightbox ? lightbox.querySelector('.lightbox-arrow--next') : null;
+
       var slides = carousel.querySelectorAll('.carousel-slide');
       var dots = carousel.querySelectorAll('.carousel-dot');
       var prevBtn = carousel.querySelector('.carousel-arrow--prev');
@@ -1836,10 +1964,44 @@
       var timer = null;
       var paused = false;
       var touchStartX = 0;
+      var lightboxOpen = false;
+
+      function getSlideImage(index) {
+        return slides[index].querySelector('img');
+      }
+
+      function updateLightboxImage() {
+        if (!lightboxImg) return;
+        var img = getSlideImage(current);
+        lightboxImg.src = img.getAttribute('src');
+        lightboxImg.alt = img.getAttribute('alt') || '';
+      }
+
+      function openLightbox() {
+        if (!lightbox) return;
+        lightboxOpen = true;
+        updateLightboxImage();
+        lightbox.classList.add('is-open');
+        lightbox.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        stopAutoplay();
+      }
+
+      function closeLightbox() {
+        if (!lightbox || !lightboxOpen) return;
+        lightboxOpen = false;
+        lightbox.classList.remove('is-open');
+        lightbox.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        if (!paused) startAutoplay();
+      }
 
       function goTo(index) {
         index = (index + slides.length) % slides.length;
-        if (index === current) return;
+        if (index === current) {
+          if (lightboxOpen) updateLightboxImage();
+          return;
+        }
 
         slides[current].classList.remove('is-active');
         dots[current].classList.remove('is-active');
@@ -1857,6 +2019,8 @@
           captionDesc.textContent = captions[current].desc;
           caption.classList.add('is-visible');
         }, 50);
+
+        if (lightboxOpen) updateLightboxImage();
       }
 
       function next() { goTo(current + 1); }
@@ -1871,7 +2035,7 @@
 
       function startAutoplay() {
         stopAutoplay();
-        if (paused) return;
+        if (paused || lightboxOpen) return;
         timer = window.setInterval(next, 5000);
       }
 
@@ -1891,6 +2055,41 @@
           startAutoplay();
         });
       });
+
+      carousel.querySelectorAll('.screenshot-image-wrap').forEach(function (wrap) {
+        wrap.addEventListener('click', function () {
+          var slide = wrap.closest('.carousel-slide');
+          if (slide) goTo(parseInt(slide.getAttribute('data-index'), 10));
+          openLightbox();
+        });
+      });
+
+      if (lightbox) {
+        lightbox.querySelectorAll('[data-lightbox-close]').forEach(function (el) {
+          el.addEventListener('click', closeLightbox);
+        });
+
+        if (lightboxPrev) {
+          lightboxPrev.addEventListener('click', function (e) {
+            e.stopPropagation();
+            prev();
+          });
+        }
+
+        if (lightboxNext) {
+          lightboxNext.addEventListener('click', function (e) {
+            e.stopPropagation();
+            next();
+          });
+        }
+
+        document.addEventListener('keydown', function (e) {
+          if (!lightboxOpen) return;
+          if (e.key === 'Escape') closeLightbox();
+          else if (e.key === 'ArrowLeft') prev();
+          else if (e.key === 'ArrowRight') next();
+        });
+      }
 
       carousel.addEventListener('mouseenter', function () {
         paused = true;
