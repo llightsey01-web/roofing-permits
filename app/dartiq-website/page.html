@@ -90,7 +90,7 @@
       overflow-x: hidden;
     }
 
-    nav, section:not(.credibility-section), footer {
+    nav, section:not(.credibility-section):not(.platform-section), footer {
       background-color: var(--bg-primary);
     }
 
@@ -743,6 +743,158 @@
       line-height: 1.55;
     }
 
+    /* Platform screenshots — always dark for contrast */
+    .platform-section {
+      background: #0a0f1e !important;
+      color: #ffffff;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .platform-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .platform-section::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(249, 115, 22, 0.06), transparent 70%);
+      pointer-events: none;
+    }
+
+    .platform-section .container {
+      position: relative;
+      z-index: 1;
+    }
+
+    .platform-section .section-label { color: var(--orange); }
+    .platform-section .section-title { color: #ffffff; }
+    .platform-section .section-desc { color: #94a3b8; }
+
+    .screenshots-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 2.75rem;
+    }
+
+    .screenshot-shot {
+      margin: 0;
+    }
+
+    .screenshot-frame {
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow:
+        0 28px 72px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .screenshot-shot:hover .screenshot-frame {
+      transform: translateY(-4px);
+      box-shadow:
+        0 36px 88px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(249, 115, 22, 0.15),
+        0 0 40px rgba(249, 115, 22, 0.08);
+    }
+
+    .screenshot-chrome {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 16px;
+      background: #1e293b;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .screenshot-dots {
+      display: flex;
+      gap: 7px;
+      flex-shrink: 0;
+    }
+
+    .screenshot-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .screenshot-dots span:nth-child(1) { background: #ef4444; }
+    .screenshot-dots span:nth-child(2) { background: #f59e0b; }
+    .screenshot-dots span:nth-child(3) { background: #22c55e; }
+
+    .screenshot-url {
+      flex: 1;
+      min-width: 0;
+      background: rgba(0, 0, 0, 0.28);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 11px;
+      color: #94a3b8;
+      text-align: center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .screenshot-image-wrap {
+      background: #f8fafc;
+      line-height: 0;
+    }
+
+    .screenshot-image-wrap img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .screenshot-caption {
+      margin-top: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .screenshot-tag {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #f97316;
+    }
+
+    .screenshot-desc {
+      font-size: 0.95rem;
+      color: #ffffff;
+      font-weight: 500;
+      line-height: 1.45;
+    }
+
+    .screenshots-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.25rem;
+    }
+
+    .platform-note {
+      text-align: center;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #64748b;
+      font-style: italic;
+      line-height: 1.6;
+    }
+
     /* Features */
     .features-grid {
       display: grid;
@@ -1082,6 +1234,7 @@
       .theme-toggle.desktop-only { display: inline-flex; }
       .footer-grid { grid-template-columns: 1.4fr 1fr 1fr 1fr; }
       .roi-layout { grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+      .screenshots-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
     @media (min-width: 992px) {
@@ -1129,6 +1282,7 @@
       </div>
       <ul class="nav-links">
         <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#platform">Platform</a></li>
         <li><a href="#features">Features</a></li>
         <li><a href="#why-us">Why DART iQ</a></li>
         <li><a href="#demo">Early Access</a></li>
@@ -1252,6 +1406,118 @@
             <p>Your complete permit packet — all documents in one PDF — ready for the job site.</p>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="platform" class="platform-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">The Platform</div>
+        <h2 class="section-title">See DART iQ in Action</h2>
+        <p class="section-desc">A complete permit automation platform built for Florida roofing contractors</p>
+      </div>
+
+      <div class="screenshots-layout">
+        <figure class="screenshot-shot screenshot-shot--featured">
+          <div class="screenshot-frame">
+            <div class="screenshot-chrome">
+              <div class="screenshot-dots"><span></span><span></span><span></span></div>
+              <div class="screenshot-url">portal.dartiq.dev</div>
+            </div>
+            <div class="screenshot-image-wrap">
+              <img src="/screenshots/dashboard.png" alt="DART iQ contractor portal job dashboard" loading="lazy" width="1440" height="900">
+            </div>
+          </div>
+          <figcaption class="screenshot-caption">
+            <span class="screenshot-tag">Dashboard</span>
+            <span class="screenshot-desc">Job Dashboard — track every permit from one view</span>
+          </figcaption>
+        </figure>
+
+        <div class="screenshots-grid">
+          <figure class="screenshot-shot">
+            <div class="screenshot-frame">
+              <div class="screenshot-chrome">
+                <div class="screenshot-dots"><span></span><span></span><span></span></div>
+                <div class="screenshot-url">portal.dartiq.dev</div>
+              </div>
+              <div class="screenshot-image-wrap">
+                <img src="/screenshots/pipeline.png" alt="Real-time permit pipeline tracking in DART iQ" loading="lazy" width="1440" height="900">
+              </div>
+            </div>
+            <figcaption class="screenshot-caption">
+              <span class="screenshot-tag">Pipeline</span>
+              <span class="screenshot-desc">Real-Time Pipeline Tracking</span>
+            </figcaption>
+          </figure>
+
+          <figure class="screenshot-shot">
+            <div class="screenshot-frame">
+              <div class="screenshot-chrome">
+                <div class="screenshot-dots"><span></span><span></span><span></span></div>
+                <div class="screenshot-url">portal.dartiq.dev</div>
+              </div>
+              <div class="screenshot-image-wrap">
+                <img src="/screenshots/new-job-1.png" alt="DART iQ job submission form" loading="lazy" width="1440" height="900">
+              </div>
+            </div>
+            <figcaption class="screenshot-caption">
+              <span class="screenshot-tag">New Job</span>
+              <span class="screenshot-desc">Job Submission Form</span>
+            </figcaption>
+          </figure>
+
+          <figure class="screenshot-shot">
+            <div class="screenshot-frame">
+              <div class="screenshot-chrome">
+                <div class="screenshot-dots"><span></span><span></span><span></span></div>
+                <div class="screenshot-url">portal.dartiq.dev</div>
+              </div>
+              <div class="screenshot-image-wrap">
+                <img src="/screenshots/new-job-2.png" alt="Material selection step in DART iQ new job flow" loading="lazy" width="1440" height="900">
+              </div>
+            </div>
+            <figcaption class="screenshot-caption">
+              <span class="screenshot-tag">Materials</span>
+              <span class="screenshot-desc">Material Selection</span>
+            </figcaption>
+          </figure>
+
+          <figure class="screenshot-shot">
+            <div class="screenshot-frame">
+              <div class="screenshot-chrome">
+                <div class="screenshot-dots"><span></span><span></span><span></span></div>
+                <div class="screenshot-url">portal.dartiq.dev</div>
+              </div>
+              <div class="screenshot-image-wrap">
+                <img src="/screenshots/settings-1.png" alt="Company settings in DART iQ contractor portal" loading="lazy" width="1440" height="900">
+              </div>
+            </div>
+            <figcaption class="screenshot-caption">
+              <span class="screenshot-tag">Settings</span>
+              <span class="screenshot-desc">Company Settings</span>
+            </figcaption>
+          </figure>
+        </div>
+
+        <figure class="screenshot-shot screenshot-shot--featured">
+          <div class="screenshot-frame">
+            <div class="screenshot-chrome">
+              <div class="screenshot-dots"><span></span><span></span><span></span></div>
+              <div class="screenshot-url">portal.dartiq.dev</div>
+            </div>
+            <div class="screenshot-image-wrap">
+              <img src="/screenshots/settings-2.png" alt="Review gate controls in DART iQ settings" loading="lazy" width="1440" height="900">
+            </div>
+          </div>
+          <figcaption class="screenshot-caption">
+            <span class="screenshot-tag">Review Gates</span>
+            <span class="screenshot-desc">Review Gate Controls — approve NOCs and permits before they go out</span>
+          </figcaption>
+        </figure>
+
+        <p class="platform-note">Portal shown in light mode — dark mode also available</p>
       </div>
     </div>
   </section>
@@ -1428,6 +1694,7 @@
           <h4>Product</h4>
           <ul>
             <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#platform">Platform</a></li>
             <li><a href="#features">Features</a></li>
             <li><a href="#roi">Value</a></li>
             <li><a href="#demo">Early Access</a></li>
