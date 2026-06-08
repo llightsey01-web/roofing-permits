@@ -7,65 +7,76 @@ import { safeGetSession } from '../../lib/auth/safe-auth'
 import { SESSION_EXPIRED_MESSAGE } from '../../lib/auth/clear-stale-session'
 import { contractorTheme } from '../../lib/ui/contractor-theme'
 
-const loginTheme = {
+const theme = {
   pageBg: '#0f172a',
-  pageBgGradient: 'linear-gradient(180deg, #0f172a 0%, #0b1220 100%)',
   surface: '#1e293b',
   border: '#334155',
   text: '#ffffff',
   textMuted: '#94a3b8',
   accent: '#3b82f6',
-  accentGlow: '0 0 20px rgba(59, 130, 246, 0.45)',
-  accentSoft: 'rgba(59, 130, 246, 0.12)',
-  warningSoft: 'rgba(217, 119, 6, 0.15)',
-  errorSoft: 'rgba(239, 68, 68, 0.15)',
-  inputBg: '#1e293b',
-  shadowCard: '0 4px 24px rgba(0, 0, 0, 0.35)',
+  accentHover: '#2563eb',
+  inputBg: '#0f172a',
+  error: '#ef4444',
   fontFamily: contractorTheme.fontFamily,
+}
+
+function useDarkPageBackground() {
+  useEffect(function () {
+    const html = document.documentElement
+    const body = document.body
+    const prevHtmlBg = html.style.backgroundColor
+    const prevBodyBg = body.style.backgroundColor
+    const prevBodyColor = body.style.color
+
+    html.style.backgroundColor = theme.pageBg
+    body.style.backgroundColor = theme.pageBg
+    body.style.color = theme.text
+
+    return function () {
+      html.style.backgroundColor = prevHtmlBg
+      body.style.backgroundColor = prevBodyBg
+      body.style.color = prevBodyColor
+    }
+  }, [])
 }
 
 function DartIQLogo() {
   return (
-    <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+    <div style={{ textAlign: 'center', marginBottom: '24px' }}>
       <div style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '12px',
-        marginBottom: '8px',
+        gap: '10px',
       }}>
         <div style={{
-          width: '44px',
-          height: '44px',
-          background: `linear-gradient(135deg, ${loginTheme.accent} 0%, #2563eb 100%)`,
-          borderRadius: '12px',
+          width: '42px',
+          height: '42px',
+          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+          borderRadius: '11px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: loginTheme.accentGlow,
+          boxShadow: '0 0 20px rgba(59, 130, 246, 0.35)',
         }}>
-          <span style={{ color: '#ffffff', fontSize: '20px', fontWeight: '800' }}>D</span>
+          <span style={{ color: '#ffffff', fontSize: '19px', fontWeight: '800' }}>D</span>
         </div>
         <span style={{
-          color: loginTheme.text,
-          fontSize: '28px',
-          fontWeight: '700',
-          letterSpacing: '-0.02em',
+          color: theme.text,
+          fontSize: '26px',
+          fontWeight: '800',
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase',
         }}>
-          Dart iQ
+          DART iQ
         </span>
       </div>
-      <p style={{
-        color: loginTheme.textMuted,
-        fontSize: '13px',
-        margin: 0,
-      }}>
-        Permit automation by {contractorTheme.companyLegal}
-      </p>
     </div>
   )
 }
 
 function LoginForm() {
+  useDarkPageBackground()
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -76,13 +87,13 @@ function LoginForm() {
 
   const inputStyle = {
     width: '100%',
-    padding: '11px 14px',
-    border: '1px solid ' + loginTheme.border,
+    padding: '12px 14px',
+    border: '1px solid ' + theme.border,
     borderRadius: '10px',
-    fontSize: '14px',
+    fontSize: '15px',
     boxSizing: 'border-box',
-    backgroundColor: loginTheme.inputBg,
-    color: loginTheme.text,
+    backgroundColor: theme.inputBg,
+    color: theme.text,
     outline: 'none',
   }
 
@@ -91,10 +102,10 @@ function LoginForm() {
     fontSize: '13px',
     fontWeight: '600',
     marginBottom: '6px',
-    color: loginTheme.textMuted,
+    color: theme.textMuted,
   }
 
-  useEffect(() => {
+  useEffect(function () {
     if (searchParams.get('session') === 'expired') {
       setNotice(SESSION_EXPIRED_MESSAGE)
     }
@@ -129,64 +140,70 @@ function LoginForm() {
     if (authError) {
       setError(authError.message)
       setLoading(false)
-    } else {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', data.user.id)
-        .single()
+      return
+    }
 
-      if (userData?.role === 'super_admin') {
-        router.push('/dashboard')
-      } else {
-        router.push('/contractor/dashboard')
-      }
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', data.user.id)
+      .single()
+
+    if (userData?.role === 'super_admin') {
+      router.push('/dashboard')
+    } else {
+      router.push('/contractor/dashboard')
     }
   }
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
+      width: '100%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: loginTheme.pageBgGradient,
-      fontFamily: loginTheme.fontFamily,
+      backgroundColor: theme.pageBg,
+      fontFamily: theme.fontFamily,
       padding: '24px',
     }}>
       <style>{`
         .dartiq-login-input:focus {
-          border-color: ${loginTheme.accent} !important;
-          box-shadow: ${loginTheme.accentGlow} !important;
+          border-color: ${theme.accent} !important;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+        }
+        .dartiq-login-input::placeholder {
+          color: #64748b;
         }
       `}</style>
 
       <div style={{
-        backgroundColor: 'rgba(30, 41, 59, 0.9)',
+        backgroundColor: theme.surface,
         padding: '40px 36px',
-        borderRadius: '12px',
-        border: '1px solid ' + loginTheme.border,
+        borderRadius: '14px',
+        border: '1px solid ' + theme.border,
         width: '100%',
         maxWidth: '420px',
-        boxShadow: loginTheme.shadowCard,
-        backdropFilter: 'blur(8px)',
+        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4)',
       }}>
         <DartIQLogo />
 
-        <p style={{
-          color: loginTheme.textMuted,
-          fontSize: '15px',
+        <h1 style={{
+          color: theme.text,
+          fontSize: '22px',
+          fontWeight: '700',
           marginBottom: '28px',
           textAlign: 'center',
+          letterSpacing: '-0.02em',
         }}>
-          Sign in to your account
-        </p>
+          Welcome back
+        </h1>
 
         {notice && (
           <p style={{
             color: '#fbbf24',
-            backgroundColor: loginTheme.warningSoft,
-            border: '1px solid rgba(217, 119, 6, 0.35)',
+            backgroundColor: 'rgba(245, 158, 11, 0.12)',
+            border: '1px solid rgba(245, 158, 11, 0.35)',
             borderRadius: '10px',
             fontSize: '14px',
             marginBottom: '16px',
@@ -198,35 +215,39 @@ function LoginForm() {
 
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Email</label>
+            <label style={labelStyle} htmlFor="login-email">Email</label>
             <input
+              id="login-email"
               className="dartiq-login-input"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={function (e) { setEmail(e.target.value) }}
               required
               autoComplete="email"
+              placeholder="you@company.com"
               style={inputStyle}
             />
           </div>
 
           <div style={{ marginBottom: '24px' }}>
-            <label style={labelStyle}>Password</label>
+            <label style={labelStyle} htmlFor="login-password">Password</label>
             <input
+              id="login-password"
               className="dartiq-login-input"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={function (e) { setPassword(e.target.value) }}
               required
               autoComplete="current-password"
+              placeholder="••••••••"
               style={inputStyle}
             />
           </div>
 
           {error && (
             <p style={{
-              color: '#f87171',
-              backgroundColor: loginTheme.errorSoft,
+              color: theme.error,
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
               border: '1px solid rgba(239, 68, 68, 0.35)',
               borderRadius: '10px',
               fontSize: '14px',
@@ -242,25 +263,25 @@ function LoginForm() {
             disabled={loading}
             style={{
               width: '100%',
-              padding: '12px',
-              backgroundColor: loading ? loginTheme.border : loginTheme.accent,
+              padding: '13px',
+              backgroundColor: loading ? theme.border : theme.accent,
               color: '#ffffff',
               border: 'none',
               borderRadius: '10px',
               fontSize: '15px',
               fontWeight: '600',
               cursor: loading ? 'not-allowed' : 'pointer',
-              boxShadow: loading ? 'none' : loginTheme.accentGlow,
+              boxShadow: loading ? 'none' : '0 0 20px rgba(59, 130, 246, 0.35)',
             }}
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         <p style={{
           textAlign: 'center',
           fontSize: '12px',
-          color: loginTheme.textMuted,
+          color: theme.textMuted,
           marginTop: '28px',
           marginBottom: 0,
         }}>
@@ -272,16 +293,19 @@ function LoginForm() {
 }
 
 function LoginLoading() {
+  useDarkPageBackground()
+
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
+      width: '100%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: loginTheme.pageBgGradient,
-      fontFamily: loginTheme.fontFamily,
+      backgroundColor: theme.pageBg,
+      fontFamily: theme.fontFamily,
     }}>
-      <p style={{ color: loginTheme.textMuted, fontSize: '14px' }}>Loading...</p>
+      <p style={{ color: theme.textMuted, fontSize: '14px' }}>Loading...</p>
     </div>
   )
 }
