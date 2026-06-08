@@ -7,7 +7,7 @@
     "dev:stable": "node scripts/start-dev-stable.js",
     "health": "node scripts/check-local-health.js",
     "build": "next build",
-    "start": "next start",
+    "start": "NODE_OPTIONS='--max-old-space-size=4096' next start",
     "lint": "eslint",
     "test": "jest",
     "test:unit": "jest tests/unit",
