@@ -1,8 +1,36 @@
 // POST /api/leads
 // Accepts form submission from marketing site
-// Saves to leads table
-// Sends notification email (stubbed for now)
-import { createClient as createServiceClient } from '../../../lib/supabase-server.js'
+// Saves to leads table and sends notification email
+import { createClient } from '../../../lib/supabase-server.js'
+
+async function sendLeadNotification(lead) {
+  try {
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) {
+      console.warn('[leads] RESEND_API_KEY not set — skipping email notification')
+      return
+    }
+
+    const { Resend } = await import('resend')
+    const resend = new Resend(apiKey)
+    await resend.emails.send({
+      from: 'DART iQ <hello@dartiq.dev>',
+      to: 'logan@dartiq.dev',
+      subject: 'New Lead: ' + lead.name + ' — ' + (lead.company || 'No company'),
+      html: `
+        <h2>New Early Access Request</h2>
+        <p><strong>Name:</strong> ${lead.name}</p>
+        <p><strong>Company:</strong> ${lead.company || 'Not provided'}</p>
+        <p><strong>Email:</strong> ${lead.email}</p>
+        <p><strong>Phone:</strong> ${lead.phone || 'Not provided'}</p>
+        <p><strong>Monthly Volume:</strong> ${lead.monthly_volume || 'Not provided'}</p>
+        <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+      `,
+    })
+  } catch (err) {
+    console.error('[leads] Email failed:', err.message)
+  }
+}
 
 export async function POST(request) {
   try {
@@ -13,7 +41,7 @@ export async function POST(request) {
       return Response.json({ error: 'Name and email required' }, { status: 400 })
     }
 
-    const supabase = createServiceClient()
+    const supabase = createClient()
     const { error } = await supabase.from('leads').insert({
       name,
       company,
@@ -25,8 +53,7 @@ export async function POST(request) {
 
     if (error) throw new Error(error.message)
 
-    // TODO: Send email notification when Resend is configured
-    console.log('[leads] New lead:', name, email, company)
+    await sendLeadNotification({ name, company, email, phone, monthly_volume })
 
     return Response.json({ success: true })
   } catch (err) {
