@@ -1680,7 +1680,7 @@
                     <div class="screenshot-url">portal.dartiq.dev</div>
                   </div>
                   <div class="screenshot-image-wrap">
-                    <img src="/screenshots/dashboard.png" alt="DART iQ contractor portal job dashboard" loading="eager" width="1440" height="900">
+                    <img src="screenshots/dashboard.png" alt="DART iQ contractor portal job dashboard" loading="eager" width="1440" height="900">
                   </div>
                 </div>
               </div>
@@ -1691,7 +1691,7 @@
                     <div class="screenshot-url">portal.dartiq.dev</div>
                   </div>
                   <div class="screenshot-image-wrap">
-                    <img src="/screenshots/pipeline.png" alt="Real-time permit pipeline tracking in DART iQ" loading="lazy" width="1440" height="900">
+                    <img src="screenshots/pipeline.png" alt="Real-time permit pipeline tracking in DART iQ" loading="lazy" width="1440" height="900">
                   </div>
                 </div>
               </div>
@@ -1702,7 +1702,7 @@
                     <div class="screenshot-url">portal.dartiq.dev</div>
                   </div>
                   <div class="screenshot-image-wrap">
-                    <img src="/screenshots/new-job-1.png" alt="DART iQ job submission form" loading="lazy" width="1440" height="900">
+                    <img src="screenshots/new-job-1.png" alt="DART iQ job submission form" loading="lazy" width="1440" height="900">
                   </div>
                 </div>
               </div>
@@ -1713,7 +1713,7 @@
                     <div class="screenshot-url">portal.dartiq.dev</div>
                   </div>
                   <div class="screenshot-image-wrap">
-                    <img src="/screenshots/new-job-2.png" alt="Material selection step in DART iQ new job flow" loading="lazy" width="1440" height="900">
+                    <img src="screenshots/new-job-2.png" alt="Material selection step in DART iQ new job flow" loading="lazy" width="1440" height="900">
                   </div>
                 </div>
               </div>
@@ -1724,7 +1724,7 @@
                     <div class="screenshot-url">portal.dartiq.dev</div>
                   </div>
                   <div class="screenshot-image-wrap">
-                    <img src="/screenshots/settings-1.png" alt="Company settings in DART iQ contractor portal" loading="lazy" width="1440" height="900">
+                    <img src="screenshots/settings-1.png" alt="Company settings in DART iQ contractor portal" loading="lazy" width="1440" height="900">
                   </div>
                 </div>
               </div>
@@ -1735,7 +1735,7 @@
                     <div class="screenshot-url">portal.dartiq.dev</div>
                   </div>
                   <div class="screenshot-image-wrap">
-                    <img src="/screenshots/settings-2.png" alt="Review gate controls in DART iQ settings" loading="lazy" width="1440" height="900">
+                    <img src="screenshots/settings-2.png" alt="Review gate controls in DART iQ settings" loading="lazy" width="1440" height="900">
                   </div>
                 </div>
               </div>
@@ -1961,8 +1961,8 @@
         <div class="footer-col">
           <h4>Legal</h4>
           <ul>
-            <li><a href="/privacy">Privacy Policy</a></li>
-            <li><a href="/terms">Terms of Service</a></li>
+            <li><a href="https://app.dartiq.dev/privacy">Privacy Policy</a></li>
+            <li><a href="https://app.dartiq.dev/terms">Terms of Service</a></li>
           </ul>
         </div>
       </div>
@@ -2156,6 +2156,79 @@
       }, { passive: true });
 
       startAutoplay();
+    })();
+  </script>
+
+
+  <script>
+    (function () {
+      var THEME_KEY = 'dartiq-theme';
+      var LEADS_API = 'https://app.dartiq.dev/api/leads';
+
+      function getPreferredTheme() {
+        try {
+          var stored = localStorage.getItem(THEME_KEY);
+          if (stored === 'light' || stored === 'dark') return stored;
+        } catch (e) {}
+        return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
+
+      function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        var btn = document.getElementById('theme-toggle');
+        if (btn) {
+          btn.setAttribute('aria-label', theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        }
+      }
+
+      function toggleTheme() {
+        var current = document.documentElement.getAttribute('data-theme') || 'dark';
+        var next = current === 'light' ? 'dark' : 'light';
+        applyTheme(next);
+        try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+      }
+
+      applyTheme(getPreferredTheme());
+
+      document.addEventListener('click', function (e) {
+        if (e.target.closest('#theme-toggle')) {
+          e.preventDefault();
+          toggleTheme();
+        }
+      });
+
+      var form = document.getElementById('demo-form');
+      if (form) {
+        form.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          var submitBtn = form.querySelector('button[type="submit"]');
+          var data = {
+            name: form.querySelector('[name="name"]').value,
+            company: form.querySelector('[name="company"]').value,
+            email: form.querySelector('[name="email"]').value,
+            phone: form.querySelector('[name="phone"]').value,
+            monthly_volume: form.querySelector('[name="monthly_volume"]').value,
+          };
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Submitting...';
+          try {
+            var response = await fetch(LEADS_API, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data),
+            });
+            if (response.ok) {
+              form.innerHTML = '<div class="success-message"><h3>You\'re on the list!</h3><p>We\'ll be in touch soon.</p></div>';
+            } else {
+              throw new Error('Failed');
+            }
+          } catch (err) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Request Access';
+            alert('Something went wrong. Please try again.');
+          }
+        });
+      }
     })();
   </script>
 

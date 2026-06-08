@@ -1,0 +1,5 @@
+[phases.build]
+cmds = []
+
+[start]
+cmd = "npx serve -s . -l 8080"

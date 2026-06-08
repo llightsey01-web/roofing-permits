@@ -3,6 +3,29 @@
 // Saves to leads table and sends notification email
 import { createClient } from '../../../lib/supabase-server.js'
 
+const ALLOWED_ORIGINS = new Set([
+  'https://www.dartiq.dev',
+  'https://dartiq.dev',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+])
+
+function corsHeaders(request) {
+  const origin = request.headers.get('origin')
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    }
+  }
+  return {}
+}
+
+export async function OPTIONS(request) {
+  return new Response(null, { status: 204, headers: corsHeaders(request) })
+}
+
 async function sendLeadNotification(lead) {
   try {
     const apiKey = process.env.RESEND_API_KEY
@@ -55,9 +78,9 @@ export async function POST(request) {
 
     await sendLeadNotification({ name, company, email, phone, monthly_volume })
 
-    return Response.json({ success: true })
+    return Response.json({ success: true }, { headers: corsHeaders(request) })
   } catch (err) {
     console.error('[leads] Error:', err.message)
-    return Response.json({ error: 'Failed to save lead' }, { status: 500 })
+    return Response.json({ error: 'Failed to save lead' }, { status: 500, headers: corsHeaders(request) })
   }
 }
