@@ -220,43 +220,81 @@
       transform: translateY(-1px);
     }
 
-    .theme-toggle {
+    .theme-fab {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      z-index: 9999;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid #f97316;
+      cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 38px;
-      height: 38px;
-      border: 1px solid var(--border-medium);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      padding: 0;
+    }
+
+    .theme-fab:hover {
+      transform: scale(1.1);
+      box-shadow: 0 12px 32px rgba(249, 115, 22, 0.25);
+    }
+
+    html[data-theme="dark"] .theme-fab {
+      background: #1e293b;
+      color: #ffffff;
+    }
+
+    html[data-theme="light"] .theme-fab {
+      background: #ffffff;
+      color: #0f172a;
+    }
+
+    .theme-fab-icon {
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+
+    html[data-theme="dark"] .theme-fab-icon-sun { display: block; }
+    html[data-theme="dark"] .theme-fab-icon-moon { display: none; }
+    html[data-theme="light"] .theme-fab-icon-sun { display: none; }
+    html[data-theme="light"] .theme-fab-icon-moon { display: block; }
+
+    .theme-fab::after {
+      position: absolute;
+      right: calc(100% + 10px);
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 0.4rem 0.65rem;
       border-radius: 8px;
-      background: transparent;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all 0.2s;
-      flex-shrink: 0;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 0.72rem;
+      font-weight: 600;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     }
 
-    .theme-toggle:hover {
-      border-color: var(--orange);
-      color: var(--orange);
+    html[data-theme="dark"] .theme-fab::after {
+      content: 'Switch to light mode';
     }
 
-    .theme-toggle svg {
-      width: 18px;
-      height: 18px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+    html[data-theme="light"] .theme-fab::after {
+      content: 'Switch to dark mode';
     }
 
-    html[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
-    html[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
-    html[data-theme="light"] .theme-toggle .icon-sun { display: none; }
-    html[data-theme="light"] .theme-toggle .icon-moon { display: block; }
-
-    .theme-toggle.mobile-only { display: inline-flex; }
-    .theme-toggle.desktop-only { display: none; }
+    .theme-fab:hover::after,
+    .theme-fab:focus-visible::after {
+      opacity: 1;
+      visibility: visible;
+    }
 
     .svg-icon {
       display: inline-flex;
@@ -1414,8 +1452,6 @@
 
     @media (min-width: 768px) {
       .nav-links { display: flex; }
-      .theme-toggle.mobile-only { display: none; }
-      .theme-toggle.desktop-only { display: inline-flex; }
       .footer-grid { grid-template-columns: 1.4fr 1fr 1fr 1fr; }
       .roi-layout { grid-template-columns: 1fr 1fr; gap: 2.5rem; }
     }
@@ -1475,6 +1511,15 @@
         height: 38px;
         font-size: 1.5rem;
       }
+      .theme-fab {
+        bottom: 20px;
+        right: 20px;
+        width: 44px;
+        height: 44px;
+      }
+      .theme-fab-icon {
+        font-size: 1.1rem;
+      }
       .form-section { padding: 1.75rem; }
     }
   </style>
@@ -1488,10 +1533,6 @@
           <div class="logo-icon">D</div>
           <span class="logo-text">DART&nbsp;iQ</span>
         </a>
-        <button type="button" id="theme-toggle-mobile" class="theme-toggle mobile-only" aria-label="Switch theme">
-          <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-          <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-        </button>
       </div>
       <ul class="nav-links">
         <li><a href="#how-it-works">How It Works</a></li>
@@ -1501,10 +1542,6 @@
         <li><a href="#demo">Early Access</a></li>
       </ul>
       <div class="nav-actions">
-        <button type="button" id="theme-toggle" class="theme-toggle desktop-only" aria-label="Switch theme">
-          <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-          <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-        </button>
         <a href="https://portal.dartiq.dev/login" class="nav-login">Contractor Login</a>
         <a href="#demo" class="nav-cta">Request Access</a>
       </div>
@@ -1932,6 +1969,11 @@
       <div class="footer-bottom">© 2026 Zigamus Technologies, LLC. All rights reserved.</div>
     </div>
   </footer>
+
+  <button type="button" id="theme-toggle" class="theme-fab" aria-label="Switch to light mode">
+    <span class="theme-fab-icon theme-fab-icon-sun" aria-hidden="true">☀️</span>
+    <span class="theme-fab-icon theme-fab-icon-moon" aria-hidden="true">🌙</span>
+  </button>
 
   <script>
     (function () {
