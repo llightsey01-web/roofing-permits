@@ -1,10 +1,80 @@
-/* Dart iQ contractor portal — mobile + overflow safety */
+/* Dart iQ contractor portal — theme variables + layout */
+
+:root,
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --portal-page-bg: #0f172a;
+  --portal-page-bg-gradient: linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+  --portal-surface: #1e293b;
+  --portal-border: #334155;
+  --portal-border-strong: #475569;
+  --portal-text: #ffffff;
+  --portal-text-body: #e2e8f0;
+  --portal-text-muted: #94a3b8;
+  --portal-accent: #3b82f6;
+  --portal-accent-hover: #2563eb;
+  --portal-accent-soft: rgba(59, 130, 246, 0.12);
+  --portal-accent-glow: 0 0 20px rgba(59, 130, 246, 0.35);
+  --portal-success: #16a34a;
+  --portal-success-soft: rgba(22, 163, 74, 0.15);
+  --portal-warning: #f59e0b;
+  --portal-warning-soft: rgba(245, 158, 11, 0.15);
+  --portal-error: #ef4444;
+  --portal-error-soft: rgba(239, 68, 68, 0.15);
+  --portal-header-bg: #1e293b;
+  --portal-header-border: #334155;
+  --portal-nav-bg: #1e293b;
+  --portal-nav-active: #3b82f6;
+  --portal-nav-active-bg: rgba(59, 130, 246, 0.2);
+  --portal-input-bg: #0f172a;
+  --portal-badge-bg: rgba(59, 130, 246, 0.15);
+  --portal-badge-text: #93c5fd;
+  --portal-badge-border: #334155;
+  --portal-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --portal-shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+  --portal-page-bg: #f8fafc;
+  --portal-page-bg-gradient: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  --portal-surface: #ffffff;
+  --portal-border: #e2e8f0;
+  --portal-border-strong: #cbd5e1;
+  --portal-text: #0f172a;
+  --portal-text-body: #0f172a;
+  --portal-text-muted: #64748b;
+  --portal-accent: #3b82f6;
+  --portal-accent-hover: #2563eb;
+  --portal-accent-soft: rgba(59, 130, 246, 0.1);
+  --portal-accent-glow: 0 0 16px rgba(59, 130, 246, 0.2);
+  --portal-success: #16a34a;
+  --portal-success-soft: rgba(22, 163, 74, 0.12);
+  --portal-warning: #d97706;
+  --portal-warning-soft: rgba(245, 158, 11, 0.12);
+  --portal-error: #ef4444;
+  --portal-error-soft: rgba(239, 68, 68, 0.1);
+  --portal-header-bg: #ffffff;
+  --portal-header-border: #e2e8f0;
+  --portal-nav-bg: #ffffff;
+  --portal-nav-active: #3b82f6;
+  --portal-nav-active-bg: #eff6ff;
+  --portal-input-bg: #ffffff;
+  --portal-badge-bg: rgba(59, 130, 246, 0.1);
+  --portal-badge-text: #2563eb;
+  --portal-badge-border: #e2e8f0;
+  --portal-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --portal-shadow-card: 0 4px 24px rgba(15, 23, 42, 0.08);
+}
+
 .contractor-shell {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
   max-width: 100vw;
+  background: var(--portal-page-bg-gradient);
+  color: var(--portal-text-body);
 }
 
 .contractor-main {
@@ -15,6 +85,8 @@
 
 .contractor-header {
   flex-shrink: 0;
+  background-color: var(--portal-header-bg);
+  border-bottom: 1px solid var(--portal-header-border);
 }
 
 .contractor-desktop-nav,
@@ -22,6 +94,43 @@
 .contractor-header-email {
   display: flex;
 }
+
+.contractor-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0;
+  border: 1px solid var(--portal-border);
+  border-radius: 8px;
+  background: var(--portal-input-bg);
+  color: var(--portal-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.contractor-theme-toggle:hover {
+  border-color: var(--portal-accent);
+  color: var(--portal-accent);
+}
+
+.contractor-theme-toggle svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+html[data-theme='dark'] .contractor-theme-toggle .icon-sun { display: block; }
+html[data-theme='dark'] .contractor-theme-toggle .icon-moon { display: none; }
+html[data-theme='light'] .contractor-theme-toggle .icon-sun { display: none; }
+html[data-theme='light'] .contractor-theme-toggle .icon-moon { display: block; }
 
 .contractor-bottom-nav {
   display: none;
@@ -32,9 +141,9 @@
   z-index: 100;
   height: 64px;
   padding-bottom: env(safe-area-inset-bottom, 0);
-  background-color: #1e293b;
-  border-top: 1px solid #334155;
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+  background-color: var(--portal-nav-bg);
+  border-top: 1px solid var(--portal-border);
+  box-shadow: var(--portal-shadow-card);
 }
 
 .contractor-bottom-nav-inner {
@@ -60,13 +169,14 @@
   cursor: pointer;
   font-size: 10px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--portal-text-muted);
   padding: 6px 4px;
   -webkit-tap-highlight-color: transparent;
 }
 
 .contractor-bottom-nav-item.is-active {
-  color: #3b82f6;
+  color: var(--portal-nav-active);
+  background-color: var(--portal-nav-active-bg);
 }
 
 .contractor-bottom-nav-icon {
@@ -76,6 +186,9 @@
 
 .contractor-footer-desktop {
   flex-shrink: 0;
+  background-color: var(--portal-header-bg);
+  border-top: 1px solid var(--portal-border);
+  color: var(--portal-text-muted);
 }
 
 .contractor-page {

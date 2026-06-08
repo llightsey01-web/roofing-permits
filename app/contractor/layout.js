@@ -1,11 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useLayoutEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '../../lib/supabase'
 import { safeGetUser, redirectIfStaleSession } from '../../lib/auth/safe-auth'
 import EnvironmentBadge from '../../components/ui/EnvironmentBadge'
-import { contractorTheme } from '../../lib/ui/contractor-theme'
+import {
+  contractorTheme,
+  getPortalTheme,
+  applyPortalTheme,
+  togglePortalTheme,
+} from '../../lib/ui/contractor-theme'
 import './contractor-portal.css'
 
 const navItems = [
@@ -22,13 +27,48 @@ function isNavActive(pathname, href) {
   return false
 }
 
+function PortalThemeToggle() {
+  const [theme, setTheme] = useState('dark')
+
+  useLayoutEffect(function () {
+    const initial = getPortalTheme()
+    applyPortalTheme(initial)
+    setTheme(initial)
+  }, [])
+
+  function handleToggle() {
+    setTheme(togglePortalTheme())
+  }
+
+  return (
+    <button
+      type="button"
+      className="contractor-theme-toggle"
+      onClick={handleToggle}
+      aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+    >
+      <svg className="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+      </svg>
+      <svg className="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+      </svg>
+    </button>
+  )
+}
+
 export default function ContractorLayout({ children }) {
   const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  useLayoutEffect(function () {
+    applyPortalTheme(getPortalTheme())
+  }, [])
+
+  useEffect(function () {
     async function checkAuth() {
       try {
         const supabase = createClient()
@@ -76,7 +116,6 @@ export default function ContractorLayout({ children }) {
       <div
         className="contractor-shell"
         style={{
-          background: contractorTheme.pageBgGradient,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -91,17 +130,11 @@ export default function ContractorLayout({ children }) {
   return (
     <div
       className="contractor-shell"
-      style={{
-        background: contractorTheme.pageBgGradient,
-        fontFamily: contractorTheme.fontFamily,
-        color: contractorTheme.textBody,
-      }}
+      style={{ fontFamily: contractorTheme.fontFamily }}
     >
       <header
         className="contractor-header"
         style={{
-          backgroundColor: contractorTheme.headerBg,
-          borderBottom: '1px solid ' + contractorTheme.headerBorder,
           padding: '0 24px',
           display: 'flex',
           justifyContent: 'space-between',
@@ -154,7 +187,7 @@ export default function ContractorLayout({ children }) {
             </div>
           </button>
           <nav className="contractor-desktop-nav" style={{ gap: '6px', flexWrap: 'wrap' }}>
-            {navItems.map(item => {
+            {navItems.map(function (item) {
               const isActive = isNavActive(pathname, item.href)
               return (
                 <button
@@ -180,6 +213,7 @@ export default function ContractorLayout({ children }) {
           </nav>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <PortalThemeToggle />
           <span className="contractor-header-email" style={{ fontSize: '13px', color: contractorTheme.textMuted }}>
             {user?.email}
           </span>
@@ -208,12 +242,9 @@ export default function ContractorLayout({ children }) {
       <footer
         className="contractor-footer-desktop"
         style={{
-          borderTop: '1px solid ' + contractorTheme.border,
           padding: '20px 24px',
           textAlign: 'center',
           fontSize: '13px',
-          color: contractorTheme.textMuted,
-          backgroundColor: contractorTheme.headerBg,
         }}
       >
         © {contractorTheme.footerYear} {contractorTheme.companyLegal}
@@ -221,7 +252,7 @@ export default function ContractorLayout({ children }) {
 
       <nav className="contractor-bottom-nav" aria-label="Mobile navigation">
         <div className="contractor-bottom-nav-inner">
-          {navItems.map(item => {
+          {navItems.map(function (item) {
             const isActive = isNavActive(pathname, item.href)
             return (
               <button
