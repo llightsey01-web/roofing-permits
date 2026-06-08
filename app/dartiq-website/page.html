@@ -137,7 +137,18 @@
       font-weight: 900;
       font-size: clamp(0.95rem, 3.2vw, 1.35rem);
       letter-spacing: 0.06em;
-      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      white-space: nowrap;
+      text-transform: none;
+      letter-spacing: 0.06em;
+    }
+
+    .brand-name {
+      text-transform: none;
+      letter-spacing: 0.02em;
     }
 
     .logo-icon {
@@ -1341,6 +1352,16 @@
         height: 34px;
         font-size: 1rem;
       }
+      .logo {
+        font-size: 0.82rem;
+        letter-spacing: 0.04em;
+        gap: 0.4rem;
+      }
+      .logo-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 0.95rem;
+      }
       .form-section { padding: 1.75rem; }
     }
   </style>
@@ -1352,7 +1373,7 @@
       <div class="nav-left">
         <a href="#" class="logo">
           <div class="logo-icon">D</div>
-          <span class="logo-text">DART iQ</span>
+          <span class="logo-text">DART&nbsp;iQ</span>
         </a>
         <button type="button" id="theme-toggle-mobile" class="theme-toggle mobile-only" aria-label="Switch theme">
           <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
@@ -1363,7 +1384,7 @@
         <li><a href="#how-it-works">How It Works</a></li>
         <li><a href="#platform">Platform</a></li>
         <li><a href="#features">Features</a></li>
-        <li><a href="#why-us">Why DART iQ</a></li>
+        <li><a href="#why-us">Why <span class="brand-name">DART iQ</span></a></li>
         <li><a href="#demo">Early Access</a></li>
       </ul>
       <div class="nav-actions">
@@ -1637,7 +1658,7 @@
   <section id="why-us" class="credibility-section">
     <div class="container">
       <div class="section-header">
-        <div class="section-label">Why DART iQ</div>
+        <div class="section-label">Why <span class="brand-name">DART iQ</span></div>
         <h2 class="section-title">Built for contractors who scale</h2>
         <p class="section-desc">Eliminate permit bottlenecks without adding administrative overhead.</p>
       </div>
@@ -1688,7 +1709,7 @@
           </ul>
         </div>
         <div class="roi-after">
-          <h3>With DART iQ</h3>
+          <h3>With <span class="brand-name">DART iQ</span></h3>
           <ul class="roi-list">
             <li>End-to-end permit automation</li>
             <li>Compliant NOC generation</li>
@@ -1756,7 +1777,7 @@
         <div class="footer-brand-block">
           <div class="logo">
             <div class="logo-icon">D</div>
-            <span class="logo-text">DART iQ</span>
+            <span class="logo-text">DART&nbsp;iQ</span>
           </div>
           <p class="footer-tagline">Built by Zigamus Technologies — the intelligent permit platform for Florida roofing contractors.</p>
         </div>
