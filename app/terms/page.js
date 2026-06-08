@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import DartiqLegalLayout from '../components/DartiqLegalLayout'
 
 export const metadata = {
@@ -5,13 +7,19 @@ export const metadata = {
   description: 'Terms of Service for DART iQ by Zigamus Technologies, LLC.',
 }
 
+function getTermsBody() {
+  return readFileSync(join(process.cwd(), 'app/terms/terms-body.html'), 'utf8')
+}
+
 export default function TermsPage() {
+  const termsHtml = getTermsBody()
+
   return (
-    <DartiqLegalLayout title="Terms of Service">
-      <p className="dartiq-legal-placeholder">
-        Terms of Service coming soon. For questions contact{' '}
-        <a href="mailto:logan@dartiq.dev">logan@dartiq.dev</a>.
-      </p>
+    <DartiqLegalLayout>
+      <div
+        className="dartiq-legal-content"
+        dangerouslySetInnerHTML={{ __html: termsHtml }}
+      />
     </DartiqLegalLayout>
   )
 }
