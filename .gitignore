@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+lib/docusign/private.key
 
 # debug
 npm-debug.log*
