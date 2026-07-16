@@ -1,5 +1,7 @@
 // worker/index.js
 const path = require('path')
+// Load local env for dev only — never override Railway-injected vars (override: false default)
+require('dotenv').config({ path: path.join(__dirname, '.env.local') })
 require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') })
 const { createClient } = require('@supabase/supabase-js')
 const ws = require('ws')
@@ -14,6 +16,11 @@ function requireLib(mod) {
   try { return require(path.join(__dirname, mod)) } catch (e) {}
   try { return require(path.join(__dirname, '..', mod)) } catch (e) {}
   throw new Error('Cannot resolve lib module: ' + mod)
+}
+
+function requireHandler(name) {
+  // Docker: /app/handlers/<name>  |  Local: worker/handlers/<name>
+  return require(path.join(__dirname, 'handlers', name))
 }
 function requireMonitoring(mod) {
   return requireLib(mod)

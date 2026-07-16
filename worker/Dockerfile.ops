@@ -1,7 +1,11 @@
 FROM node:20-slim
 WORKDIR /app
+
 COPY worker/package.json ./
 RUN npm install --omit=dev
+
 COPY worker/ops-worker.js ./index.js
 COPY lib/ ./lib/
+
+# Do not bake ENVIRONMENT/NODE_ENV here — Railway injects them at runtime.
 CMD ["node", "index.js"]

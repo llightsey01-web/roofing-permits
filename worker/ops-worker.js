@@ -2,6 +2,8 @@
 // Worker 3 — notifications, permit packets, status reconcile (no Playwright)
 
 const path = require('path')
+// Load local env for dev only — never override Railway-injected vars
+require('dotenv').config({ path: path.join(__dirname, '.env.local') })
 require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') })
 const { createClient } = require('@supabase/supabase-js')
 const ws = require('ws')

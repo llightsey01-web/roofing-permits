@@ -2,6 +2,8 @@
 // Worker 2 — NOC generation, Proof.com, ePN recording (Playwright)
 
 const path = require('path')
+// Load local env for dev only — never override Railway-injected vars
+require('dotenv').config({ path: path.join(__dirname, '.env.local') })
 require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') })
 const { createClient } = require('@supabase/supabase-js')
 const ws = require('ws')
@@ -16,6 +18,10 @@ function requireLib(mod) {
   try { return require(path.join(__dirname, mod)) } catch (e) {}
   try { return require(path.join(__dirname, '..', mod)) } catch (e) {}
   throw new Error('Cannot resolve lib module: ' + mod)
+}
+function requireHandler(name) {
+  // In Docker this file is copied to /app/index.js; handlers live at /app/handlers/
+  return require(path.join(__dirname, 'handlers', name))
 }
 function requireMonitoring(mod) {
   return requireLib(mod)
@@ -112,8 +118,7 @@ async function recoverStuckRuns() {
 
 async function handleNocGenerate(job, run) {
   var { runNocPhaseForJob } = resolveLib('lib/noc/run-noc-phase.js')
-  var nocHandlerPath = path.join(__dirname, 'handlers', 'noc-handler.js')
-  var { handleNocGenerate: runNocHandler } = require(nocHandlerPath)
+  var { handleNocGenerate: runNocHandler } = requireHandler('noc-handler.js')
 
   return runNocHandler(job, run, {
     supabase: supabase,

@@ -1,9 +1,19 @@
 // worker/handlers/noc-handler.js
 // Handles noc_generate runs, including contractor NOC workflow options
 
+const path = require('path')
+
+function requireLib(mod) {
+  // Docker image layout: /app/handlers + /app/lib
+  try { return require(path.join(__dirname, '..', mod)) } catch (e) {}
+  // Local repo layout: worker/handlers + <repo>/lib
+  try { return require(path.join(__dirname, '..', '..', mod)) } catch (e) {}
+  throw new Error('Cannot resolve lib module: ' + mod)
+}
+
 const {
   NOC_OPTIONS,
-} = require('../../lib/noc/noc-options.js')
+} = requireLib('lib/noc/noc-options.js')
 
 async function queueRun(supabase, jobId, runType, dependencyRunId) {
   var { data: run, error } = await supabase.from('automation_runs').insert({

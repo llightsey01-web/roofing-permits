@@ -1,10 +1,25 @@
-// GET /api/internal/health — system health for Railway and monitoring
+// GET /api/internal/health — detailed system health for monitoring dashboards
+// NOTE: Prefer /api/health for Railway liveness probes. This route may return 503
+// when the database is unreachable, which would incorrectly restart a healthy web process.
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const url = new URL(request.url)
+    // ?liveness=1 always returns 200 if this process can respond (safe for Railway)
+    const livenessOnly = url.searchParams.get('liveness') === '1'
+
+    if (livenessOnly) {
+      return Response.json({
+        ok: true,
+        status: 'ok',
+        mode: 'liveness',
+        checkedAt: new Date().toISOString(),
+      }, { status: 200 })
+    }
+
     const { getSystemHealthSnapshot } = await import('../../../../lib/monitoring/job-monitor.js')
     const health = await getSystemHealthSnapshot({ sendAlerts: false })
 

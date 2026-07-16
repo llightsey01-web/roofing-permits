@@ -1,8 +1,16 @@
 FROM mcr.microsoft.com/playwright:v1.40.0-jammy
 WORKDIR /app
+
 COPY worker/package.json ./
 RUN npm install
+
+# Entry is named index.js in the container (/app/index.js)
 COPY worker/noc-proof-erecord-worker.js ./index.js
+COPY worker/handlers ./handlers
+COPY worker/project-root.js ./
+
 COPY automation/ ./automation/
 COPY lib/ ./lib/
+
+# Do not bake ENVIRONMENT/NODE_ENV here — Railway injects them at runtime.
 CMD ["node", "index.js"]
