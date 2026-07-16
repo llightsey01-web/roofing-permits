@@ -112,7 +112,8 @@ async function recoverStuckRuns() {
 
 async function handleNocGenerate(job, run) {
   var { runNocPhaseForJob } = resolveLib('lib/noc/run-noc-phase.js')
-  var { handleNocGenerate: runNocHandler } = require('./handlers/noc-handler.js')
+  var nocHandlerPath = path.join(__dirname, 'handlers', 'noc-handler.js')
+  var { handleNocGenerate: runNocHandler } = require(nocHandlerPath)
 
   return runNocHandler(job, run, {
     supabase: supabase,
