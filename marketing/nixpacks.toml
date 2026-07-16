@@ -1,5 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs"]
+
+[phases.install]
+cmds = ["npm install -g serve"]
+
 [phases.build]
 cmds = []
 
 [start]
-cmd = "npx serve -s . -l 8080"
+cmd = "serve -s . -l 8080 --no-clipboard"
