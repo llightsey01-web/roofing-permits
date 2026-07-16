@@ -4,6 +4,7 @@ const nextConfig = {
     'playwright',
     'playwright-core',
     '2captcha',
+    'docusign-esign',
   ],
 };
 
