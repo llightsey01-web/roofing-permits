@@ -4,8 +4,5 @@ nixPkgs = ["nodejs"]
 [phases.install]
 cmds = ["npm install -g serve"]
 
-[phases.build]
-cmds = []
-
 [start]
-cmd = "serve -s . -l 8080 --no-clipboard"
+cmd = "serve -s . -l ${PORT:-8080} --no-clipboard"
