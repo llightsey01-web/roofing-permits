@@ -20,10 +20,12 @@ export default function ContractorSettingsPage() {
   })
 
   const [credentials, setCredentials] = useState([])
+  const [vaultCredentials, setVaultCredentials] = useState([])
   const [ahjs, setAhjs] = useState([])
+  const [coveredCounties, setCoveredCounties] = useState([])
   const [encryptionConfigured, setEncryptionConfigured] = useState(true)
-  const [credForm, setCredForm] = useState({ ahj_id: '', username: '', password: '', notes: '' })
-  const [editingCred, setEditingCred] = useState(null)
+  const [credModal, setCredModal] = useState(null) // { countyId, label, ahjId, hasCreds }
+  const [credForm, setCredForm] = useState({ username: '', password: '' })
   const [credSaving, setCredSaving] = useState(false)
   const [credMessage, setCredMessage] = useState('')
   const [reviewGates, setReviewGates] = useState({
@@ -34,6 +36,13 @@ export default function ContractorSettingsPage() {
   const [reviewSaving, setReviewSaving] = useState(false)
   const [reviewSaved, setReviewSaved] = useState(false)
   const [reviewError, setReviewError] = useState('')
+
+  const COUNTY_OPTIONS = [
+    { id: 'polk', label: 'Polk County', provider: 'polk_accela' },
+    { id: 'lee', label: 'Lee County', provider: 'lee_accela' },
+    { id: 'manatee', label: 'Manatee County', provider: 'manatee_accela' },
+    { id: 'sarasota', label: 'Sarasota County', provider: 'sarasota_accela' },
+  ]
 
   useEffect(() => {
     loadAll()
@@ -72,11 +81,13 @@ export default function ContractorSettingsPage() {
           qualifer_name: c.qualifer_name || c.qualifier_name || '',
           qualifer_license: c.qualifer_license || c.qualifier_license || '',
         })
+        setCoveredCounties(Array.isArray(c.covered_counties) ? c.covered_counties : [])
       }
 
       const credData = await credRes.json()
       if (credRes.ok) {
         setCredentials(credData.credentials || [])
+        setVaultCredentials(credData.vaultCredentials || [])
         setEncryptionConfigured(credData.encryptionConfigured !== false)
       }
 
@@ -138,62 +149,67 @@ export default function ContractorSettingsPage() {
     setSaving(false)
   }
 
-  async function handleSaveCredential(e) {
+  async function handleSaveCredentialModal(e) {
     e.preventDefault()
+    if (!credModal) return
     setCredSaving(true)
     setCredMessage('')
     const token = await getToken()
-
-    const isEdit = Boolean(editingCred)
-    const url = isEdit ? '/api/contractor/credentials/' + editingCred.id : '/api/contractor/credentials'
-    const body = isEdit
-      ? { username: credForm.username, password: credForm.password || undefined, notes: credForm.notes }
-      : credForm
-
-    if (!isEdit && (!credForm.ahj_id || !credForm.username || !credForm.password)) {
-      setCredMessage('AHJ, username, and password are required')
+    if (!credForm.username.trim() || !credForm.password) {
+      setCredMessage('Username and password are required')
       setCredSaving(false)
       return
     }
 
-    const response = await fetch(url, {
-      method: isEdit ? 'PUT' : 'POST',
+    const response = await fetch('/api/contractor/credentials/save', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        county_id: credModal.countyId,
+        ahj_id: credModal.ahjId || null,
+        username: credForm.username.trim(),
+        password: credForm.password,
+      }),
     })
     const result = await response.json()
-
     if (!response.ok) {
       setCredMessage(result.error || 'Failed to save credential')
     } else {
-      setCredMessage(isEdit ? 'Credential updated' : 'Credential added')
-      setCredForm({ ahj_id: '', username: '', password: '', notes: '' })
-      setEditingCred(null)
+      setCredMessage('Credentials saved')
+      setCredForm({ username: '', password: '' })
+      setTimeout(function () {
+        setCredModal(null)
+        setCredMessage('')
+      }, 700)
       await loadAll()
     }
     setCredSaving(false)
   }
 
-  async function handleDeleteCredential(id) {
-    if (!confirm('Delete this AHJ credential?')) return
-    const token = await getToken()
-    const response = await fetch('/api/contractor/credentials/' + id, {
-      method: 'DELETE',
-      headers: { Authorization: 'Bearer ' + token },
+  function openCredModal(county) {
+    setCredModal(county)
+    setCredForm({ username: '', password: '' })
+    setCredMessage('')
+  }
+
+  function countyHasCredentials(countyId, ahjId, provider) {
+    const vaultHit = vaultCredentials.some(function (c) {
+      if (!c.is_active && c.is_active !== undefined) return false
+      if (ahjId && c.ahj_id === ahjId && c.has_password) return true
+      if (provider && c.provider === provider && c.has_password) return true
+      return false
     })
-    if (response.ok) await loadAll()
+    if (vaultHit) return true
+    return credentials.some(function (c) {
+      return ahjId && c.ahj_id === ahjId && c.has_password
+    })
   }
 
-  function startEdit(cred) {
-    setEditingCred(cred)
-    setCredForm({ ahj_id: cred.ahj_id, username: cred.username, password: '', notes: cred.notes || '' })
-    setCredMessage('')
-  }
-
-  function cancelEdit() {
-    setEditingCred(null)
-    setCredForm({ ahj_id: '', username: '', password: '', notes: '' })
-    setCredMessage('')
+  function findPortalForCounty(countyId) {
+    return ahjs.find(function (a) {
+      const hay = ((a.name || '') + ' ' + (a.county_or_city || '')).toLowerCase()
+      return hay.includes(countyId)
+    }) || null
   }
 
   if (loading) {
@@ -226,8 +242,19 @@ export default function ContractorSettingsPage() {
   }
   const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }
 
-  const configuredAhjIds = new Set(credentials.map(c => c.ahj_id))
-  const availableAhjs = ahjs.filter(a => !configuredAhjIds.has(a.id) || (editingCred && a.id === editingCred.ahj_id))
+  const coveredCountyRows = COUNTY_OPTIONS
+    .filter(function (c) { return coveredCounties.includes(c.id) })
+    .map(function (c) {
+      const portal = findPortalForCounty(c.id)
+      const hasCreds = countyHasCredentials(c.id, portal?.id || null, c.provider)
+      return {
+        countyId: c.id,
+        label: c.label,
+        provider: c.provider,
+        ahjId: portal?.id || null,
+        hasCreds: hasCreds,
+      }
+    })
 
   return (
     <div style={{ maxWidth: '800px', margin: '28px auto', padding: '0 24px 48px' }}>
@@ -344,7 +371,7 @@ export default function ContractorSettingsPage() {
       <div style={sectionStyle}>
         <h2 style={sectionTitleStyle}>AHJ portal credentials</h2>
         <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '0 0 20px 0' }}>
-          Securely store login credentials for county permit portals. Passwords are encrypted server-side and never displayed.
+          Add county portal logins for the areas you selected during onboarding. Passwords are encrypted and never displayed.
         </p>
 
         {!encryptionConfigured && (
@@ -360,106 +387,146 @@ export default function ContractorSettingsPage() {
           </div>
         )}
 
-        {credentials.length > 0 && (
-          <div style={{ marginBottom: '24px' }}>
-            {credentials.map(cred => (
-              <div key={cred.id} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '14px 16px',
-                border: '1px solid ' + contractorTheme.border,
-                borderRadius: '10px',
-                marginBottom: '10px',
-                flexWrap: 'wrap',
-                gap: '12px',
-              }}>
-                <div>
-                  <p style={{ fontSize: '14px', fontWeight: '600', margin: 0, color: contractorTheme.text }}>
-                    {cred.ahj_name || 'AHJ portal'}
-                  </p>
-                  <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '4px 0 0 0' }}>
-                    User: {cred.username} · Password: {cred.password_masked}
-                  </p>
-                  {cred.notes && <p style={{ fontSize: '12px', color: contractorTheme.textMuted, margin: '4px 0 0 0' }}>{cred.notes}</p>}
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button type="button" onClick={() => startEdit(cred)} style={{
-                    fontSize: '13px', padding: '6px 12px', border: '1px solid ' + contractorTheme.border,
-                    borderRadius: '8px', backgroundColor: '#ffffff', cursor: 'pointer',
-                  }}>
-                    Update
+        {coveredCountyRows.length === 0 ? (
+          <p style={{ fontSize: '14px', color: contractorTheme.textMuted, margin: 0 }}>
+            No counties selected yet. Complete onboarding coverage or contact support to update your service areas.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {coveredCountyRows.map(function (row) {
+              return (
+                <div
+                  key={row.countyId}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '12px',
+                    flexWrap: 'wrap',
+                    padding: '14px 16px',
+                    border: '1px solid ' + contractorTheme.border,
+                    borderRadius: '10px',
+                    backgroundColor: contractorTheme.inputBg || '#0f172a',
+                  }}
+                >
+                  <div>
+                    <p style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: contractorTheme.text }}>{row.label}</p>
+                    <p style={{
+                      margin: '6px 0 0',
+                      fontSize: '13px',
+                      color: row.hasCreds ? contractorTheme.success : '#fbbf24',
+                    }}>
+                      {row.hasCreds ? 'Status: ✓ Credentials saved' : 'Status: ⚠️ Credentials not saved'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!encryptionConfigured}
+                    onClick={function () { openCredModal(row) }}
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      backgroundColor: contractorTheme.accent,
+                      color: '#fff',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: encryptionConfigured ? 'pointer' : 'not-allowed',
+                      opacity: encryptionConfigured ? 1 : 0.6,
+                    }}
+                  >
+                    {row.hasCreds ? 'Update Credentials' : 'Add Credentials'}
                   </button>
-                  <button type="button" onClick={() => handleDeleteCredential(cred.id)} style={{
-                    fontSize: '13px', padding: '6px 12px', border: '1px solid #fecaca',
-                    borderRadius: '8px', backgroundColor: contractorTheme.errorSoft,
-                    color: contractorTheme.error, cursor: 'pointer',
-                  }}>
-                    Delete
-                  </button>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
+      </div>
 
-        <form onSubmit={handleSaveCredential} style={{
-          border: '1px solid ' + contractorTheme.border,
-          borderRadius: '10px',
-          padding: '20px',
-          backgroundColor: '#f8fafc',
+      {credModal ? (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(2, 6, 23, 0.72)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 60,
+          padding: '16px',
         }}>
-          <p style={{ fontSize: '14px', fontWeight: '600', margin: '0 0 16px 0', color: contractorTheme.text }}>
-            {editingCred ? 'Update credential' : 'Add credential'}
-          </p>
-          <div style={grid2}>
-            {!editingCred && (
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={labelStyle}>AHJ portal *</label>
-                <select style={inputStyle} value={credForm.ahj_id} onChange={e => setCredForm(p => ({ ...p, ahj_id: e.target.value }))} required>
-                  <option value="">Select AHJ</option>
-                  {availableAhjs.map(a => <option key={a.id} value={a.id}>{a.name} ({a.county_or_city})</option>)}
-                </select>
-              </div>
-            )}
-            <div>
-              <label style={labelStyle}>Username *</label>
-              <input style={inputStyle} value={credForm.username} onChange={e => setCredForm(p => ({ ...p, username: e.target.value }))} required />
+          <form
+            onSubmit={handleSaveCredentialModal}
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              backgroundColor: contractorTheme.surface || '#0b1220',
+              border: '1px solid ' + contractorTheme.border,
+              borderRadius: '12px',
+              padding: '22px',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.45)',
+            }}
+          >
+            <h3 style={{ margin: '0 0 6px', color: contractorTheme.text, fontSize: '18px' }}>
+              {credModal.hasCreds ? 'Update' : 'Add'} credentials
+            </h3>
+            <p style={{ margin: '0 0 16px', color: contractorTheme.textMuted, fontSize: '13px' }}>
+              {credModal.label} portal login
+            </p>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={labelStyle}>Portal username</label>
+              <input
+                style={inputStyle}
+                value={credForm.username}
+                onChange={function (e) { setCredForm(function (p) { return { ...p, username: e.target.value } }) }}
+                autoComplete="off"
+                required
+              />
             </div>
-            <div>
-              <label style={labelStyle}>{editingCred ? 'New password (leave blank to keep)' : 'Password *'}</label>
-              <input style={inputStyle} type="password" value={credForm.password} onChange={e => setCredForm(p => ({ ...p, password: e.target.value }))} autoComplete="new-password" required={!editingCred} />
+            <div style={{ marginBottom: '16px' }}>
+              <label style={labelStyle}>Portal password</label>
+              <input
+                style={inputStyle}
+                type="password"
+                value={credForm.password}
+                onChange={function (e) { setCredForm(function (p) { return { ...p, password: e.target.value } }) }}
+                autoComplete="new-password"
+                required
+              />
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={labelStyle}>Notes</label>
-              <input style={inputStyle} value={credForm.notes} onChange={e => setCredForm(p => ({ ...p, notes: e.target.value }))} placeholder="Optional notes" />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '12px', marginTop: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <button type="submit" disabled={credSaving || !encryptionConfigured} style={contractorPrimaryButtonStyle(credSaving || !encryptionConfigured)}>
-              {credSaving ? 'Saving...' : editingCred ? 'Replace credential' : 'Add credential'}
-            </button>
-            {editingCred && (
-              <button type="button" onClick={cancelEdit} style={{
-                padding: '10px 20px', border: '1px solid ' + contractorTheme.border,
-                borderRadius: '10px', backgroundColor: '#ffffff', fontSize: '14px', cursor: 'pointer',
+            {credMessage ? (
+              <p style={{
+                fontSize: '13px',
+                marginBottom: '12px',
+                color: credMessage.includes('Failed') || credMessage.includes('required')
+                  ? contractorTheme.error
+                  : contractorTheme.success,
               }}>
+                {credMessage}
+              </p>
+            ) : null}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={function () { setCredModal(null); setCredMessage('') }}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid ' + contractorTheme.border,
+                  backgroundColor: 'transparent',
+                  color: contractorTheme.textMuted,
+                  cursor: 'pointer',
+                }}
+              >
                 Cancel
               </button>
-            )}
-          </div>
-          {credMessage && (
-            <p style={{
-              fontSize: '13px',
-              marginTop: '12px',
-              color: credMessage.includes('Failed') || credMessage.includes('required') ? contractorTheme.error : contractorTheme.success,
-            }}>
-              {credMessage}
-            </p>
-          )}
-        </form>
-      </div>
+              <button type="submit" disabled={credSaving} style={contractorPrimaryButtonStyle(credSaving)}>
+                {credSaving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </div>
   )
 }

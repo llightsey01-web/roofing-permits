@@ -1,6 +1,8 @@
 import { createRequire } from 'module'
 import { authenticateRequest, requireCompanyUser, filterJobsByCompany } from '../../../../lib/auth/session.js'
 import { createClient } from '../../../../lib/supabase-server.js'
+import { resolveAHJ } from '../../../../lib/ahj-resolver.js'
+import { hasPortalCredentialsForAhj } from '../../../../lib/credentials/has-portal-credentials.js'
 
 const require = createRequire(import.meta.url)
 const {
@@ -11,6 +13,7 @@ const {
   requiresUpload,
   buildJobUpdateForUploadedNoc,
 } = require('../../../../lib/noc/noc-options.js')
+const { providerForPortal } = require('../../../../lib/ahj/county-options.js')
 
 export async function GET(request) {
   try {
@@ -53,6 +56,45 @@ export async function POST(request) {
     const body = await request.json()
     const nocOption = isValidNocOption(body.noc_option) ? body.noc_option : NOC_OPTIONS.AUTO_GENERATE
 
+    let resolvedAhj = null
+    if (body.property_address && body.property_city && body.property_zip) {
+      try {
+        const resolveResult = await resolveAHJ(
+          context.supabase,
+          body.property_address,
+          body.property_city,
+          body.property_state || 'FL',
+          body.property_zip
+        )
+        resolvedAhj = resolveResult?.ahj || null
+      } catch (resolveErr) {
+        console.warn('[contractor/jobs] AHJ resolve failed:', resolveErr.message)
+      }
+    }
+
+    const ahjId = body.ahj_id || resolvedAhj?.id || null
+    if (ahjId) {
+      let portal = resolvedAhj
+      if (!portal || portal.id !== ahjId) {
+        const { data: portalRow } = await context.supabase
+          .from('ahj_portals')
+          .select('id, name, county_or_city, credential_key')
+          .eq('id', ahjId)
+          .maybeSingle()
+        portal = portalRow
+      }
+      const provider = providerForPortal(portal)
+      const hasCreds = await hasPortalCredentialsForAhj(context.companyId, ahjId, provider)
+      if (!hasCreds) {
+        const ahjName = portal?.name || resolvedAhj?.name || 'this county'
+        return Response.json({
+          error: 'No portal credentials found for this county. Please add your credentials in Settings before submitting a permit in this area.',
+          ahj: ahjName,
+          settingsUrl: '/contractor/settings',
+        }, { status: 400 })
+      }
+    }
+
     const { data: job, error: jobError } = await context.userSupabase
       .from('jobs')
       .insert({
@@ -67,7 +109,7 @@ export async function POST(request) {
         roof_type: body.roof_type || null,
         valuation: body.valuation ? parseFloat(body.valuation) : null,
         internal_notes: body.notes || body.internal_notes || null,
-        ahj_id: body.ahj_id || null,
+        ahj_id: ahjId,
         company_id: context.companyId,
         created_by: context.user.id,
         job_status: 'ready',

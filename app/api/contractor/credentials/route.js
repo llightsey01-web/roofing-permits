@@ -10,8 +10,16 @@ export async function GET(request) {
       return Response.json({ error: context.error }, { status: context.status })
     }
 
-    const credentials = await secureCredentialService.listCredentialsForCompany(context.companyId)
-    return Response.json({ credentials, encryptionConfigured: isEncryptionConfigured() })
+    const [credentials, vaultCredentials] = await Promise.all([
+      secureCredentialService.listCredentialsForCompany(context.companyId),
+      secureCredentialService.listVaultCredentialsForCompany(context.companyId),
+    ])
+
+    return Response.json({
+      credentials,
+      vaultCredentials,
+      encryptionConfigured: isEncryptionConfigured(),
+    })
   } catch (err) {
     console.error('List credentials error:', err.message)
     return Response.json({ error: err.message }, { status: 500 })

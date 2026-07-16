@@ -1,13 +1,8 @@
+import { createRequire } from 'module'
 import { authenticateRequest, requireCompanyUser } from '../../../../../lib/auth/session.js'
-import { saveCredential } from '../../../../../lib/credentials/secure-credential-service.js'
-import { isEncryptionConfigured } from '../../../../../lib/crypto/credential-encryption.js'
 
-const AHJ_PROVIDERS = {
-  polk: 'polk_accela',
-  lee: 'lee_accela',
-  manatee: 'manatee_accela',
-  sarasota: 'sarasota_accela',
-}
+const require = createRequire(import.meta.url)
+const { normalizeCountyIds } = require('../../../../../lib/ahj/county-options.js')
 
 function normalizeReviewGates(raw) {
   const gates = raw && typeof raw === 'object' ? raw : {}
@@ -82,52 +77,15 @@ export async function POST(request) {
     }
 
     if (step === 4) {
-      const selected = Array.isArray(body.ahjs) ? body.ahjs : []
-      if (selected.length === 0) {
+      const fromIds = Array.isArray(body.covered_counties) ? body.covered_counties : null
+      const fromAhjs = Array.isArray(body.ahjs)
+        ? body.ahjs.map(function (a) { return a.id || a })
+        : []
+      const covered = normalizeCountyIds(fromIds || fromAhjs)
+      if (covered.length === 0) {
         return Response.json({ error: 'Select at least one county' }, { status: 400 })
       }
-
-      const { data: portals } = await context.supabase
-        .from('ahj_portals')
-        .select('id, name, county_or_city')
-
-      for (const ahj of selected) {
-        const key = String(ahj.id || '').toLowerCase()
-        const provider = AHJ_PROVIDERS[key] || ahj.provider
-        if (!provider) {
-          return Response.json({ error: 'Invalid AHJ selection' }, { status: 400 })
-        }
-        if (!ahj.username || !ahj.password) {
-          return Response.json({ error: 'Username and password required for each selected county' }, { status: 400 })
-        }
-
-        const label = String(ahj.label || key).toLowerCase()
-        const portal = (portals || []).find(function (p) {
-          const hay = ((p.name || '') + ' ' + (p.county_or_city || '')).toLowerCase()
-          return hay.includes(label.split(' ')[0]) || hay.includes(key)
-        })
-
-        if (isEncryptionConfigured()) {
-          await saveCredential({
-            companyId: context.companyId,
-            provider,
-            ahjId: portal?.id || null,
-            username: String(ahj.username).trim(),
-            password: String(ahj.password),
-            credentialType: 'ahj_portal',
-          })
-        } else {
-          // Store placeholders when encryption is not configured yet
-          await context.supabase.from('company_credentials').upsert({
-            company_id: context.companyId,
-            provider,
-            ahj_id: portal?.id || null,
-            credential_type: 'ahj_portal',
-            is_active: true,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'company_id,provider,ahj_id', ignoreDuplicates: false })
-        }
-      }
+      updates.covered_counties = covered
     }
 
     const { data: updated, error: updateError } = await context.supabase

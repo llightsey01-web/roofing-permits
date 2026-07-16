@@ -18,13 +18,6 @@ const AHJ_OPTIONS = [
   { id: 'sarasota', label: 'Sarasota County', provider: 'sarasota_accela' },
 ]
 
-const emptyAhjCreds = {
-  polk: { username: '', password: '' },
-  lee: { username: '', password: '' },
-  manatee: { username: '', password: '' },
-  sarasota: { username: '', password: '' },
-}
-
 export default function ContractorOnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
@@ -51,7 +44,6 @@ export default function ContractorOnboardingPage() {
       permit_before_submit: false,
     },
     selectedAhjs: { polk: false, lee: false, manatee: false, sarasota: false },
-    ahjCreds: emptyAhjCreds,
   })
 
   useEffect(function () {
@@ -132,6 +124,12 @@ export default function ContractorOnboardingPage() {
             noc_before_send: !!company.review_gates?.noc_before_send,
             permit_before_submit: !!company.review_gates?.permit_before_submit,
           },
+          selectedAhjs: {
+            polk: (company.covered_counties || []).includes('polk'),
+            lee: (company.covered_counties || []).includes('lee'),
+            manatee: (company.covered_counties || []).includes('manatee'),
+            sarasota: (company.covered_counties || []).includes('sarasota'),
+          },
         }
       })
       setLoading(false)
@@ -170,18 +168,6 @@ export default function ContractorOnboardingPage() {
     })
   }
 
-  function setAhjCred(id, field, value) {
-    setForm(function (prev) {
-      return {
-        ...prev,
-        ahjCreds: {
-          ...prev.ahjCreds,
-          [id]: { ...prev.ahjCreds[id], [field]: value },
-        },
-      }
-    })
-  }
-
   function validateStep(current) {
     if (current === 1) {
       if (!form.name.trim()) return 'Company legal name is required'
@@ -201,11 +187,6 @@ export default function ContractorOnboardingPage() {
         return form.selectedAhjs[a.id]
       })
       if (selected.length === 0) return 'Select at least one county'
-      for (const ahj of selected) {
-        if (!form.ahjCreds[ahj.id].username.trim() || !form.ahjCreds[ahj.id].password.trim()) {
-          return 'Username and password required for ' + ahj.label
-        }
-      }
     }
     return ''
   }
@@ -238,16 +219,10 @@ export default function ContractorOnboardingPage() {
       payload.review_gates = form.review_gates
     }
     if (current === 4) {
-      payload.ahjs = AHJ_OPTIONS.filter(function (a) {
+      payload.covered_counties = AHJ_OPTIONS.filter(function (a) {
         return form.selectedAhjs[a.id]
       }).map(function (a) {
-        return {
-          id: a.id,
-          label: a.label,
-          provider: a.provider,
-          username: form.ahjCreds[a.id].username,
-          password: form.ahjCreds[a.id].password,
-        }
+        return a.id
       })
     }
 
@@ -465,43 +440,35 @@ export default function ContractorOnboardingPage() {
 
         {step === 4 && (
           <div>
-            <h2 style={{ margin: '0 0 16px', fontSize: '18px', color: contractorTheme.text }}>AHJ Credentials</h2>
-            <p style={{ margin: '0 0 14px', color: contractorTheme.textMuted, fontSize: '14px' }}>
-              Which counties do you cover?
+            <h2 style={{ margin: '0 0 8px', fontSize: '18px', color: contractorTheme.text }}>AHJ Coverage</h2>
+            <p style={{ margin: '0 0 6px', color: contractorTheme.text, fontSize: '14px', fontWeight: 600 }}>
+              Which counties do you plan to submit permits in?
             </p>
-            <div style={{ display: 'grid', gap: '14px' }}>
+            <p style={{ margin: '0 0 14px', color: contractorTheme.textMuted, fontSize: '13px' }}>
+              You can add login credentials later when you&apos;re ready
+            </p>
+            <div style={{ display: 'grid', gap: '10px' }}>
               {AHJ_OPTIONS.map(function (ahj) {
                 const selected = form.selectedAhjs[ahj.id]
                 return (
-                  <div key={ahj.id} style={{ border: '1px solid ' + contractorTheme.border, borderRadius: '10px', padding: '14px' }}>
-                    <label style={{ display: 'flex', gap: '10px', alignItems: 'center', color: contractorTheme.text, fontWeight: 600 }}>
-                      <input type="checkbox" checked={selected} onChange={function () { toggleAhj(ahj.id) }} />
-                      {ahj.label}
-                    </label>
-                    {selected ? (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '12px' }}>
-                        <div>
-                          <label style={labelStyle}>Portal username *</label>
-                          <input
-                            style={contractorInputStyle()}
-                            value={form.ahjCreds[ahj.id].username}
-                            onChange={function (e) { setAhjCred(ahj.id, 'username', e.target.value) }}
-                            autoComplete="off"
-                          />
-                        </div>
-                        <div>
-                          <label style={labelStyle}>Portal password *</label>
-                          <input
-                            style={contractorInputStyle()}
-                            type="password"
-                            value={form.ahjCreds[ahj.id].password}
-                            onChange={function (e) { setAhjCred(ahj.id, 'password', e.target.value) }}
-                            autoComplete="new-password"
-                          />
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
+                  <label
+                    key={ahj.id}
+                    style={{
+                      display: 'flex',
+                      gap: '10px',
+                      alignItems: 'center',
+                      color: contractorTheme.text,
+                      fontWeight: 600,
+                      border: '1px solid ' + contractorTheme.border,
+                      borderRadius: '10px',
+                      padding: '14px',
+                      cursor: 'pointer',
+                      backgroundColor: selected ? contractorTheme.accentSoft : 'transparent',
+                    }}
+                  >
+                    <input type="checkbox" checked={selected} onChange={function () { toggleAhj(ahj.id) }} />
+                    {ahj.label}
+                  </label>
                 )
               })}
             </div>

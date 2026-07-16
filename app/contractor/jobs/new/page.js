@@ -59,6 +59,8 @@ export default function ContractorNewJobPage() {
   const [allAHJs, setAllAHJs] = useState([])
   const [nocOption, setNocOption] = useState('auto_generate')
   const [nocFile, setNocFile] = useState(null)
+  const [ahjCredStatus, setAhjCredStatus] = useState(null) // 'ready' | 'missing' | null
+  const [settingsError, setSettingsError] = useState(null)
 
   const selectedNocChoice = NOC_OPTION_CHOICES.find(c => c.value === nocOption) || NOC_OPTION_CHOICES[0]
 
@@ -91,10 +93,39 @@ export default function ContractorNewJobPage() {
       .then(({ data }) => setAllAHJs(data || []))
   }, [])
 
+  async function checkAhjCredentials(ahj, token) {
+    if (!ahj?.id || !token) {
+      setAhjCredStatus(null)
+      return
+    }
+    try {
+      const credRes = await fetch('/api/contractor/credentials', {
+        headers: { Authorization: 'Bearer ' + token },
+      })
+      const credData = await credRes.json()
+      if (!credRes.ok) {
+        setAhjCredStatus(null)
+        return
+      }
+      const vault = credData.vaultCredentials || []
+      const legacy = credData.credentials || []
+      const hasVault = vault.some(function (c) {
+        return c.ahj_id === ahj.id || (c.has_password && c.ahj_name && String(c.ahj_name).includes(String(ahj.name || '').split(' ')[0]))
+      })
+      const hasLegacy = legacy.some(function (c) { return c.ahj_id === ahj.id && c.has_password })
+      setAhjCredStatus(hasVault || hasLegacy ? 'ready' : 'missing')
+    } catch (err) {
+      console.error('Credential status check failed:', err)
+      setAhjCredStatus(null)
+    }
+  }
+
   async function handleAHJResolve() {
     if (!form.property_address || !form.property_city || !form.property_zip) return
     setAhjLoading(true)
     setDetectedAHJ(null)
+    setAhjCredStatus(null)
+    setSettingsError(null)
     try {
       const supabase = createClient()
       const { session, staleSession } = await safeGetSession(supabase)
@@ -118,6 +149,7 @@ export default function ContractorNewJobPage() {
       if (result.ahj) {
         setDetectedAHJ(result.ahj)
         setForm(prev => ({ ...prev, ahj_id: result.ahj.id }))
+        await checkAhjCredentials(result.ahj, session.access_token)
       }
     } catch (err) {
       console.error('AHJ resolve error:', err)
@@ -247,7 +279,13 @@ export default function ContractorNewJobPage() {
 
     const result = await response.json()
     if (!response.ok) {
-      setError(result.error || 'Failed to save application')
+      if (result.settingsUrl) {
+        setSettingsError(result)
+        setError(result.error || 'Failed to save application')
+      } else {
+        setSettingsError(null)
+        setError(result.error || 'Failed to save application')
+      }
       setLoading(false)
     } else {
       setSuccess(true)
@@ -426,9 +464,48 @@ export default function ContractorNewJobPage() {
           </div>
           {ahjLoading && <p style={{ fontSize: '13px', color: contractorTheme.textMuted, marginTop: '12px' }}>Detecting AHJ...</p>}
           {detectedAHJ && !ahjLoading && (
-            <p style={{ fontSize: '13px', marginTop: '12px', color: contractorTheme.accent }}>
-              AHJ detected: <strong>{detectedAHJ.name}</strong>
-            </p>
+            <div style={{
+              marginTop: '14px',
+              padding: '14px 16px',
+              borderRadius: '10px',
+              border: '1px solid ' + (ahjCredStatus === 'missing' ? '#f59e0b' : contractorTheme.border),
+              backgroundColor: ahjCredStatus === 'missing' ? 'rgba(245, 158, 11, 0.12)' : contractorTheme.accentSoft,
+            }}>
+              <p style={{ margin: 0, fontSize: '14px', color: contractorTheme.text, fontWeight: 600 }}>
+                📍 County detected: {detectedAHJ.name}
+              </p>
+              {ahjCredStatus === 'ready' ? (
+                <p style={{ margin: '8px 0 0', fontSize: '13px', color: contractorTheme.success }}>
+                  ✓ Portal credentials on file — ready to submit
+                </p>
+              ) : null}
+              {ahjCredStatus === 'missing' ? (
+                <div style={{ marginTop: '8px' }}>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#fbbf24' }}>
+                    ⚠️ No portal credentials saved for {detectedAHJ.name}
+                  </p>
+                  <p style={{ margin: '6px 0 10px', fontSize: '13px', color: contractorTheme.textMuted }}>
+                    Add your credentials in Settings before submitting
+                  </p>
+                  <button
+                    type="button"
+                    onClick={function () { router.push('/contractor/settings') }}
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      backgroundColor: contractorTheme.accent,
+                      color: '#fff',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Go to Settings
+                  </button>
+                </div>
+              ) : null}
+            </div>
           )}
           {!detectedAHJ && !ahjLoading && form.property_zip.length === 5 && (
             <div style={{ marginTop: '12px' }}>
@@ -436,7 +513,19 @@ export default function ContractorNewJobPage() {
               <select
                 style={inputStyle}
                 value={form.ahj_id}
-                onChange={e => setForm(prev => ({ ...prev, ahj_id: e.target.value }))}
+                onChange={async function (e) {
+                  const ahjId = e.target.value
+                  setForm(function (prev) { return { ...prev, ahj_id: ahjId } })
+                  const ahj = allAHJs.find(function (a) { return a.id === ahjId }) || null
+                  setDetectedAHJ(ahj)
+                  if (ahj) {
+                    const supabase = createClient()
+                    const { session } = await safeGetSession(supabase)
+                    if (session) await checkAhjCredentials(ahj, session.access_token)
+                  } else {
+                    setAhjCredStatus(null)
+                  }
+                }}
               >
                 <option value="">Select AHJ</option>
                 {allAHJs.map(ahj => <option key={ahj.id} value={ahj.id}>{ahj.name}</option>)}
@@ -601,7 +690,34 @@ export default function ContractorNewJobPage() {
         </div>
 
         {error && (
-          <p style={{ color: contractorTheme.error, fontSize: '14px', marginBottom: '16px' }}>{error}</p>
+          <div style={{
+            marginBottom: '16px',
+            padding: '12px 14px',
+            borderRadius: '10px',
+            backgroundColor: contractorTheme.errorSoft,
+            border: '1px solid ' + contractorTheme.border,
+          }}>
+            <p style={{ color: contractorTheme.error, fontSize: '14px', margin: 0 }}>{error}</p>
+            {settingsError?.settingsUrl ? (
+              <button
+                type="button"
+                onClick={function () { router.push(settingsError.settingsUrl) }}
+                style={{
+                  marginTop: '10px',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: contractorTheme.accent,
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Go to Settings{settingsError.ahj ? ' (' + settingsError.ahj + ')' : ''}
+              </button>
+            ) : null}
+          </div>
         )}
 
         <div className="contractor-form-actions">

@@ -10,7 +10,7 @@ export async function GET(request) {
 
     const { data: company, error } = await context.userSupabase
       .from('companies')
-      .select('id, name, address, city, state, zip, phone, primary_email, license_number, qualifer_name, qualifer_license, qualifier_name, qualifier_license')
+      .select('id, name, address, city, state, zip, phone, primary_email, license_number, qualifer_name, qualifer_license, qualifier_name, qualifier_license, covered_counties')
       .eq('id', context.companyId)
       .single()
 
