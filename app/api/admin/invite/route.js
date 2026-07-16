@@ -1,14 +1,11 @@
-import { authenticateRequest } from '../../../../lib/auth/session.js'
+import { authenticateRequest, requireSuperAdmin } from '../../../../lib/auth/session.js'
 
 export async function POST(request) {
   try {
-    const context = await authenticateRequest(request)
+    let context = await authenticateRequest(request)
+    context = await requireSuperAdmin(context)
     if (context.error) {
       return Response.json({ error: context.error }, { status: context.status })
-    }
-
-    if (!context.isSuperAdmin) {
-      return Response.json({ error: 'Super admin access required' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -22,8 +19,9 @@ export async function POST(request) {
     }
 
     const redirectTo = body.redirectTo ||
-      process.env.NEXT_PUBLIC_APP_URL ||
-      'https://roofing-permits-production.up.railway.app/dashboard'
+      (process.env.NEXT_PUBLIC_PORTAL_URL
+        ? process.env.NEXT_PUBLIC_PORTAL_URL + '/login'
+        : 'https://portal.dartiq.dev/login')
 
     const { data: inviteData, error: inviteError } = await context.supabase.auth.admin.inviteUserByEmail(
       email,

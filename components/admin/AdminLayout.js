@@ -8,9 +8,12 @@ import EnvironmentBadge from '../ui/EnvironmentBadge'
 import { adminTheme } from '../../lib/ui/admin-theme'
 
 const navItems = [
-  { href: '/dashboard', label: 'Operations Queue', match: (p) => p === '/dashboard' || (p.startsWith('/jobs/') && p !== '/jobs/new') },
-  { href: '/admin', label: 'Companies', match: (p) => p === '/admin' || p.startsWith('/admin/') },
-  { href: '/jobs/new', label: 'Manual Intake', match: (p) => p === '/jobs/new' },
+  { href: '/admin', label: 'Dashboard', match: (p) => p === '/admin' },
+  { href: '/admin/companies', label: 'Companies', match: (p) => p.startsWith('/admin/companies') },
+  { href: '/admin/jobs', label: 'Jobs', match: (p) => p.startsWith('/admin/jobs') },
+  { href: '/admin/leads', label: 'Leads', match: (p) => p.startsWith('/admin/leads') },
+  { href: '/admin/system', label: 'System', match: (p) => p.startsWith('/admin/system') },
+  { href: '/dashboard', label: 'Ops Queue', match: (p) => p === '/dashboard' || (p.startsWith('/jobs/') && !p.startsWith('/admin/')) },
 ]
 
 export default function AdminLayout({ children }) {
@@ -22,27 +25,27 @@ export default function AdminLayout({ children }) {
   useEffect(() => {
     async function checkAuth() {
       try {
-      const supabase = createClient()
-      const { user: authUser, staleSession } = await safeGetUser(supabase)
-      if (redirectIfStaleSession(router, staleSession)) return
-      if (!authUser) {
-        router.replace('/login')
-        return
-      }
+        const supabase = createClient()
+        const { user: authUser, staleSession } = await safeGetUser(supabase)
+        if (redirectIfStaleSession(router, staleSession)) return
+        if (!authUser) {
+          router.replace('/login')
+          return
+        }
 
-      const { data: userData } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', authUser.id)
-        .single()
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', authUser.id)
+          .single()
 
-      if (userData?.role !== 'super_admin') {
-        router.push('/contractor/dashboard')
-        return
-      }
+        if (userData?.role !== 'super_admin') {
+          router.push('/contractor/dashboard')
+          return
+        }
 
-      setUser(authUser)
-      setLoading(false)
+        setUser(authUser)
+        setLoading(false)
       } catch (err) {
         console.error('[auth] Admin layout auth check failed:', err)
         router.replace('/login')
@@ -66,63 +69,74 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: adminTheme.pageBg, color: adminTheme.text }}>
-      <header style={{
+    <div style={{ minHeight: '100vh', backgroundColor: adminTheme.pageBg, color: adminTheme.text, display: 'flex' }}>
+      <aside style={{
+        width: '220px',
+        flexShrink: 0,
         backgroundColor: adminTheme.headerBg,
-        borderBottom: '1px solid ' + adminTheme.border,
-        padding: '0 24px',
+        borderRight: '1px solid ' + adminTheme.border,
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        height: '56px',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        position: 'sticky',
+        top: 0,
+        alignSelf: 'flex-start',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid ' + adminTheme.border }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
             <div style={{
               width: '30px', height: '30px',
-              background: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
+              background: 'linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)',
               borderRadius: '6px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 12px rgba(99, 102, 241, 0.4)',
             }}>
-              <span style={{ color: 'white', fontSize: '13px', fontWeight: '800' }}>⚙</span>
+              <span style={{ color: 'white', fontSize: '12px', fontWeight: '800' }}>D</span>
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: adminTheme.text, fontSize: '15px', fontWeight: '700', letterSpacing: '-0.02em' }}>Admin Console</span>
-                <EnvironmentBadge label="Internal" variant="admin" />
-              </div>
-              <span style={{ color: adminTheme.textDim, fontSize: '11px', fontFamily: adminTheme.fontMono }}>AHJ-iQ · operator workspace</span>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: adminTheme.text }}>DART iQ</div>
+              <div style={{ fontSize: '10px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono }}>Admin Portal</div>
             </div>
           </div>
-          <nav style={{ display: 'flex', gap: '2px', marginLeft: '8px' }}>
-            {navItems.map(item => {
-              const active = item.match(pathname || '')
-              return (
-                <button
-                  key={item.href}
-                  onClick={() => router.push(item.href)}
-                  style={{
-                    fontSize: '12px', padding: '7px 12px', borderRadius: '6px',
-                    border: '1px solid ' + (active ? adminTheme.border : 'transparent'),
-                    cursor: 'pointer', fontFamily: adminTheme.fontMono,
-                    backgroundColor: active ? adminTheme.navActive : 'transparent',
-                    color: active ? adminTheme.text : adminTheme.textMuted,
-                    fontWeight: active ? '600' : '400',
-                  }}
-                >
-                  {item.label}
-                </button>
-              )
-            })}
-          </nav>
+          <EnvironmentBadge label="Internal" variant="admin" />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <span style={{ fontSize: '11px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono }}>{user?.email}</span>
+
+        <nav style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+          {navItems.map(item => {
+            const active = item.match(pathname || '')
+            return (
+              <button
+                key={item.href}
+                onClick={() => router.push(item.href)}
+                style={{
+                  textAlign: 'left',
+                  fontSize: '13px',
+                  padding: '10px 12px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: adminTheme.fontMono,
+                  backgroundColor: active ? adminTheme.navActive : 'transparent',
+                  color: active ? adminTheme.text : adminTheme.textMuted,
+                  fontWeight: active ? '600' : '400',
+                  borderLeft: active ? '3px solid #3b82f6' : '3px solid transparent',
+                }}
+              >
+                {item.label}
+              </button>
+            )
+          })}
+        </nav>
+
+        <div style={{ padding: '14px 16px', borderTop: '1px solid ' + adminTheme.border }}>
+          <div style={{ fontSize: '11px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono, marginBottom: '10px', wordBreak: 'break-all' }}>
+            {user?.email}
+          </div>
           <button
             onClick={handleSignOut}
             style={{
-              fontSize: '11px', padding: '6px 12px',
+              width: '100%',
+              fontSize: '11px',
+              padding: '8px 12px',
               border: '1px solid ' + adminTheme.border,
               borderRadius: '6px',
               backgroundColor: adminTheme.surface,
@@ -134,8 +148,9 @@ export default function AdminLayout({ children }) {
             Sign out
           </button>
         </div>
-      </header>
-      <main>{children}</main>
+      </aside>
+
+      <main style={{ flex: 1, minWidth: 0 }}>{children}</main>
     </div>
   )
 }

@@ -1,277 +1,230 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '../../lib/supabase'
-import { adminTheme, adminPanelStyle } from '../../lib/ui/admin-theme'
+import { adminTheme, adminStatCardStyle, adminPanelStyle } from '../../lib/ui/admin-theme'
 
-export default function AdminPage() {
-  const [companies, setCompanies] = useState([])
+export default function AdminDashboardPage() {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [showNewCompany, setShowNewCompany] = useState(false)
-  const [creating, setCreating] = useState(false)
-  const [createError, setCreateError] = useState('')
-  const [createSuccess, setCreateSuccess] = useState('')
-
-  const [form, setForm] = useState({
-    name: '', address: '', city: '', state: 'FL', zip: '',
-    phone: '', primary_email: '', license_number: '',
-    qualifier_name: '', qualifier_license: '',
-    contact_first_name: '', contact_last_name: '', contact_email: '',
+  const [stats, setStats] = useState({
+    companies: 0,
+    jobs: 0,
+    activeRuns: 0,
+    jobsToday: 0,
+    nocGenerated: 0,
+    permitsSubmitted: 0,
+    leads: 0,
   })
+  const [recentLeads, setRecentLeads] = useState([])
+  const [health, setHealth] = useState(null)
 
   useEffect(() => {
-    loadCompanies(createClient())
-  }, [])
+    async function load() {
+      const supabase = createClient()
+      const todayStart = new Date()
+      todayStart.setHours(0, 0, 0, 0)
+      const todayIso = todayStart.toISOString()
 
-  async function loadCompanies(supabase) {
-    const { data } = await supabase.from('companies').select('*').order('created_at', { ascending: false })
-    setCompanies(data || [])
-    setLoading(false)
-  }
+      const [
+        companiesRes,
+        jobsRes,
+        activeRes,
+        todayRes,
+        nocRes,
+        permitRes,
+        leadsCountRes,
+        leadsRes,
+      ] = await Promise.all([
+        supabase.from('companies').select('id', { count: 'exact', head: true }),
+        supabase.from('jobs').select('id', { count: 'exact', head: true }),
+        supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('job_status', 'automation_running'),
+        supabase.from('jobs').select('id', { count: 'exact', head: true }).gte('created_at', todayIso),
+        supabase.from('jobs').select('id', { count: 'exact', head: true }).not('noc_status', 'eq', 'not_started').not('noc_status', 'is', null),
+        supabase.from('jobs').select('id', { count: 'exact', head: true }).in('job_status', ['submitted', 'permit_issued']),
+        supabase.from('leads').select('id', { count: 'exact', head: true }),
+        supabase.from('leads').select('*').order('created_at', { ascending: false }).limit(8),
+      ])
 
-  function handleChange(e) {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
-  }
-
-  async function handleCreateCompany(e) {
-    e.preventDefault()
-    setCreating(true)
-    setCreateError('')
-    setCreateSuccess('')
-    const supabase = createClient()
-
-    try {
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          name: form.name, address: form.address, city: form.city,
-          state: form.state, zip: form.zip, phone: form.phone,
-          primary_email: form.primary_email, license_number: form.license_number,
-          qualifier_name: form.qualifier_name, qualifier_license: form.qualifier_license,
-          is_active: true,
-        })
-        .select()
-        .single()
-
-      if (companyError) throw new Error('Failed to create company: ' + companyError.message)
-
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) throw new Error('Session expired — sign in again')
-
-      const inviteResponse = await fetch('/api/admin/invite', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + session.access_token,
-        },
-        body: JSON.stringify({
-          email: form.contact_email,
-          company_id: company.id,
-          full_name: form.contact_first_name + ' ' + form.contact_last_name,
-          role: 'company_admin',
-          redirectTo: 'https://roofing-permits-production.up.railway.app/dashboard',
-        }),
+      setStats({
+        companies: companiesRes.count || 0,
+        jobs: jobsRes.count || 0,
+        activeRuns: activeRes.count || 0,
+        jobsToday: todayRes.count || 0,
+        nocGenerated: nocRes.count || 0,
+        permitsSubmitted: permitRes.count || 0,
+        leads: leadsCountRes.count || 0,
       })
+      setRecentLeads(leadsRes.data || [])
 
-      const invitePayload = await inviteResponse.json()
-      if (!inviteResponse.ok) {
-        throw new Error(invitePayload.error || 'Failed to send invite')
+      try {
+        const healthRes = await fetch('/api/internal/health')
+        const healthData = await healthRes.json()
+        setHealth(healthData)
+      } catch {
+        setHealth({ status: 'down' })
       }
 
-      const inviteData = { user: invitePayload.user }
-
-      await supabase.from('users').insert({
-        id: inviteData.user.id,
-        company_id: company.id,
-        role: 'company_admin',
-        email: form.contact_email,
-        full_name: form.contact_first_name + ' ' + form.contact_last_name,
-      })
-
-      await supabase.from('companies').update({ owner_user_id: inviteData.user.id }).eq('id', company.id)
-
-      setCreateSuccess('Company provisioned · invite dispatched to ' + form.contact_email)
-      setForm({
-        name: '', address: '', city: '', state: 'FL', zip: '',
-        phone: '', primary_email: '', license_number: '',
-        qualifier_name: '', qualifier_license: '',
-        contact_first_name: '', contact_last_name: '', contact_email: '',
-      })
-      setShowNewCompany(false)
-      loadCompanies(supabase)
-    } catch (err) {
-      setCreateError(err.message)
+      setLoading(false)
     }
-    setCreating(false)
-  }
+    load()
+  }, [])
 
-  const inputStyle = {
-    width: '100%', padding: '9px 11px',
-    border: '1px solid ' + adminTheme.border,
-    borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box',
-    backgroundColor: adminTheme.surfaceRaised, color: adminTheme.text,
-  }
-  const labelStyle = {
-    display: 'block', fontSize: '11px', fontWeight: '600',
-    marginBottom: '5px', color: adminTheme.textMuted,
-    fontFamily: adminTheme.fontMono, textTransform: 'uppercase', letterSpacing: '0.06em',
-  }
-  const grid2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }
+  const healthColor = health?.status === 'ok' || health?.status === 'healthy'
+    ? '#10b981'
+    : health?.status === 'degraded'
+      ? '#f59e0b'
+      : '#ef4444'
 
   if (loading) {
     return (
       <div style={{ padding: '48px', textAlign: 'center' }}>
-        <p style={{ color: adminTheme.textMuted, fontFamily: adminTheme.fontMono, fontSize: '13px' }}>Loading registry...</p>
+        <p style={{ color: adminTheme.textMuted, fontFamily: adminTheme.fontMono, fontSize: '13px' }}>Loading dashboard...</p>
       </div>
     )
   }
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: '1100px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div>
-          <h1 style={{ fontSize: '20px', fontWeight: '700', color: adminTheme.text, margin: 0 }}>Company Registry</h1>
-          <p style={{ fontSize: '12px', color: adminTheme.textDim, margin: '4px 0 0 0', fontFamily: adminTheme.fontMono }}>
-            Provision contractor tenants · portal access · license records
-          </p>
-        </div>
-        <button
-          onClick={() => { setShowNewCompany(true); setCreateError(''); setCreateSuccess('') }}
-          style={{
-            padding: '8px 14px', backgroundColor: adminTheme.accentStrong,
-            color: 'white', border: 'none', borderRadius: '6px',
-            fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: adminTheme.fontMono,
-          }}
-        >
-          + Provision company
-        </button>
+    <div style={{ padding: '24px 28px', maxWidth: '1200px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: '700', color: adminTheme.text, margin: 0 }}>Dashboard</h1>
+        <p style={{ fontSize: '13px', color: adminTheme.textDim, margin: '6px 0 0 0' }}>
+          Platform overview · contractors · pipeline · system health
+        </p>
       </div>
 
-      {createSuccess && (
-        <div style={{
-          padding: '12px 16px', backgroundColor: '#064e3b',
-          border: '1px solid #059669', borderRadius: '6px',
-          marginBottom: '16px', fontSize: '12px', color: '#6ee7b7', fontFamily: adminTheme.fontMono,
-        }}>
-          {createSuccess}
-        </div>
-      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+        {[
+          { label: 'Companies', value: stats.companies, color: '#3b82f6', href: '/admin/companies' },
+          { label: 'Total Jobs', value: stats.jobs, color: adminTheme.text, href: '/admin/jobs' },
+          { label: 'Active Automation', value: stats.activeRuns, color: '#f59e0b', href: '/admin/jobs' },
+          { label: 'Leads', value: stats.leads, color: '#10b981', href: '/admin/leads' },
+        ].map(stat => (
+          <div
+            key={stat.label}
+            style={{ ...adminStatCardStyle(stat.color), cursor: 'pointer' }}
+            onClick={() => router.push(stat.href)}
+          >
+            <p style={{ fontSize: '10px', color: adminTheme.textDim, margin: '0 0 6px 0', fontFamily: adminTheme.fontMono, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              {stat.label}
+            </p>
+            <p style={{ fontSize: '28px', fontWeight: '700', color: stat.color, margin: 0, fontFamily: adminTheme.fontMono }}>
+              {stat.value}
+            </p>
+          </div>
+        ))}
+      </div>
 
-      {showNewCompany && (
-        <div style={{ ...adminPanelStyle(), padding: '24px', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '14px', fontWeight: '600', color: adminTheme.text, margin: 0, fontFamily: adminTheme.fontMono }}>
-              NEW TENANT PROVISIONING
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
+        {[
+          { label: 'Jobs submitted today', value: stats.jobsToday },
+          { label: 'NOCs generated', value: stats.nocGenerated },
+          { label: 'Permits submitted', value: stats.permitsSubmitted },
+        ].map(stat => (
+          <div key={stat.label} style={adminStatCardStyle('#64748b')}>
+            <p style={{ fontSize: '10px', color: adminTheme.textDim, margin: '0 0 6px 0', fontFamily: adminTheme.fontMono, textTransform: 'uppercase' }}>
+              {stat.label}
+            </p>
+            <p style={{ fontSize: '22px', fontWeight: '700', color: adminTheme.text, margin: 0, fontFamily: adminTheme.fontMono }}>
+              {stat.value}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div style={adminPanelStyle()}>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid ' + adminTheme.border, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: '12px', fontWeight: '600', color: adminTheme.textMuted, margin: 0, fontFamily: adminTheme.fontMono, textTransform: 'uppercase' }}>
+              System Health
             </h2>
-            <button onClick={() => setShowNewCompany(false)} style={{ color: adminTheme.textDim, background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>×</button>
+            <button
+              onClick={() => router.push('/admin/system')}
+              style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '12px', cursor: 'pointer', fontFamily: adminTheme.fontMono }}
+            >
+              View details →
+            </button>
           </div>
-
-          <form onSubmit={handleCreateCompany}>
-            <p style={{ ...labelStyle, marginBottom: '12px' }}>Company record</p>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={labelStyle}>Company name</label>
-              <input style={inputStyle} name="name" value={form.name} onChange={handleChange} required />
+          <div style={{ padding: '18px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: healthColor }} />
+              <span style={{ fontSize: '14px', fontWeight: '600', color: adminTheme.text, textTransform: 'uppercase', fontFamily: adminTheme.fontMono }}>
+                {health?.status || 'unknown'}
+              </span>
             </div>
-            <div style={{ marginBottom: '14px' }}>
-              <label style={labelStyle}>Business address</label>
-              <input style={inputStyle} name="address" value={form.address} onChange={handleChange} required />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', fontFamily: adminTheme.fontMono }}>
+              <div style={{ color: adminTheme.textDim }}>Database</div>
+              <div style={{ color: health?.database ? '#10b981' : '#ef4444' }}>{health?.database ? 'OK' : 'DOWN'}</div>
+              <div style={{ color: adminTheme.textDim }}>Permit worker</div>
+              <div style={{ color: health?.workers?.permit ? '#10b981' : '#ef4444' }}>{health?.workers?.permit ? 'UP' : 'STALE'}</div>
+              <div style={{ color: adminTheme.textDim }}>NOC/Proof worker</div>
+              <div style={{ color: health?.workers?.nocProof ? '#10b981' : '#ef4444' }}>{health?.workers?.nocProof ? 'UP' : 'STALE'}</div>
+              <div style={{ color: adminTheme.textDim }}>Stuck jobs</div>
+              <div style={{ color: adminTheme.text }}>{health?.stuckJobs ?? '—'}</div>
             </div>
-            <div style={{ ...grid2, marginBottom: '14px' }}>
-              <div><label style={labelStyle}>City</label><input style={inputStyle} name="city" value={form.city} onChange={handleChange} required /></div>
-              <div><label style={labelStyle}>Zip</label><input style={inputStyle} name="zip" value={form.zip} onChange={handleChange} required /></div>
-              <div><label style={labelStyle}>Phone</label><input style={inputStyle} name="phone" value={form.phone} onChange={handleChange} required /></div>
-              <div><label style={labelStyle}>Company email</label><input style={inputStyle} type="email" name="primary_email" value={form.primary_email} onChange={handleChange} /></div>
-            </div>
-
-            <p style={{ ...labelStyle, margin: '20px 0 12px 0' }}>License metadata</p>
-            <div style={{ ...grid2, marginBottom: '14px' }}>
-              <div><label style={labelStyle}>Contractor license #</label><input style={inputStyle} name="license_number" value={form.license_number} onChange={handleChange} required /></div>
-              <div><label style={labelStyle}>Qualifier name</label><input style={inputStyle} name="qualifier_name" value={form.qualifier_name} onChange={handleChange} required /></div>
-              <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Qualifier license #</label><input style={inputStyle} name="qualifier_license" value={form.qualifier_license} onChange={handleChange} /></div>
-            </div>
-
-            <p style={{ ...labelStyle, margin: '20px 0 8px 0' }}>Portal operator invite</p>
-            <p style={{ fontSize: '12px', color: adminTheme.textDim, margin: '0 0 14px 0' }}>
-              Dispatches Contractor Portal credentials to the company admin contact.
-            </p>
-            <div style={{ ...grid2, marginBottom: '20px' }}>
-              <div><label style={labelStyle}>First name</label><input style={inputStyle} name="contact_first_name" value={form.contact_first_name} onChange={handleChange} required /></div>
-              <div><label style={labelStyle}>Last name</label><input style={inputStyle} name="contact_last_name" value={form.contact_last_name} onChange={handleChange} required /></div>
-              <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Email</label><input style={inputStyle} type="email" name="contact_email" value={form.contact_email} onChange={handleChange} required /></div>
-            </div>
-
-            {createError && <p style={{ color: adminTheme.danger, fontSize: '12px', marginBottom: '12px', fontFamily: adminTheme.fontMono }}>{createError}</p>}
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button type="button" onClick={() => setShowNewCompany(false)} style={{
-                padding: '8px 14px', border: '1px solid ' + adminTheme.border,
-                borderRadius: '6px', backgroundColor: adminTheme.surface,
-                fontSize: '12px', cursor: 'pointer', color: adminTheme.textMuted, fontFamily: adminTheme.fontMono,
-              }}>Cancel</button>
-              <button type="submit" disabled={creating} style={{
-                padding: '8px 14px', backgroundColor: creating ? adminTheme.textDim : adminTheme.accentStrong,
-                color: 'white', border: 'none', borderRadius: '6px',
-                fontSize: '12px', fontWeight: '600', cursor: creating ? 'not-allowed' : 'pointer', fontFamily: adminTheme.fontMono,
-              }}>
-                {creating ? 'Provisioning...' : 'Create & dispatch invite'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div style={adminPanelStyle()}>
-        <div style={{ padding: '14px 18px', borderBottom: '1px solid ' + adminTheme.border, backgroundColor: adminTheme.surfaceRaised }}>
-          <h2 style={{ fontSize: '11px', fontWeight: '600', color: adminTheme.textMuted, margin: 0, fontFamily: adminTheme.fontMono, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Active tenants ({companies.length})
-          </h2>
+          </div>
         </div>
 
-        {companies.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center' }}>
-            <p style={{ color: adminTheme.textDim, fontSize: '12px', fontFamily: adminTheme.fontMono, margin: 0 }}>
-              No tenants provisioned · use &quot;Provision company&quot; to onboard a contractor
-            </p>
+        <div style={adminPanelStyle()}>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid ' + adminTheme.border, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: '12px', fontWeight: '600', color: adminTheme.textMuted, margin: 0, fontFamily: adminTheme.fontMono, textTransform: 'uppercase' }}>
+              Recent Leads
+            </h2>
+            <button
+              onClick={() => router.push('/admin/leads')}
+              style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '12px', cursor: 'pointer', fontFamily: adminTheme.fontMono }}
+            >
+              View all →
+            </button>
           </div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid ' + adminTheme.border }}>
-                {['Company', 'Location', 'License', 'Qualifier', 'Status', 'Created'].map(h => (
-                  <th key={h} style={{
-                    padding: '10px 14px', textAlign: 'left', fontSize: '10px', fontWeight: '600',
-                    color: adminTheme.textDim, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: adminTheme.fontMono,
-                  }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {companies.map((company, i) => (
-                <tr key={company.id} style={{ borderBottom: i < companies.length - 1 ? '1px solid ' + adminTheme.borderSubtle : 'none' }}>
-                  <td style={{ padding: '12px 14px' }}>
-                    <p style={{ fontSize: '13px', fontWeight: '600', color: adminTheme.text, margin: 0 }}>{company.name}</p>
-                    <p style={{ fontSize: '11px', color: adminTheme.textDim, margin: '2px 0 0 0' }}>{company.primary_email}</p>
-                  </td>
-                  <td style={{ padding: '12px 14px', fontSize: '12px', color: adminTheme.textMuted }}>{company.city}, {company.state}</td>
-                  <td style={{ padding: '12px 14px', fontSize: '11px', color: adminTheme.textMuted, fontFamily: adminTheme.fontMono }}>{company.license_number || '—'}</td>
-                  <td style={{ padding: '12px 14px', fontSize: '12px', color: adminTheme.textMuted }}>{company.qualifier_name || '—'}</td>
-                  <td style={{ padding: '12px 14px' }}>
-                    <span style={{
-                      fontSize: '10px', fontWeight: '600', padding: '2px 8px', borderRadius: '4px', fontFamily: adminTheme.fontMono,
-                      backgroundColor: company.is_active ? '#064e3b' : '#450a0a',
-                      color: company.is_active ? '#6ee7b7' : '#fca5a5',
-                    }}>
-                      {company.is_active ? 'ACTIVE' : 'INACTIVE'}
+          {recentLeads.length === 0 ? (
+            <div style={{ padding: '32px', textAlign: 'center', color: adminTheme.textDim, fontSize: '12px' }}>No leads yet</div>
+          ) : (
+            <div>
+              {recentLeads.map((lead, i) => (
+                <div
+                  key={lead.id}
+                  style={{
+                    padding: '12px 18px',
+                    borderBottom: i < recentLeads.length - 1 ? '1px solid ' + adminTheme.borderSubtle : 'none',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+                    <div>
+                      <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: adminTheme.text }}>{lead.name}</p>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: adminTheme.textMuted }}>{lead.company || lead.email}</p>
+                    </div>
+                    <span style={{ fontSize: '11px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono, whiteSpace: 'nowrap' }}>
+                      {lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                     </span>
-                  </td>
-                  <td style={{ padding: '12px 14px', fontSize: '11px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono }}>
-                    {new Date(company.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+        <button
+          onClick={() => router.push('/admin/companies/new')}
+          style={{
+            padding: '10px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none',
+            borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+          }}
+        >
+          + Onboard Contractor
+        </button>
+        <button
+          onClick={() => router.push('/admin/jobs')}
+          style={{
+            padding: '10px 16px', backgroundColor: adminTheme.surface, color: adminTheme.text,
+            border: '1px solid ' + adminTheme.border, borderRadius: '6px', fontSize: '13px', cursor: 'pointer',
+          }}
+        >
+          View All Jobs
+        </button>
       </div>
     </div>
   )

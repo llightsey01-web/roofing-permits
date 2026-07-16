@@ -150,7 +150,7 @@ function LoginForm() {
       .single()
 
     if (userData?.role === 'super_admin') {
-      router.push('/dashboard')
+      router.push('/admin')
     } else {
       router.push('/contractor/dashboard')
     }
