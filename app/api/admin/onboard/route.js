@@ -1,5 +1,6 @@
 import { authenticateRequest, requireSuperAdmin } from '../../../../lib/auth/session.js'
 import {
+  generateTemporaryPassword,
   sendContractorWelcomeEmail,
   sendContractorOnboardedNotification,
   PORTAL_LOGIN_URL,
@@ -77,26 +78,26 @@ export async function POST(request) {
       return Response.json({ error: 'Failed to create company: ' + (companyError?.message || 'unknown') }, { status: 500 })
     }
 
-    const redirectTo = PORTAL_LOGIN_URL + '/login'
-    const { data: inviteData, error: inviteError } = await context.supabase.auth.admin.inviteUserByEmail(
-      ownerEmail,
-      {
-        data: {
-          company_id: createdCompany.id,
-          full_name: fullName,
-          role: 'company_admin',
-        },
-        redirectTo,
-      }
-    )
+    const tempPassword = generateTemporaryPassword()
+    const { data: createdAuth, error: createUserError } = await context.supabase.auth.admin.createUser({
+      email: ownerEmail,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: {
+        company_id: createdCompany.id,
+        full_name: fullName,
+        role: 'company_admin',
+        must_change_password: true,
+      },
+    })
 
-    if (inviteError || !inviteData?.user) {
+    if (createUserError || !createdAuth?.user) {
       await context.supabase.from('companies').delete().eq('id', createdCompany.id)
-      return Response.json({ error: 'Failed to invite user: ' + (inviteError?.message || 'unknown') }, { status: 500 })
+      return Response.json({ error: 'Failed to create user: ' + (createUserError?.message || 'unknown') }, { status: 500 })
     }
 
     const { error: userError } = await context.supabase.from('users').upsert({
-      id: inviteData.user.id,
+      id: createdAuth.user.id,
       company_id: createdCompany.id,
       role: 'company_admin',
       email: ownerEmail,
@@ -109,7 +110,7 @@ export async function POST(request) {
 
     await context.supabase
       .from('companies')
-      .update({ owner_user_id: inviteData.user.id })
+      .update({ owner_user_id: createdAuth.user.id })
       .eq('id', createdCompany.id)
 
     const { data: portals } = await context.supabase
@@ -149,6 +150,7 @@ export async function POST(request) {
         contractorName: firstName,
         contractorEmail: ownerEmail,
         companyName: name,
+        tempPassword,
       })
       notificationResult = await sendContractorOnboardedNotification({
         contractorName: fullName,
@@ -162,7 +164,7 @@ export async function POST(request) {
     return Response.json({
       success: true,
       company_id: createdCompany.id,
-      user_id: inviteData.user.id,
+      user_id: createdAuth.user.id,
       login_url: PORTAL_LOGIN_URL,
       welcome_email_sent: !!emailResult.sent,
       notification_email_sent: !!notificationResult.sent,

@@ -1,5 +1,8 @@
 import { authenticateRequest, requireSuperAdmin } from '../../../../../../lib/auth/session.js'
-import { sendContractorWelcomeEmail, PORTAL_LOGIN_URL } from '../../../../../../lib/email/contractor-welcome.js'
+import {
+  generateTemporaryPassword,
+  sendContractorWelcomeEmail,
+} from '../../../../../../lib/email/contractor-welcome.js'
 
 export async function POST(request, { params }) {
   try {
@@ -22,15 +25,17 @@ export async function POST(request, { params }) {
 
     let recipientEmail = company.primary_email || null
     let contractorName = company.qualifier_name || 'there'
+    let ownerUserId = company.owner_user_id || null
 
     if (company.owner_user_id) {
       const { data: owner } = await context.supabase
         .from('users')
-        .select('email, full_name')
+        .select('id, email, full_name')
         .eq('id', company.owner_user_id)
         .maybeSingle()
 
       if (owner?.email) recipientEmail = owner.email
+      if (owner?.id) ownerUserId = owner.id
       if (owner?.full_name) {
         contractorName = String(owner.full_name).trim().split(/\s+/)[0] || contractorName
       }
@@ -39,29 +44,30 @@ export async function POST(request, { params }) {
     if (!recipientEmail) {
       return Response.json({ error: 'No owner or primary email on file for this company' }, { status: 400 })
     }
+    if (!ownerUserId) {
+      return Response.json({ error: 'No owner user linked to this company' }, { status: 400 })
+    }
 
-    // Re-invite via Supabase so they can set/reset their password if needed
-    const { error: inviteError } = await context.supabase.auth.admin.inviteUserByEmail(
-      recipientEmail,
-      {
-        data: {
-          company_id: company.id,
-          full_name: contractorName,
-          role: 'company_admin',
-        },
-        redirectTo: PORTAL_LOGIN_URL + '/login',
-      }
-    )
+    const tempPassword = generateTemporaryPassword()
+    const { error: updateError } = await context.supabase.auth.admin.updateUserById(ownerUserId, {
+      password: tempPassword,
+      user_metadata: {
+        company_id: company.id,
+        full_name: contractorName,
+        role: 'company_admin',
+        must_change_password: true,
+      },
+    })
 
-    // inviteUserByEmail fails if user already exists — still send welcome email
-    if (inviteError && !/already.*(registered|exists|been)/i.test(inviteError.message)) {
-      console.warn('[resend-onboarding] invite warning:', inviteError.message)
+    if (updateError) {
+      return Response.json({ error: 'Failed to reset temporary password: ' + updateError.message }, { status: 500 })
     }
 
     const emailResult = await sendContractorWelcomeEmail({
       contractorName,
       contractorEmail: recipientEmail,
       companyName: company.name,
+      tempPassword,
     })
 
     if (emailResult.skipped) {
@@ -72,7 +78,6 @@ export async function POST(request, { params }) {
       success: true,
       emailed: recipientEmail,
       welcome_email_sent: true,
-      invite_warning: inviteError ? inviteError.message : null,
     })
   } catch (err) {
     console.error('[resend-onboarding] Error:', err.message)
