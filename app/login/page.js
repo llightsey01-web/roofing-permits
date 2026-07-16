@@ -17,6 +17,7 @@ const theme = {
   accentHover: '#2563eb',
   inputBg: '#0f172a',
   error: '#ef4444',
+  success: '#10b981',
   fontFamily: contractorTheme.fontFamily,
 }
 
@@ -77,10 +78,12 @@ function DartIQLogo() {
 function LoginForm() {
   useDarkPageBackground()
 
+  const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -130,6 +133,7 @@ function LoginForm() {
     setLoading(true)
     setError('')
     setNotice('')
+    setSuccess('')
 
     const supabase = createClient()
     const { data, error: authError } = await supabase.auth.signInWithPassword({
@@ -154,6 +158,31 @@ function LoginForm() {
     } else {
       router.push('/contractor/dashboard')
     }
+  }
+
+  async function handleForgotPassword(e) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Request failed')
+      }
+
+      setSuccess('Check your email for a password reset link')
+    } catch (err) {
+      setError('Something went wrong. Please try again.')
+    }
+
+    setLoading(false)
   }
 
   return (
@@ -196,10 +225,10 @@ function LoginForm() {
           textAlign: 'center',
           letterSpacing: '-0.02em',
         }}>
-          Welcome back
+          {mode === 'login' ? 'Welcome back' : 'Reset Your Password'}
         </h1>
 
-        {notice && (
+        {notice && mode === 'login' && (
           <p style={{
             color: '#fbbf24',
             backgroundColor: 'rgba(245, 158, 11, 0.12)',
@@ -213,70 +242,191 @@ function LoginForm() {
           </p>
         )}
 
-        <form onSubmit={handleLogin}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle} htmlFor="login-email">Email</label>
-            <input
-              id="login-email"
-              className="dartiq-login-input"
-              type="email"
-              value={email}
-              onChange={function (e) { setEmail(e.target.value) }}
-              required
-              autoComplete="email"
-              placeholder="you@company.com"
-              style={inputStyle}
-            />
-          </div>
+        {success && (
+          <p style={{
+            color: theme.success,
+            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
+            borderRadius: '10px',
+            fontSize: '14px',
+            marginBottom: '16px',
+            padding: '10px 12px',
+          }}>
+            {success}
+          </p>
+        )}
 
-          <div style={{ marginBottom: '24px' }}>
-            <label style={labelStyle} htmlFor="login-password">Password</label>
-            <input
-              id="login-password"
-              className="dartiq-login-input"
-              type="password"
-              value={password}
-              onChange={function (e) { setPassword(e.target.value) }}
-              required
-              autoComplete="current-password"
-              placeholder="••••••••"
-              style={inputStyle}
-            />
-          </div>
+        {mode === 'login' ? (
+          <form onSubmit={handleLogin}>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={labelStyle} htmlFor="login-email">Email</label>
+              <input
+                id="login-email"
+                className="dartiq-login-input"
+                type="email"
+                value={email}
+                onChange={function (e) { setEmail(e.target.value) }}
+                required
+                autoComplete="email"
+                placeholder="you@company.com"
+                style={inputStyle}
+              />
+            </div>
 
-          {error && (
+            <div style={{ marginBottom: '8px' }}>
+              <label style={labelStyle} htmlFor="login-password">Password</label>
+              <input
+                id="login-password"
+                className="dartiq-login-input"
+                type="password"
+                value={password}
+                onChange={function (e) { setPassword(e.target.value) }}
+                required
+                autoComplete="current-password"
+                placeholder="••••••••"
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={{ textAlign: 'right', marginBottom: '20px' }}>
+              <button
+                type="button"
+                onClick={function () {
+                  setMode('forgot')
+                  setError('')
+                  setSuccess('')
+                  setNotice('')
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: theme.accent,
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  padding: '4px 0',
+                }}
+              >
+                Forgot Password?
+              </button>
+            </div>
+
+            {error && (
+              <p style={{
+                color: theme.error,
+                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+                borderRadius: '10px',
+                fontSize: '14px',
+                marginBottom: '16px',
+                padding: '10px 12px',
+              }}>
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '13px',
+                backgroundColor: loading ? theme.border : theme.accent,
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                boxShadow: loading ? 'none' : '0 0 20px rgba(59, 130, 246, 0.35)',
+              }}
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleForgotPassword}>
             <p style={{
-              color: theme.error,
-              backgroundColor: 'rgba(239, 68, 68, 0.12)',
-              border: '1px solid rgba(239, 68, 68, 0.35)',
-              borderRadius: '10px',
+              color: theme.textMuted,
               fontSize: '14px',
-              marginBottom: '16px',
-              padding: '10px 12px',
+              margin: '0 0 20px',
+              textAlign: 'center',
+              lineHeight: 1.5,
             }}>
-              {error}
+              Enter your email address and we&apos;ll send you a link to reset your password.
             </p>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '13px',
-              backgroundColor: loading ? theme.border : theme.accent,
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '10px',
-              fontSize: '15px',
-              fontWeight: '600',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              boxShadow: loading ? 'none' : '0 0 20px rgba(59, 130, 246, 0.35)',
-            }}
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={labelStyle} htmlFor="forgot-email">Email</label>
+              <input
+                id="forgot-email"
+                className="dartiq-login-input"
+                type="email"
+                value={email}
+                onChange={function (e) { setEmail(e.target.value) }}
+                required
+                autoComplete="email"
+                placeholder="you@company.com"
+                style={inputStyle}
+              />
+            </div>
+
+            {error && (
+              <p style={{
+                color: theme.error,
+                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+                borderRadius: '10px',
+                fontSize: '14px',
+                marginBottom: '16px',
+                padding: '10px 12px',
+              }}>
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '13px',
+                backgroundColor: loading ? theme.border : theme.accent,
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                boxShadow: loading ? 'none' : '0 0 20px rgba(59, 130, 246, 0.35)',
+                marginBottom: '14px',
+              }}
+            >
+              {loading ? 'Sending...' : 'Send Reset Link'}
+            </button>
+
+            <button
+              type="button"
+              onClick={function () {
+                setMode('login')
+                setError('')
+                setSuccess('')
+              }}
+              style={{
+                width: '100%',
+                background: 'none',
+                border: 'none',
+                color: theme.textMuted,
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                padding: '8px 0',
+              }}
+            >
+              ← Back to Login
+            </button>
+          </form>
+        )}
 
         <p style={{
           textAlign: 'center',

@@ -26,6 +26,8 @@ export default function ContractorOnboardingPage() {
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
   const [adminNotes, setAdminNotes] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [form, setForm] = useState({
     name: '',
     dba_name: '',
@@ -188,6 +190,12 @@ export default function ContractorOnboardingPage() {
       })
       if (selected.length === 0) return 'Select at least one county'
     }
+    if (current === 5) {
+      if (newPassword.length < 8) return 'Password must be at least 8 characters'
+      if (!/[0-9]/.test(newPassword)) return 'Password must include at least one number'
+      if (!/[A-Z]/.test(newPassword)) return 'Password must include at least one uppercase letter'
+      if (newPassword !== confirmPassword) return 'Passwords do not match'
+    }
     return ''
   }
 
@@ -250,12 +258,11 @@ export default function ContractorOnboardingPage() {
       return
     }
 
-    setSaving(true)
-    const ok = await saveStep(step)
-    setSaving(false)
-    if (!ok) return
-
-    if (step < 4) {
+    if (step < 5) {
+      setSaving(true)
+      const ok = await saveStep(step)
+      setSaving(false)
+      if (!ok) return
       setStep(step + 1)
       return
     }
@@ -266,17 +273,37 @@ export default function ContractorOnboardingPage() {
       setSaving(false)
       return
     }
-    const res = await fetch('/api/contractor/onboarding/complete', {
+
+    const res = await fetch('/api/contractor/onboarding/set-password', {
       method: 'POST',
-      headers: { Authorization: 'Bearer ' + token },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+      },
+      body: JSON.stringify({
+        password: newPassword,
+        confirmPassword: confirmPassword,
+      }),
     })
     const data = await res.json()
     setSaving(false)
     if (!res.ok) {
-      setError(data.error || 'Failed to complete onboarding')
+      setError(data.error || 'Failed to set password')
       return
     }
     setDone(true)
+  }
+
+  function passwordRequirement(met, label) {
+    return (
+      <li style={{
+        color: met ? '#10b981' : contractorTheme.textMuted,
+        fontSize: '13px',
+        marginBottom: '4px',
+      }}>
+        {met ? '✓' : '○'} {label}
+      </li>
+    )
   }
 
   const labelStyle = {
@@ -317,7 +344,7 @@ export default function ContractorOnboardingPage() {
           Account setup
         </h1>
         <p style={{ margin: 0, color: contractorTheme.textMuted, fontSize: '14px' }}>
-          Step {step} of 4
+          Step {step} of 5
         </p>
       </div>
 
@@ -329,7 +356,7 @@ export default function ContractorOnboardingPage() {
         marginBottom: '20px',
       }}>
         <div style={{
-          width: (step / 4) * 100 + '%',
+          width: (step / 5) * 100 + '%',
           height: '100%',
           backgroundColor: contractorTheme.accent,
           transition: 'width 0.2s ease',
@@ -475,6 +502,62 @@ export default function ContractorOnboardingPage() {
           </div>
         )}
 
+        {step === 5 && (
+          <div>
+            <h2 style={{ margin: '0 0 8px', fontSize: '18px', color: contractorTheme.text }}>
+              Set Your Password
+            </h2>
+            <p style={{ margin: '0 0 16px', color: contractorTheme.textMuted, fontSize: '14px' }}>
+              Create a secure password for your DART iQ account.
+            </p>
+            <div style={{ display: 'grid', gap: '14px' }}>
+              <div>
+                <label style={labelStyle}>Current temporary password</label>
+                <input
+                  style={{
+                    ...contractorInputStyle(),
+                    color: contractorTheme.textMuted,
+                  }}
+                  value="DART-XXXXXXXX"
+                  readOnly
+                  aria-describedby="temp-password-hint"
+                />
+                <p id="temp-password-hint" style={{ margin: '6px 0 0', fontSize: '12px', color: contractorTheme.textMuted }}>
+                  Your temporary password was emailed when your account was created (format DART-XXXXXXXX). Shown once as a reminder — use the value from that email to sign in.
+                </p>
+              </div>
+              <div>
+                <label style={labelStyle}>New Password</label>
+                <input
+                  style={contractorInputStyle()}
+                  type="password"
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={function (e) { setNewPassword(e.target.value) }}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Confirm Password</label>
+                <input
+                  style={contractorInputStyle()}
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={function (e) { setConfirmPassword(e.target.value) }}
+                />
+              </div>
+              <ul style={{ margin: '4px 0 0', paddingLeft: '0', listStyle: 'none' }}>
+                <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 600, color: contractorTheme.text }}>
+                  Password requirements:
+                </p>
+                {passwordRequirement(newPassword.length >= 8, 'At least 8 characters')}
+                {passwordRequirement(/[0-9]/.test(newPassword), 'At least one number')}
+                {passwordRequirement(/[A-Z]/.test(newPassword), 'At least one uppercase letter')}
+              </ul>
+            </div>
+          </div>
+        )}
+
         {error ? (
           <p style={{ color: contractorTheme.error, margin: '16px 0 0', fontSize: '14px' }}>{error}</p>
         ) : null}
@@ -500,7 +583,11 @@ export default function ContractorOnboardingPage() {
             onClick={handleNext}
             style={contractorPrimaryButtonStyle(saving)}
           >
-            {saving ? 'Saving...' : step === 4 ? 'Finish setup' : 'Next'}
+            {saving
+              ? 'Saving...'
+              : step === 5
+                ? 'Set Password & Complete Setup'
+                : 'Next'}
           </button>
         </div>
       </div>
