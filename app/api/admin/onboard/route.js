@@ -1,5 +1,9 @@
 import { authenticateRequest, requireSuperAdmin } from '../../../../lib/auth/session.js'
-import { sendContractorWelcomeEmail, PORTAL_LOGIN_URL } from '../../../../lib/email/contractor-welcome.js'
+import {
+  sendContractorWelcomeEmail,
+  sendContractorOnboardedNotification,
+  PORTAL_LOGIN_URL,
+} from '../../../../lib/email/contractor-welcome.js'
 
 function normalizeReviewGates(raw) {
   const gates = raw && typeof raw === 'object' ? raw : {}
@@ -139,14 +143,20 @@ export async function POST(request) {
     }
 
     let emailResult = { sent: false }
+    let notificationResult = { sent: false }
     try {
       emailResult = await sendContractorWelcomeEmail({
         contractorName: firstName,
         contractorEmail: ownerEmail,
         companyName: name,
       })
+      notificationResult = await sendContractorOnboardedNotification({
+        contractorName: fullName,
+        contractorEmail: ownerEmail,
+        companyName: name,
+      })
     } catch (emailErr) {
-      console.error('[admin/onboard] welcome email failed:', emailErr.message)
+      console.error('[admin/onboard] onboarding email flow failed:', emailErr.message)
     }
 
     return Response.json({
@@ -155,6 +165,7 @@ export async function POST(request) {
       user_id: inviteData.user.id,
       login_url: PORTAL_LOGIN_URL,
       welcome_email_sent: !!emailResult.sent,
+      notification_email_sent: !!notificationResult.sent,
     })
   } catch (err) {
     console.error('[admin/onboard] Error:', err.message)
