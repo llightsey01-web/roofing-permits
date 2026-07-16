@@ -1,8 +1,5 @@
 [phases.setup]
-nixPkgs = ["nodejs"]
-
-[phases.install]
-cmds = ["npm install -g serve"]
+nixPkgs = ["python3"]
 
 [start]
-cmd = "serve -s . -l ${PORT:-8080} --no-clipboard"
+cmd = "python3 -m http.server ${PORT:-8080}"
