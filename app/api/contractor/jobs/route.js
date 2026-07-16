@@ -1,4 +1,16 @@
+import { createRequire } from 'module'
 import { authenticateRequest, requireCompanyUser, filterJobsByCompany } from '../../../../lib/auth/session.js'
+import { createClient } from '../../../../lib/supabase-server.js'
+
+const require = createRequire(import.meta.url)
+const {
+  NOC_OPTIONS,
+  UPLOADED_NOC_PATH,
+  MAX_NOC_UPLOAD_BYTES,
+  isValidNocOption,
+  requiresUpload,
+  buildJobUpdateForUploadedNoc,
+} = require('../../../../lib/noc/noc-options.js')
 
 export async function GET(request) {
   try {
@@ -39,6 +51,7 @@ export async function POST(request) {
     }
 
     const body = await request.json()
+    const nocOption = isValidNocOption(body.noc_option) ? body.noc_option : NOC_OPTIONS.AUTO_GENERATE
 
     const { data: job, error: jobError } = await context.userSupabase
       .from('jobs')
@@ -59,6 +72,7 @@ export async function POST(request) {
         created_by: context.user.id,
         job_status: 'ready',
         noc_status: 'not_started',
+        noc_option: nocOption,
         material_manufacturer: body.roof_specs?.primary_material?.manufacturer || null,
         material_model: body.roof_specs?.primary_material?.product_name || null,
         material_approval_num: body.roof_specs?.primary_material?.approval_number || null,
@@ -80,10 +94,37 @@ export async function POST(request) {
       return Response.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    let savedJob = job
+    if (requiresUpload(nocOption) && body.noc_upload_base64) {
+      const buffer = Buffer.from(body.noc_upload_base64, 'base64')
+      if (buffer.length > MAX_NOC_UPLOAD_BYTES) {
+        return Response.json({ error: 'NOC PDF must be 10MB or smaller' }, { status: 400 })
+      }
+      const supabase = createClient()
+      const storagePath = UPLOADED_NOC_PATH(job.id)
+      const { error: uploadError } = await supabase.storage
+        .from('job-documents')
+        .upload(storagePath, buffer, { contentType: 'application/pdf', upsert: true })
+      if (uploadError) {
+        return Response.json({ error: 'NOC upload failed: ' + uploadError.message }, { status: 500 })
+      }
+      const update = buildJobUpdateForUploadedNoc(job, nocOption, storagePath)
+      const { data: updated, error: updateError } = await supabase
+        .from('jobs')
+        .update(update)
+        .eq('id', job.id)
+        .select('*')
+        .single()
+      if (updateError) {
+        return Response.json({ error: updateError.message }, { status: 500 })
+      }
+      savedJob = updated
+    }
+
     const { error: runError } = await context.supabase
       .from('automation_runs')
       .insert({
-        job_id: job.id,
+        job_id: savedJob.id,
         run_status: 'queued',
         started_at: new Date().toISOString(),
       })
@@ -95,13 +136,16 @@ export async function POST(request) {
     const { error: statusError } = await context.supabase
       .from('jobs')
       .update({ job_status: 'automation_running' })
-      .eq('id', job.id)
+      .eq('id', savedJob.id)
 
     if (statusError) {
       console.error('Failed to update job status:', statusError.message)
     }
 
-    return Response.json({ success: true, job: { ...job, job_status: 'automation_running' } }, { status: 201 })
+    return Response.json({
+      success: true,
+      job: { ...savedJob, job_status: 'automation_running' },
+    }, { status: 201 })
   } catch (err) {
     console.error('Contractor job creation error:', err.message)
     return Response.json({ error: err.message }, { status: 500 })

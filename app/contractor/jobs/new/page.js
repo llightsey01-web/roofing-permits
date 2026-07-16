@@ -13,6 +13,41 @@ import {
 
 const emptyMaterial = { manufacturer: '', product_name: '', approval_number: '' }
 
+const NOC_OPTION_CHOICES = [
+  {
+    value: 'auto_generate',
+    label: 'Generate NOC automatically',
+    description: 'DART iQ will fill out and send for online notarization',
+    needsFile: false,
+  },
+  {
+    value: 'upload_signed',
+    label: 'I have a signed NOC to upload',
+    description: 'Homeowner already signed — we will send for notarization',
+    needsFile: true,
+  },
+  {
+    value: 'upload_notarized',
+    label: 'I have a notarized NOC to upload',
+    description: 'Already signed and notarized — we will send for recording only',
+    needsFile: true,
+  },
+  {
+    value: 'upload_recorded',
+    label: 'I have a recorded NOC to upload',
+    description: 'Already signed, notarized, and recorded — skip to permit submission',
+    needsFile: true,
+  },
+  {
+    value: 'manual_download',
+    label: 'Generate NOC for manual processing',
+    description: 'Download the filled NOC PDF to print and sign manually',
+    needsFile: false,
+  },
+]
+
+const MAX_NOC_BYTES = 10 * 1024 * 1024
+
 export default function ContractorNewJobPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -22,6 +57,10 @@ export default function ContractorNewJobPage() {
   const [detectedAHJ, setDetectedAHJ] = useState(null)
   const [ahjLoading, setAhjLoading] = useState(false)
   const [allAHJs, setAllAHJs] = useState([])
+  const [nocOption, setNocOption] = useState('auto_generate')
+  const [nocFile, setNocFile] = useState(null)
+
+  const selectedNocChoice = NOC_OPTION_CHOICES.find(c => c.value === nocOption) || NOC_OPTION_CHOICES[0]
 
   const [form, setForm] = useState({
     owner_name: '',
@@ -116,6 +155,41 @@ export default function ContractorNewJobPage() {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  function handleNocFileChange(e) {
+    const file = e.target.files?.[0] || null
+    if (!file) {
+      setNocFile(null)
+      return
+    }
+    if (file.type !== 'application/pdf') {
+      setError('NOC upload must be a PDF file.')
+      e.target.value = ''
+      setNocFile(null)
+      return
+    }
+    if (file.size > MAX_NOC_BYTES) {
+      setError('NOC PDF must be 10MB or smaller.')
+      e.target.value = ''
+      setNocFile(null)
+      return
+    }
+    setError('')
+    setNocFile(file)
+  }
+
+  function readFileAsBase64(file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader()
+      reader.onload = function () {
+        const result = String(reader.result || '')
+        const base64 = result.includes(',') ? result.split(',')[1] : result
+        resolve(base64)
+      }
+      reader.onerror = function () { reject(new Error('Failed to read NOC file')) }
+      reader.readAsDataURL(file)
+    })
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     if (!primaryMaterial.manufacturer || !primaryMaterial.product_name) {
@@ -124,6 +198,10 @@ export default function ContractorNewJobPage() {
     }
     if (!underlayment.manufacturer || !underlayment.product_name) {
       setError('Underlayment is required.')
+      return
+    }
+    if (selectedNocChoice.needsFile && !nocFile) {
+      setError('Please upload a signed/notarized/recorded NOC PDF.')
       return
     }
     setLoading(true)
@@ -145,6 +223,17 @@ export default function ContractorNewJobPage() {
         ventilation: showVentilation ? ventilation : null,
       },
       job_specs: { squares: form.squares || null },
+      noc_option: nocOption,
+    }
+
+    if (nocFile) {
+      try {
+        payload.noc_upload_base64 = await readFileAsBase64(nocFile)
+      } catch (readErr) {
+        setError(readErr.message || 'Failed to read NOC file')
+        setLoading(false)
+        return
+      }
     }
 
     const response = await fetch('/api/contractor/jobs', {
@@ -357,7 +446,68 @@ export default function ContractorNewJobPage() {
         </div>
 
         <div style={sectionStyle}>
-          <h2 style={sectionTitleStyle}>3. Job details</h2>
+          <h2 style={sectionTitleStyle}>3. NOC (Notice of Commencement)</h2>
+          <p style={sectionDescStyle}>How would you like to handle the NOC for this job?</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {NOC_OPTION_CHOICES.map(function (choice) {
+              const selected = nocOption === choice.value
+              return (
+                <label
+                  key={choice.value}
+                  style={{
+                    display: 'flex',
+                    gap: '12px',
+                    alignItems: 'flex-start',
+                    padding: '14px 16px',
+                    borderRadius: '10px',
+                    border: '1px solid ' + (selected ? contractorTheme.accent : contractorTheme.border),
+                    backgroundColor: selected ? contractorTheme.accentSoft : contractorTheme.inputBg,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="noc_option"
+                    value={choice.value}
+                    checked={selected}
+                    onChange={function () {
+                      setNocOption(choice.value)
+                      if (!choice.needsFile) setNocFile(null)
+                    }}
+                    style={{ marginTop: '3px' }}
+                  />
+                  <span>
+                    <span style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: contractorTheme.text }}>
+                      {choice.label}
+                    </span>
+                    <span style={{ display: 'block', fontSize: '13px', color: contractorTheme.textMuted, marginTop: '4px' }}>
+                      {choice.description}
+                    </span>
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+          {selectedNocChoice.needsFile ? (
+            <div style={{ marginTop: '16px' }}>
+              <label style={labelStyle}>Upload NOC PDF (max 10MB) *</label>
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={handleNocFileChange}
+                style={{ ...inputStyle, padding: '10px' }}
+              />
+              {nocFile ? (
+                <p style={{ margin: '8px 0 0', fontSize: '12px', color: contractorTheme.success }}>
+                  Selected: {nocFile.name}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        <div style={sectionStyle}>
+          <h2 style={sectionTitleStyle}>4. Job details</h2>
           <p style={sectionDescStyle}>Scope, roof type, and contract value for the permit.</p>
           <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Scope of work</label>
@@ -390,7 +540,7 @@ export default function ContractorNewJobPage() {
         </div>
 
         <div style={sectionStyle}>
-          <h2 style={sectionTitleStyle}>4. Materials and product approvals</h2>
+          <h2 style={sectionTitleStyle}>5. Materials and product approvals</h2>
           <p style={sectionDescStyle}>Florida-approved products by layer. Approval numbers auto-fill from the database.</p>
           <MaterialLayer title="Primary material" layerType="primary" values={primaryMaterial} setter={setPrimaryMaterial} />
           <MaterialLayer title="Underlayment" layerType="underlayment" values={underlayment} setter={setUnderlayment} />
@@ -439,7 +589,7 @@ export default function ContractorNewJobPage() {
         </div>
 
         <div style={sectionStyle}>
-          <h2 style={sectionTitleStyle}>5. Internal notes</h2>
+          <h2 style={sectionTitleStyle}>6. Internal notes</h2>
           <p style={sectionDescStyle}>Optional notes visible only to your team.</p>
           <textarea
             style={{ ...inputStyle, height: '80px', resize: 'vertical', minHeight: '80px' }}

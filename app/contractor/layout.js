@@ -62,6 +62,7 @@ export default function ContractorLayout({ children }) {
   const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState(null)
+  const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useLayoutEffect(function () {
@@ -95,6 +96,27 @@ export default function ContractorLayout({ children }) {
           return
         }
 
+        const { data: companyData } = await supabase
+          .from('companies')
+          .select('id, name, onboarding_status, notes')
+          .eq('id', userData.company_id)
+          .single()
+
+        const status = companyData?.onboarding_status || 'pending'
+        const onOnboarding = pathname?.startsWith('/contractor/onboarding')
+
+        if ((status === 'pending' || status === 'in_progress' || status === 'needs_changes') && !onOnboarding) {
+          router.replace('/contractor/onboarding')
+          return
+        }
+
+        if (status === 'pending_review' && onOnboarding) {
+          // allow holding success view on onboarding page
+        } else if (status === 'pending_review' && !onOnboarding) {
+          // stay on current route but show holding screen below
+        }
+
+        setCompany(companyData || null)
         setUser({ ...authUser, ...userData })
         setLoading(false)
       } catch (err) {
@@ -103,7 +125,7 @@ export default function ContractorLayout({ children }) {
       }
     }
     checkAuth()
-  }, [router])
+  }, [router, pathname])
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -127,6 +149,10 @@ export default function ContractorLayout({ children }) {
     )
   }
 
+  const status = company?.onboarding_status || 'pending'
+  const showHolding = status === 'pending_review'
+  const hideNav = status === 'pending' || status === 'in_progress' || status === 'needs_changes' || status === 'pending_review'
+
   return (
     <div
       className="contractor-shell"
@@ -146,14 +172,14 @@ export default function ContractorLayout({ children }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', minWidth: 0 }}>
           <button
             type="button"
-            onClick={() => router.push('/contractor/dashboard')}
+            onClick={() => !hideNav && router.push('/contractor/dashboard')}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '10px',
               border: 'none',
               background: 'none',
-              cursor: 'pointer',
+              cursor: hideNav ? 'default' : 'pointer',
               padding: 0,
               minHeight: '44px',
             }}
@@ -186,31 +212,33 @@ export default function ContractorLayout({ children }) {
               </span>
             </div>
           </button>
-          <nav className="contractor-desktop-nav" style={{ gap: '6px', flexWrap: 'wrap' }}>
-            {navItems.map(function (item) {
-              const isActive = isNavActive(pathname, item.href)
-              return (
-                <button
-                  key={item.href}
-                  type="button"
-                  onClick={() => router.push(item.href)}
-                  style={{
-                    fontSize: '14px',
-                    padding: '10px 14px',
-                    minHeight: '44px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    backgroundColor: isActive ? contractorTheme.navActiveBg : 'transparent',
-                    color: isActive ? contractorTheme.navActive : contractorTheme.textMuted,
-                    fontWeight: isActive ? '600' : '500',
-                  }}
-                >
-                  {item.label}
-                </button>
-              )
-            })}
-          </nav>
+          {!hideNav ? (
+            <nav className="contractor-desktop-nav" style={{ gap: '6px', flexWrap: 'wrap' }}>
+              {navItems.map(function (item) {
+                const isActive = isNavActive(pathname, item.href)
+                return (
+                  <button
+                    key={item.href}
+                    type="button"
+                    onClick={() => router.push(item.href)}
+                    style={{
+                      fontSize: '14px',
+                      padding: '10px 14px',
+                      minHeight: '44px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      backgroundColor: isActive ? contractorTheme.navActiveBg : 'transparent',
+                      color: isActive ? contractorTheme.navActive : contractorTheme.textMuted,
+                      fontWeight: isActive ? '600' : '500',
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                )
+              })}
+            </nav>
+          ) : null}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <PortalThemeToggle />
@@ -237,7 +265,29 @@ export default function ContractorLayout({ children }) {
         </div>
       </header>
 
-      <main className="contractor-main">{children}</main>
+      <main className="contractor-main">
+        {showHolding && !pathname?.startsWith('/contractor/onboarding') ? (
+          <div style={{ maxWidth: '640px', margin: '48px auto', padding: '0 20px' }}>
+            <div style={{
+              backgroundColor: contractorTheme.surface,
+              border: '1px solid ' + contractorTheme.border,
+              borderRadius: '12px',
+              padding: '36px',
+              textAlign: 'center',
+              boxShadow: contractorTheme.shadowCard,
+            }}>
+              <h1 style={{ margin: '0 0 12px', color: contractorTheme.text, fontSize: '24px' }}>
+                Account under review
+              </h1>
+              <p style={{ margin: 0, color: contractorTheme.textBody, lineHeight: 1.6, fontSize: '16px' }}>
+                Account under review. We will notify you within 1 business day.
+              </p>
+            </div>
+          </div>
+        ) : (
+          children
+        )}
+      </main>
 
       <footer
         className="contractor-footer-desktop"
@@ -250,34 +300,36 @@ export default function ContractorLayout({ children }) {
         © {contractorTheme.footerYear} {contractorTheme.companyLegal}
       </footer>
 
-      <nav className="contractor-bottom-nav" aria-label="Mobile navigation">
-        <div className="contractor-bottom-nav-inner">
-          {navItems.map(function (item) {
-            const isActive = isNavActive(pathname, item.href)
-            return (
-              <button
-                key={item.href}
-                type="button"
-                className={'contractor-bottom-nav-item' + (isActive ? ' is-active' : '')}
-                onClick={() => router.push(item.href)}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                <span className="contractor-bottom-nav-icon" aria-hidden="true">{item.icon}</span>
-                <span>{item.shortLabel}</span>
-              </button>
-            )
-          })}
-          <button
-            type="button"
-            className="contractor-bottom-nav-item"
-            onClick={handleSignOut}
-            aria-label="Sign out"
-          >
-            <span className="contractor-bottom-nav-icon" aria-hidden="true">↪</span>
-            <span>Logout</span>
-          </button>
-        </div>
-      </nav>
+      {!hideNav ? (
+        <nav className="contractor-bottom-nav" aria-label="Mobile navigation">
+          <div className="contractor-bottom-nav-inner">
+            {navItems.map(function (item) {
+              const isActive = isNavActive(pathname, item.href)
+              return (
+                <button
+                  key={item.href}
+                  type="button"
+                  className={'contractor-bottom-nav-item' + (isActive ? ' is-active' : '')}
+                  onClick={() => router.push(item.href)}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <span className="contractor-bottom-nav-icon" aria-hidden="true">{item.icon}</span>
+                  <span>{item.shortLabel}</span>
+                </button>
+              )
+            })}
+            <button
+              type="button"
+              className="contractor-bottom-nav-item"
+              onClick={handleSignOut}
+              aria-label="Sign out"
+            >
+              <span className="contractor-bottom-nav-icon" aria-hidden="true">↪</span>
+              <span>Logout</span>
+            </button>
+          </div>
+        </nav>
+      ) : null}
     </div>
   )
 }

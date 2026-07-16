@@ -28,6 +28,9 @@ export default function CompanyDetailPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [toast, setToast] = useState('')
+  const [showChangesForm, setShowChangesForm] = useState(false)
+  const [changeNotes, setChangeNotes] = useState('')
   const [edit, setEdit] = useState({})
 
   async function load() {
@@ -133,9 +136,69 @@ export default function CompanyDetailPage() {
       setMessage(payload.error || 'Failed to resend onboarding email')
     } else {
       setMessage('Onboarding email resent to ' + (payload.emailed || 'owner'))
+      setToast('Onboarding email resent')
     }
     setSaving(false)
   }
+
+  async function approveAccount() {
+    setSaving(true)
+    setMessage('')
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/admin/companies/' + id + '/approve', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + session.access_token },
+    })
+    const payload = await res.json()
+    if (!res.ok) {
+      setMessage(payload.error || 'Approve failed')
+    } else {
+      setCompany(payload.company)
+      setToast('Account approved — contractor notified')
+      setMessage('Account approved')
+    }
+    setSaving(false)
+  }
+
+  async function requestChanges() {
+    if (!changeNotes.trim()) {
+      setMessage('Notes are required when requesting changes')
+      return
+    }
+    setSaving(true)
+    setMessage('')
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/admin/companies/' + id + '/request-changes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + session.access_token,
+      },
+      body: JSON.stringify({ notes: changeNotes.trim() }),
+    })
+    const payload = await res.json()
+    if (!res.ok) {
+      setMessage(payload.error || 'Request changes failed')
+    } else {
+      setCompany(payload.company)
+      setEdit(function (prev) {
+        return { ...prev, notes: changeNotes.trim() }
+      })
+      setShowChangesForm(false)
+      setChangeNotes('')
+      setToast('Changes requested — contractor notified')
+      setMessage('Changes requested')
+    }
+    setSaving(false)
+  }
+
+  useEffect(function () {
+    if (!toast) return undefined
+    const timer = setTimeout(function () { setToast('') }, 4000)
+    return function () { clearTimeout(timer) }
+  }, [toast])
 
   const inputStyle = {
     width: '100%', padding: '8px 10px', border: '1px solid ' + adminTheme.border,
@@ -152,13 +215,108 @@ export default function CompanyDetailPage() {
 
   return (
     <div style={{ padding: '24px 28px', maxWidth: '1100px' }}>
+      {toast ? (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 50,
+          padding: '12px 16px',
+          borderRadius: '8px',
+          backgroundColor: '#064e3b',
+          border: '1px solid #059669',
+          color: '#6ee7b7',
+          fontSize: '13px',
+          fontFamily: adminTheme.fontMono,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+        }}>
+          {toast}
+        </div>
+      ) : null}
+
       <button onClick={() => router.push('/admin/companies')} style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '12px', cursor: 'pointer', padding: 0, marginBottom: '8px', fontFamily: adminTheme.fontMono }}>
         ← Companies
       </button>
+
+      {company.onboarding_status === 'pending_review' ? (
+        <div style={{
+          ...adminPanelStyle(),
+          padding: '16px 18px',
+          marginBottom: '16px',
+          borderColor: '#f59e0b',
+          backgroundColor: '#422006',
+        }}>
+          <p style={{ margin: '0 0 12px', color: '#fcd34d', fontSize: '14px', fontWeight: 600 }}>
+            ⚠️ This contractor has completed onboarding and is awaiting your approval.
+          </p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              onClick={approveAccount}
+              disabled={saving}
+              style={{ padding: '8px 14px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+            >
+              Approve Account
+            </button>
+            <button
+              onClick={() => {
+                setShowChangesForm(true)
+                setChangeNotes(company.notes || '')
+              }}
+              disabled={saving}
+              style={{ padding: '8px 14px', backgroundColor: '#f59e0b', color: '#111827', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+            >
+              Request Changes
+            </button>
+          </div>
+          {showChangesForm ? (
+            <div style={{ marginTop: '14px' }}>
+              <label style={{ display: 'block', fontSize: '11px', color: '#fcd34d', marginBottom: '6px', fontFamily: adminTheme.fontMono }}>
+                What needs to be fixed?
+              </label>
+              <textarea
+                value={changeNotes}
+                onChange={e => setChangeNotes(e.target.value)}
+                style={{
+                  width: '100%',
+                  minHeight: '90px',
+                  padding: '10px',
+                  borderRadius: '6px',
+                  border: '1px solid ' + adminTheme.border,
+                  backgroundColor: adminTheme.surfaceRaised,
+                  color: adminTheme.text,
+                  boxSizing: 'border-box',
+                  fontSize: '13px',
+                }}
+                placeholder="Describe the updates the contractor needs to make..."
+              />
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                <button
+                  onClick={requestChanges}
+                  disabled={saving}
+                  style={{ padding: '8px 12px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
+                >
+                  Send request
+                </button>
+                <button
+                  onClick={() => setShowChangesForm(false)}
+                  disabled={saving}
+                  style={{ padding: '8px 12px', backgroundColor: 'transparent', color: adminTheme.textMuted, border: '1px solid ' + adminTheme.border, borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: adminTheme.text, margin: 0 }}>{company.name}</h1>
           <p style={{ fontSize: '13px', color: adminTheme.textDim, margin: '6px 0 0 0', fontFamily: adminTheme.fontMono }}>{company.id}</p>
+          <p style={{ fontSize: '12px', color: adminTheme.textMuted, margin: '6px 0 0 0', fontFamily: adminTheme.fontMono }}>
+            onboarding: {company.onboarding_status || '—'} · subscription: {company.subscription_status || '—'}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button

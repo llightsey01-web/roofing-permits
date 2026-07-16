@@ -95,6 +95,10 @@ export default function ContractorJobDetailPage({ params }) {
   const [pendingReview, setPendingReview] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [nocActionMessage, setNocActionMessage] = useState('')
+  const [nocActionBusy, setNocActionBusy] = useState(false)
+  const [uploadNocOption, setUploadNocOption] = useState('upload_signed')
+  const [uploadNocFile, setUploadNocFile] = useState(null)
 
   useEffect(() => {
     async function init() {
@@ -143,6 +147,70 @@ export default function ContractorJobDetailPage({ params }) {
     }
   }
 
+  async function downloadManualNoc() {
+    if (!jobId) return
+    setNocActionBusy(true)
+    setNocActionMessage('')
+    try {
+      const supabase = createClient()
+      const { session, staleSession } = await safeGetSession(supabase)
+      if (redirectIfStaleSession(router, staleSession)) return
+      if (!session) { router.replace('/login'); return }
+
+      const res = await fetch('/api/contractor/jobs/' + jobId + '/download-noc', {
+        headers: { Authorization: 'Bearer ' + session.access_token },
+      })
+      const payload = await res.json()
+      if (!res.ok) {
+        setNocActionMessage(payload.error || 'Download failed')
+      } else if (payload.url) {
+        window.open(payload.url, '_blank', 'noopener,noreferrer')
+      }
+    } catch (err) {
+      setNocActionMessage(err.message || 'Download failed')
+    }
+    setNocActionBusy(false)
+  }
+
+  async function uploadCompletedNoc() {
+    if (!jobId) return
+    if (!uploadNocFile) {
+      setNocActionMessage('Choose a PDF file to upload')
+      return
+    }
+    setNocActionBusy(true)
+    setNocActionMessage('')
+    try {
+      const supabase = createClient()
+      const { session, staleSession } = await safeGetSession(supabase)
+      if (redirectIfStaleSession(router, staleSession)) return
+      if (!session) { router.replace('/login'); return }
+
+      const formData = new FormData()
+      formData.append('noc_option', uploadNocOption)
+      formData.append('file', uploadNocFile)
+      formData.append('queue_next', 'true')
+
+      const res = await fetch('/api/contractor/jobs/' + jobId + '/upload-noc', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + session.access_token },
+        body: formData,
+      })
+      const payload = await res.json()
+      if (!res.ok) {
+        setNocActionMessage(payload.error || 'Upload failed')
+      } else {
+        setJob(payload.job)
+        setUploadNocFile(null)
+        setNocActionMessage('NOC uploaded — pipeline continued')
+        loadJob(jobId)
+      }
+    } catch (err) {
+      setNocActionMessage(err.message || 'Upload failed')
+    }
+    setNocActionBusy(false)
+  }
+
   if (loading) {
     return (
       <div className="contractor-page" style={{ padding: '48px 16px', textAlign: 'center' }}>
@@ -169,6 +237,10 @@ export default function ContractorJobDetailPage({ params }) {
 
   const pStatus = permitStatusConfig[job.job_status] || permitStatusConfig.draft
   const nStatus = nocStatusConfig[job.noc_status || 'not_started'] || nocStatusConfig.not_started
+  const showManualDownload = job.noc_option === 'manual_download' && job.noc_status === 'ready_for_download'
+  const showCompletedUpload = job.noc_option === 'manual_download' && (
+    job.noc_status === 'ready_for_download' || job.noc_status === 'generated'
+  )
 
   const sectionStyle = { ...contractorCardStyle(), padding: '24px', marginBottom: '20px', boxSizing: 'border-box' }
   const sectionTitleStyle = {
@@ -346,6 +418,103 @@ export default function ContractorJobDetailPage({ params }) {
           })}
         </div>
       </div>
+
+      {(showManualDownload || showCompletedUpload) ? (
+        <div style={sectionStyle}>
+          <h2 style={sectionTitleStyle}>NOC workflow</h2>
+          {showManualDownload ? (
+            <div style={{ marginBottom: showCompletedUpload ? '20px' : 0 }}>
+              <p style={{ margin: '0 0 12px', fontSize: '14px', color: contractorTheme.textBody }}>
+                Your filled NOC is ready. Download it to print and sign manually.
+              </p>
+              <button
+                type="button"
+                onClick={downloadManualNoc}
+                disabled={nocActionBusy}
+                style={{
+                  padding: '12px 18px',
+                  minHeight: '44px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: contractorTheme.accent,
+                  color: 'white',
+                  fontWeight: '600',
+                  cursor: nocActionBusy ? 'wait' : 'pointer',
+                  fontSize: '14px',
+                }}
+              >
+                {nocActionBusy ? 'Preparing...' : 'Download NOC PDF'}
+              </button>
+            </div>
+          ) : null}
+
+          {showCompletedUpload ? (
+            <div>
+              <p style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 600, color: contractorTheme.text }}>
+                Upload Completed NOC
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                {[
+                  { value: 'upload_signed', label: 'Upload signed NOC' },
+                  { value: 'upload_notarized', label: 'Upload notarized NOC' },
+                  { value: 'upload_recorded', label: 'Upload recorded NOC' },
+                ].map(function (opt) {
+                  return (
+                    <label key={opt.value} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '14px', color: contractorTheme.textBody, cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="upload_noc_option"
+                        value={opt.value}
+                        checked={uploadNocOption === opt.value}
+                        onChange={function () { setUploadNocOption(opt.value) }}
+                      />
+                      {opt.label}
+                    </label>
+                  )
+                })}
+              </div>
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={function (e) { setUploadNocFile(e.target.files?.[0] || null) }}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  marginBottom: '12px',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  border: '1px solid ' + contractorTheme.border,
+                  backgroundColor: contractorTheme.inputBg,
+                  color: contractorTheme.text,
+                  boxSizing: 'border-box',
+                }}
+              />
+              <button
+                type="button"
+                onClick={uploadCompletedNoc}
+                disabled={nocActionBusy}
+                style={{
+                  padding: '12px 18px',
+                  minHeight: '44px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: contractorTheme.success,
+                  color: 'white',
+                  fontWeight: '600',
+                  cursor: nocActionBusy ? 'wait' : 'pointer',
+                  fontSize: '14px',
+                }}
+              >
+                {nocActionBusy ? 'Uploading...' : 'Upload & Continue Pipeline'}
+              </button>
+            </div>
+          ) : null}
+
+          {nocActionMessage ? (
+            <p style={{ margin: '12px 0 0', fontSize: '13px', color: contractorTheme.textMuted }}>{nocActionMessage}</p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div style={sectionStyle}>
         <h2 style={sectionTitleStyle}>Homeowner & property</h2>

@@ -112,21 +112,13 @@ async function recoverStuckRuns() {
 
 async function handleNocGenerate(job, run) {
   var { runNocPhaseForJob } = resolveLib('lib/noc/run-noc-phase.js')
+  var { handleNocGenerate: runNocHandler } = require('./handlers/noc-handler.js')
 
-  var result = await runNocPhaseForJob(job.id, { currentRunId: run.id })
-  await markRunComplete(run.id)
-
-  await supabase.from('automation_runs').insert({
-    job_id: job.id,
-    run_type: 'proof_send',
-    run_status: 'queued',
-    dependency_run_id: run.id,
-    started_at: new Date().toISOString(),
-    attempts: 0,
+  return runNocHandler(job, run, {
+    supabase: supabase,
+    markRunComplete: markRunComplete,
+    runNocPhaseForJob: runNocPhaseForJob,
   })
-  console.log('[noc-worker] Queued proof_send for job ' + job.id)
-
-  return result
 }
 
 async function handleProofSend(job, run) {
