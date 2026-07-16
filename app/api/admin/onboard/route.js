@@ -1,31 +1,5 @@
 import { authenticateRequest, requireSuperAdmin } from '../../../../lib/auth/session.js'
-
-const PORTAL_LOGIN_URL = process.env.NEXT_PUBLIC_PORTAL_URL || 'https://portal.dartiq.dev'
-
-async function sendWelcomeEmail({ contractorName, contractorEmail }) {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) {
-    console.warn('[admin/onboard] RESEND_API_KEY not set — skipping welcome email')
-    return { sent: false, skipped: true }
-  }
-
-  const { Resend } = await import('resend')
-  const resend = new Resend(apiKey)
-  await resend.emails.send({
-    from: 'DART iQ <logan@dartiq.dev>',
-    to: contractorEmail,
-    subject: 'Welcome to DART iQ — Your Account is Ready',
-    html: `
-      <h2>Welcome to DART iQ, ${contractorName}!</h2>
-      <p>Your DART iQ account has been set up. You can now log in to start submitting permits.</p>
-      <p><strong>Login URL:</strong> <a href="${PORTAL_LOGIN_URL}">portal.dartiq.dev</a></p>
-      <p><strong>Email:</strong> ${contractorEmail}</p>
-      <p>If you have any questions contact us at logan@dartiq.dev</p>
-      <p>— The DART iQ Team</p>
-    `,
-  })
-  return { sent: true }
-}
+import { sendContractorWelcomeEmail, PORTAL_LOGIN_URL } from '../../../../lib/email/contractor-welcome.js'
 
 function normalizeReviewGates(raw) {
   const gates = raw && typeof raw === 'object' ? raw : {}
@@ -134,7 +108,6 @@ export async function POST(request) {
       .update({ owner_user_id: inviteData.user.id })
       .eq('id', createdCompany.id)
 
-    // Match AHJ portals and create credential placeholders
     const { data: portals } = await context.supabase
       .from('ahj_portals')
       .select('id, name, county_or_city')
@@ -167,9 +140,10 @@ export async function POST(request) {
 
     let emailResult = { sent: false }
     try {
-      emailResult = await sendWelcomeEmail({
+      emailResult = await sendContractorWelcomeEmail({
         contractorName: firstName,
         contractorEmail: ownerEmail,
+        companyName: name,
       })
     } catch (emailErr) {
       console.error('[admin/onboard] welcome email failed:', emailErr.message)

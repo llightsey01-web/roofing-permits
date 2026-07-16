@@ -117,6 +117,26 @@ export default function CompanyDetailPage() {
     setSaving(false)
   }
 
+  async function resendOnboardingEmail() {
+    setSaving(true)
+    setMessage('')
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/admin/companies/' + id + '/resend-onboarding', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + session.access_token,
+      },
+    })
+    const payload = await res.json()
+    if (!res.ok) {
+      setMessage(payload.error || 'Failed to resend onboarding email')
+    } else {
+      setMessage('Onboarding email resent to ' + (payload.emailed || 'owner'))
+    }
+    setSaving(false)
+  }
+
   const inputStyle = {
     width: '100%', padding: '8px 10px', border: '1px solid ' + adminTheme.border,
     borderRadius: '6px', fontSize: '13px', backgroundColor: adminTheme.surfaceRaised, color: adminTheme.text, boxSizing: 'border-box',
@@ -140,7 +160,14 @@ export default function CompanyDetailPage() {
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: adminTheme.text, margin: 0 }}>{company.name}</h1>
           <p style={{ fontSize: '13px', color: adminTheme.textDim, margin: '6px 0 0 0', fontFamily: adminTheme.fontMono }}>{company.id}</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            onClick={resendOnboardingEmail}
+            disabled={saving}
+            style={{ padding: '8px 12px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}
+          >
+            Resend Onboarding Email
+          </button>
           {company.is_active === false ? (
             <button onClick={() => setActive(true)} disabled={saving} style={{ padding: '8px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
               Activate
