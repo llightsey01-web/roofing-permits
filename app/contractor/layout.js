@@ -119,6 +119,12 @@ export default function ContractorLayout({ children }) {
         setCompany(companyData || null)
         setUser({ ...authUser, ...userData })
         setLoading(false)
+
+        if (companyData?.name) {
+          document.title = companyData.name + ' — DART iQ'
+        } else {
+          document.title = 'DART iQ Contractor Portal'
+        }
       } catch (err) {
         console.error('[auth] Contractor layout auth check failed:', err)
         router.replace('/login')
@@ -165,7 +171,10 @@ export default function ContractorLayout({ children }) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          height: '64px',
+          height: 'auto',
+          minHeight: '64px',
+          paddingTop: '10px',
+          paddingBottom: '10px',
           boxShadow: contractorTheme.shadow,
         }}
       >
@@ -201,15 +210,58 @@ export default function ContractorLayout({ children }) {
             </div>
             <div style={{ textAlign: 'left', minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ color: contractorTheme.text, fontSize: '18px', fontWeight: '700' }}>Dart iQ</span>
+                <span style={{ color: contractorTheme.text, fontSize: '18px', fontWeight: '700' }}>DART iQ</span>
                 <EnvironmentBadge label="Contractor" variant="contractor" />
               </div>
-              <span
-                className="contractor-header-subtitle"
-                style={{ color: contractorTheme.textMuted, fontSize: '12px', display: 'block' }}
-              >
-                Permit automation by {contractorTheme.companyLegal}
-              </span>
+              {company?.name ? (
+                <div className="contractor-header-company" style={{ marginTop: '2px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    minWidth: 0,
+                  }}>
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: '7px',
+                        height: '7px',
+                        borderRadius: '50%',
+                        backgroundColor: '#16a34a',
+                        boxShadow: '0 0 6px rgba(22, 163, 74, 0.7)',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span style={{
+                      color: '#f97316',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '220px',
+                    }}>
+                      {company.name}
+                    </span>
+                  </div>
+                  <span style={{
+                    color: '#94a3b8',
+                    fontSize: '11px',
+                    display: 'block',
+                    marginTop: '1px',
+                    paddingLeft: '13px',
+                  }}>
+                    Contractor Portal 🔒
+                  </span>
+                </div>
+              ) : (
+                <span
+                  className="contractor-header-subtitle"
+                  style={{ color: contractorTheme.textMuted, fontSize: '12px', display: 'block' }}
+                >
+                  Permit automation by {contractorTheme.companyLegal}
+                </span>
+              )}
             </div>
           </button>
           {!hideNav ? (

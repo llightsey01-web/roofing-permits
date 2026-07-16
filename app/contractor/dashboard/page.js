@@ -38,10 +38,18 @@ function getCurrentStageLabel(job) {
   return STAGE_LABELS[stage.key] || stage.label
 }
 
+function getGreeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 17) return 'Good afternoon'
+  return 'Good evening'
+}
+
 export default function ContractorDashboardPage() {
   const router = useRouter()
   const [jobs, setJobs] = useState([])
   const [pendingReviewJobIds, setPendingReviewJobIds] = useState(new Set())
+  const [companyName, setCompanyName] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -67,6 +75,14 @@ export default function ContractorDashboardPage() {
         setLoading(false)
         return
       }
+
+      const { data: companyData } = await supabase
+        .from('companies')
+        .select('name')
+        .eq('id', userData.company_id)
+        .single()
+
+      if (companyData?.name) setCompanyName(companyData.name)
 
       const response = await fetch('/api/contractor/jobs', {
         headers: { Authorization: 'Bearer ' + session.access_token },
@@ -110,14 +126,26 @@ export default function ContractorDashboardPage() {
     issued: jobs.filter(j => j.job_status === 'permit_issued').length,
   }
 
+  const greeting = getGreeting()
+  const welcomeName = companyName || 'Contractor'
+
   return (
     <div className="contractor-page">
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: 0 }}>
+          {greeting}, <span style={{ color: '#f97316' }}>{welcomeName}</span> 👋
+        </h1>
+        <p style={{ fontSize: '15px', color: contractorTheme.textMuted, margin: '6px 0 0 0' }}>
+          DART iQ Contractor Portal — Your data is private and secured
+        </p>
+      </div>
+
       <div className="contractor-dashboard-header">
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: 0 }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '600', color: contractorTheme.text, margin: 0 }}>
             Dashboard
-          </h1>
-          <p style={{ fontSize: '15px', color: contractorTheme.textMuted, margin: '6px 0 0 0' }}>
+          </h2>
+          <p style={{ fontSize: '14px', color: contractorTheme.textMuted, margin: '6px 0 0 0' }}>
             Track every permit application in one place
           </p>
         </div>

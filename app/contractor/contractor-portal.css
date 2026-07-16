@@ -300,6 +300,18 @@ html[data-theme='light'] .contractor-theme-toggle .icon-moon { display: block; }
     display: none !important;
   }
 
+  .contractor-header {
+    padding: 0 16px !important;
+    height: auto !important;
+    min-height: 56px;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .contractor-header-company span {
+    max-width: 160px !important;
+  }
+
   .contractor-bottom-nav {
     display: block;
   }
@@ -310,11 +322,6 @@ html[data-theme='light'] .contractor-theme-toggle .icon-moon { display: block; }
 
   .contractor-footer-desktop {
     display: none;
-  }
-
-  .contractor-header {
-    padding: 0 16px !important;
-    height: 56px !important;
   }
 
   .contractor-page,
