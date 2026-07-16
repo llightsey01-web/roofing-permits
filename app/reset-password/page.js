@@ -15,6 +15,7 @@ const theme = {
   inputBg: '#0f172a',
   error: '#ef4444',
   success: '#10b981',
+  warning: '#f59e0b',
   fontFamily: contractorTheme.fontFamily,
 }
 
@@ -72,6 +73,42 @@ function DartIQLogo() {
   )
 }
 
+async function establishRecoverySession(supabase) {
+  const hash = typeof window !== 'undefined' ? window.location.hash : ''
+  const search = typeof window !== 'undefined' ? window.location.search : ''
+
+  // Implicit / hash flow: #access_token=...&refresh_token=...&type=recovery
+  if (hash && hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.replace(/^#/, ''))
+    const accessToken = params.get('access_token')
+    const refreshToken = params.get('refresh_token')
+    if (accessToken && refreshToken) {
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      })
+      if (error) throw error
+      // Clean tokens out of the address bar after session is established
+      window.history.replaceState({}, document.title, '/reset-password')
+      return true
+    }
+  }
+
+  // PKCE flow: ?code=...
+  if (search.includes('code=')) {
+    const code = new URLSearchParams(search).get('code')
+    if (code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(code)
+      if (error) throw error
+      window.history.replaceState({}, document.title, '/reset-password')
+      return true
+    }
+  }
+
+  const { data: { session } } = await supabase.auth.getSession()
+  return Boolean(session)
+}
+
 export default function ResetPasswordPage() {
   useDarkPageBackground()
 
@@ -79,9 +116,9 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [ready, setReady] = useState(false)
+  const [verifying, setVerifying] = useState(true)
   const [sessionReady, setSessionReady] = useState(false)
 
   const inputStyle = {
@@ -94,57 +131,56 @@ export default function ResetPasswordPage() {
     backgroundColor: theme.inputBg,
     color: theme.text,
     outline: 'none',
+    marginTop: '6px',
   }
 
   const labelStyle = {
     display: 'block',
     fontSize: '13px',
     fontWeight: '600',
-    marginBottom: '6px',
     color: theme.textMuted,
   }
 
   useEffect(function () {
+    const supabase = createClient()
+    let cancelled = false
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(function (event) {
+      if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+        if (!cancelled) {
+          setSessionReady(true)
+          setVerifying(false)
+          setError('')
+        }
+      }
+    })
+
     async function prepareSession() {
       try {
-        const supabase = createClient()
-
-        // Handle PKCE / hash recovery tokens from Supabase email link
-        const hash = typeof window !== 'undefined' ? window.location.hash : ''
-        if (hash && hash.includes('access_token')) {
-          const params = new URLSearchParams(hash.replace(/^#/, ''))
-          const accessToken = params.get('access_token')
-          const refreshToken = params.get('refresh_token')
-          if (accessToken && refreshToken) {
-            await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            })
-          }
-        }
-
-        const search = typeof window !== 'undefined' ? window.location.search : ''
-        if (search.includes('code=')) {
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(
-            new URLSearchParams(search).get('code')
-          )
-          if (exchangeError) {
-            console.warn('[reset-password] code exchange failed:', exchangeError.message)
-          }
-        }
-
-        const { data: { session } } = await supabase.auth.getSession()
-        setSessionReady(!!session)
-        if (!session) {
+        const ok = await establishRecoverySession(supabase)
+        if (cancelled) return
+        if (ok) {
+          setSessionReady(true)
+          setError('')
+        } else {
+          setSessionReady(false)
           setError('This reset link is invalid or has expired. Request a new link from the login page.')
         }
       } catch (err) {
-        setError('Unable to verify reset link. Please try again.')
+        if (!cancelled) {
+          setSessionReady(false)
+          setError(err.message || 'Unable to verify reset link. Please try again.')
+        }
       }
-      setReady(true)
+      if (!cancelled) setVerifying(false)
     }
 
     prepareSession()
+
+    return function () {
+      cancelled = true
+      authListener.subscription.unsubscribe()
+    }
   }, [])
 
   function validatePassword(value) {
@@ -157,7 +193,6 @@ export default function ResetPasswordPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    setSuccess('')
 
     const passwordError = validatePassword(password)
     if (passwordError) {
@@ -179,10 +214,37 @@ export default function ResetPasswordPage() {
       return
     }
 
-    setSuccess('Password updated successfully. Redirecting...')
+    setSuccess(true)
     setTimeout(function () {
       router.push('/contractor/dashboard')
-    }, 1000)
+    }, 2000)
+  }
+
+  if (success) {
+    return (
+      <div style={{
+        minHeight: '100dvh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: theme.pageBg,
+        fontFamily: theme.fontFamily,
+        padding: '24px',
+      }}>
+        <div style={{
+          backgroundColor: theme.surface,
+          padding: '40px 36px',
+          borderRadius: '14px',
+          border: '1px solid ' + theme.border,
+          textAlign: 'center',
+          maxWidth: '420px',
+          width: '100%',
+        }}>
+          <h2 style={{ color: theme.success, margin: '0 0 10px', fontSize: '22px' }}>✓ Password Updated</h2>
+          <p style={{ color: theme.textMuted, margin: 0 }}>Redirecting to your portal...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -218,18 +280,29 @@ export default function ResetPasswordPage() {
           color: theme.text,
           fontSize: '22px',
           fontWeight: '700',
-          marginBottom: '28px',
+          marginBottom: '8px',
           textAlign: 'center',
           letterSpacing: '-0.02em',
         }}>
           Set New Password
         </h1>
+        <p style={{
+          color: theme.textMuted,
+          textAlign: 'center',
+          fontSize: '14px',
+          marginTop: 0,
+          marginBottom: '28px',
+        }}>
+          Choose a new password for your DART iQ account
+        </p>
 
-        {!ready ? (
-          <p style={{ color: theme.textMuted, textAlign: 'center', fontSize: '14px' }}>
+        {verifying ? (
+          <p style={{ color: theme.warning, textAlign: 'center', fontSize: '14px' }}>
             Verifying reset link...
           </p>
-        ) : (
+        ) : null}
+
+        {!verifying && sessionReady ? (
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '16px' }}>
               <label style={labelStyle} htmlFor="new-password">New Password</label>
@@ -241,7 +314,7 @@ export default function ResetPasswordPage() {
                 onChange={function (e) { setPassword(e.target.value) }}
                 required
                 autoComplete="new-password"
-                disabled={!sessionReady || loading}
+                disabled={loading}
                 style={inputStyle}
               />
             </div>
@@ -256,12 +329,12 @@ export default function ResetPasswordPage() {
                 onChange={function (e) { setConfirmPassword(e.target.value) }}
                 required
                 autoComplete="new-password"
-                disabled={!sessionReady || loading}
+                disabled={loading}
                 style={inputStyle}
               />
             </div>
 
-            {error && (
+            {error ? (
               <p style={{
                 color: theme.error,
                 backgroundColor: 'rgba(239, 68, 68, 0.12)',
@@ -273,62 +346,63 @@ export default function ResetPasswordPage() {
               }}>
                 {error}
               </p>
-            )}
-
-            {success && (
-              <p style={{
-                color: theme.success,
-                backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                border: '1px solid rgba(16, 185, 129, 0.35)',
-                borderRadius: '10px',
-                fontSize: '14px',
-                marginBottom: '16px',
-                padding: '10px 12px',
-              }}>
-                {success}
-              </p>
-            )}
+            ) : null}
 
             <button
               type="submit"
-              disabled={!sessionReady || loading}
+              disabled={loading}
               style={{
                 width: '100%',
                 padding: '13px',
-                backgroundColor: (!sessionReady || loading) ? theme.border : theme.accent,
+                backgroundColor: loading ? theme.border : theme.accent,
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '10px',
                 fontSize: '15px',
                 fontWeight: '600',
-                cursor: (!sessionReady || loading) ? 'not-allowed' : 'pointer',
-                boxShadow: (!sessionReady || loading) ? 'none' : '0 0 20px rgba(59, 130, 246, 0.35)',
-                marginBottom: '14px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                boxShadow: loading ? 'none' : '0 0 20px rgba(59, 130, 246, 0.35)',
               }}
             >
               {loading ? 'Updating...' : 'Update Password'}
             </button>
-
-            {!sessionReady ? (
-              <button
-                type="button"
-                onClick={function () { router.push('/login') }}
-                style={{
-                  width: '100%',
-                  background: 'none',
-                  border: 'none',
-                  color: theme.accent,
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  padding: '8px 0',
-                }}
-              >
-                ← Back to Login
-              </button>
-            ) : null}
           </form>
-        )}
+        ) : null}
+
+        {!verifying && !sessionReady ? (
+          <div>
+            {error ? (
+              <p style={{
+                color: theme.error,
+                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+                borderRadius: '10px',
+                fontSize: '14px',
+                marginBottom: '16px',
+                padding: '10px 12px',
+              }}>
+                {error}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={function () { router.push('/login') }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: 'transparent',
+                border: '1px solid ' + theme.border,
+                borderRadius: '10px',
+                color: theme.accent,
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}
+            >
+              ← Back to Login
+            </button>
+          </div>
+        ) : null}
 
         <p style={{
           textAlign: 'center',
