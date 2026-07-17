@@ -5,62 +5,135 @@ import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '../../lib/supabase'
 import { safeGetUser, redirectIfStaleSession } from '../../lib/auth/safe-auth'
 import EnvironmentBadge from '../ui/EnvironmentBadge'
-import { contractorTheme } from '../../lib/ui/contractor-theme'
+import {
+  portalShellTheme,
+  portalShellRootStyle,
+  portalAsideStyle,
+  portalNavItemStyle,
+  portalSectionLabelStyle,
+  portalSignOutButtonStyle,
+} from '../../lib/ui/admin-theme'
 
-const navItems = [
-  { href: '/contractor/dashboard', label: 'My Jobs' },
-  { href: '/contractor/jobs/new', label: 'New Job' },
-  { href: '/contractor/ahj-guide', label: 'Permit Guide' },
-  { href: '/contractor/settings', label: 'Settings' },
+const navSections = [
+  {
+    label: 'MAIN',
+    items: [
+      {
+        href: '/contractor/dashboard',
+        label: 'Dashboard',
+        icon: '📋',
+        match: (p) => p === '/contractor/dashboard',
+      },
+      {
+        href: '/contractor/jobs/new',
+        label: 'New Job',
+        icon: '📝',
+        match: (p) => p === '/contractor/jobs/new',
+      },
+      {
+        href: '/contractor/jobs',
+        label: 'Jobs',
+        icon: '📁',
+        match: (p) =>
+          p === '/contractor/jobs' ||
+          (p.startsWith('/contractor/jobs/') && p !== '/contractor/jobs/new'),
+      },
+    ],
+  },
+  {
+    label: 'TOOLS',
+    items: [
+      {
+        href: '/contractor/ahj-guide',
+        label: 'Permit Guide',
+        icon: '📖',
+        match: (p) => p.startsWith('/contractor/ahj-guide'),
+      },
+      {
+        href: '/contractor/materials',
+        label: 'Materials',
+        icon: '🏗️',
+        match: (p) => p.startsWith('/contractor/materials'),
+      },
+    ],
+  },
+  {
+    label: 'ACCOUNT',
+    items: [
+      {
+        href: '/contractor/settings',
+        label: 'Settings',
+        icon: '⚙️',
+        match: (p) => p.startsWith('/contractor/settings'),
+      },
+    ],
+  },
 ]
 
 export default function ContractorLayout({ children }) {
   const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState(null)
+  const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function checkAuth() {
       try {
-      const supabase = createClient()
-      const { user: authUser, staleSession } = await safeGetUser(supabase)
-      if (redirectIfStaleSession(router, staleSession)) return
-      if (!authUser) {
-        router.replace('/login')
-        return
-      }
+        const supabase = createClient()
+        const { user: authUser, staleSession } = await safeGetUser(supabase)
+        if (redirectIfStaleSession(router, staleSession)) return
+        if (!authUser) {
+          router.replace('/login')
+          return
+        }
 
-      const { data: userData } = await supabase
-        .from('users')
-        .select('role, company_id, full_name')
-        .eq('id', authUser.id)
-        .single()
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role, company_id, full_name')
+          .eq('id', authUser.id)
+          .single()
 
-      if (userData?.role === 'super_admin') {
-        router.push('/dashboard')
-        return
-      }
+        if (userData?.role === 'super_admin') {
+          router.push('/dashboard')
+          return
+        }
 
-      if (userData?.role !== 'company_admin') {
-        router.push('/login')
-        return
-      }
+        if (userData?.role !== 'company_admin' || !userData?.company_id) {
+          router.push('/login')
+          return
+        }
 
-      if (!userData?.company_id) {
-        router.push('/login')
-        return
-      }
+        const { data: companyData } = await supabase
+          .from('companies')
+          .select('id, name, onboarding_status, notes')
+          .eq('id', userData.company_id)
+          .single()
 
-      setUser({ ...authUser, ...userData })
-      setLoading(false)
+        const status = companyData?.onboarding_status || 'pending'
+        const onOnboarding = pathname?.startsWith('/contractor/onboarding')
+
+        if ((status === 'pending' || status === 'in_progress' || status === 'needs_changes') && !onOnboarding) {
+          router.replace('/contractor/onboarding')
+          return
+        }
+
+        setCompany(companyData || null)
+        setUser({ ...authUser, ...userData })
+        setLoading(false)
+
+        if (companyData?.name) {
+          document.title = companyData.name + ' — DART iQ'
+        } else {
+          document.title = 'DART iQ Contractor Portal'
+        }
       } catch (err) {
         console.error('[auth] Contractor layout auth check failed:', err)
         router.replace('/login')
       }
     }
     checkAuth()
-  }, [router])
+  }, [router, pathname])
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -72,82 +145,141 @@ export default function ContractorLayout({ children }) {
     return (
       <div style={{
         minHeight: '100vh',
-        background: contractorTheme.pageBgGradient,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: portalShellTheme.pageBg,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}>
-        <p style={{ color: contractorTheme.textMuted, fontSize: '15px' }}>Loading your portal...</p>
+        <p style={{
+          color: portalShellTheme.textMuted,
+          fontSize: '13px',
+          fontFamily: portalShellTheme.fontMono,
+        }}>
+          LOADING PORTAL...
+        </p>
       </div>
     )
   }
 
+  const status = company?.onboarding_status || 'pending'
+  const showHolding = status === 'pending_review'
+  const hideNav =
+    status === 'pending' ||
+    status === 'in_progress' ||
+    status === 'needs_changes' ||
+    status === 'pending_review'
+
   return (
-    <div style={{ minHeight: '100vh', background: contractorTheme.pageBgGradient }}>
-      <header style={{
-        backgroundColor: contractorTheme.headerBg,
-        borderBottom: '1px solid ' + contractorTheme.headerBorder,
-        padding: '0 28px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        height: '64px',
-        boxShadow: contractorTheme.shadow,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '36px', height: '36px',
-              background: 'linear-gradient(135deg, #0284c7 0%, #059669 100%)',
-              borderRadius: '10px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{ color: 'white', fontSize: '16px', fontWeight: '700' }}>A</span>
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: contractorTheme.text, fontSize: '17px', fontWeight: '700' }}>Contractor Portal</span>
-                <EnvironmentBadge label="Client" variant="contractor" />
+    <div style={portalShellRootStyle()}>
+      {!hideNav ? (
+        <aside style={portalAsideStyle()}>
+          <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid ' + portalShellTheme.border }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <div style={{
+                width: '30px',
+                height: '30px',
+                background: 'linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)',
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <span style={{ color: 'white', fontSize: '12px', fontWeight: '800' }}>D</span>
               </div>
-              <span style={{ color: contractorTheme.textMuted, fontSize: '12px' }}>AHJ-iQ · permit tracking for your team</span>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: '700', color: portalShellTheme.text }}>DART iQ</div>
+                <div style={{ fontSize: '10px', color: portalShellTheme.textDim, fontFamily: portalShellTheme.fontMono }}>
+                  Contractor Portal
+                </div>
+              </div>
             </div>
+            <EnvironmentBadge label="Contractor" variant="contractor" />
+            {company?.name ? (
+              <div style={{
+                marginTop: '10px',
+                fontSize: '11px',
+                color: portalShellTheme.textMuted,
+                fontFamily: portalShellTheme.fontMono,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
+                {company.name}
+              </div>
+            ) : null}
           </div>
-          <nav style={{ display: 'flex', gap: '6px' }}>
-            {navItems.map(item => {
-              const isActive = pathname === item.href ||
-                (item.label === 'My Jobs' && pathname?.startsWith('/contractor/jobs/') && pathname !== '/contractor/jobs/new')
+
+          <nav style={{ padding: '8px 10px 12px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+            {navSections.map(function (section) {
               return (
-                <button
-                  key={item.href}
-                  onClick={() => router.push(item.href)}
-                  style={{
-                    fontSize: '14px', padding: '8px 16px', borderRadius: '999px',
-                    border: 'none', cursor: 'pointer',
-                    backgroundColor: isActive ? contractorTheme.navActiveBg : 'transparent',
-                    color: isActive ? contractorTheme.navActive : contractorTheme.textMuted,
-                    fontWeight: isActive ? '600' : '500',
-                  }}
-                >
-                  {item.label}
-                </button>
+                <div key={section.label}>
+                  <p style={portalSectionLabelStyle()}>{section.label}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {section.items.map(function (item) {
+                      const active = item.match(pathname || '')
+                      return (
+                        <button
+                          key={item.href}
+                          type="button"
+                          onClick={() => router.push(item.href)}
+                          style={portalNavItemStyle(active)}
+                        >
+                          <span aria-hidden="true" style={{ fontSize: '13px', lineHeight: 1, width: '18px', textAlign: 'center' }}>
+                            {item.icon}
+                          </span>
+                          <span>{item.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
               )
             })}
           </nav>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '13px', color: contractorTheme.textMuted }}>{user?.email}</span>
-          <button
-            onClick={handleSignOut}
-            style={{
-              fontSize: '13px', padding: '8px 16px',
-              border: '1px solid ' + contractorTheme.borderStrong,
-              borderRadius: '999px',
-              backgroundColor: 'white',
-              color: contractorTheme.textBody,
-              cursor: 'pointer',
-            }}
-          >
-            Sign out
-          </button>
-        </div>
-      </header>
-      <main>{children}</main>
+
+          <div style={{ padding: '14px 16px', borderTop: '1px solid ' + portalShellTheme.border }}>
+            <div style={{
+              fontSize: '11px',
+              color: portalShellTheme.textDim,
+              fontFamily: portalShellTheme.fontMono,
+              marginBottom: '10px',
+              wordBreak: 'break-all',
+            }}>
+              {user?.email}
+            </div>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              style={portalSignOutButtonStyle()}
+            >
+              🚪 Logout
+            </button>
+          </div>
+        </aside>
+      ) : null}
+
+      <main style={{ flex: 1, minWidth: 0 }}>
+        {showHolding && !pathname?.startsWith('/contractor/onboarding') ? (
+          <div style={{ maxWidth: '640px', margin: '48px auto', padding: '0 20px' }}>
+            <div style={{
+              backgroundColor: portalShellTheme.surface,
+              border: '1px solid ' + portalShellTheme.border,
+              borderRadius: '8px',
+              padding: '36px',
+              textAlign: 'center',
+            }}>
+              <h1 style={{ margin: '0 0 12px', color: portalShellTheme.text, fontSize: '22px' }}>
+                Account under review
+              </h1>
+              <p style={{ margin: 0, color: portalShellTheme.textMuted, lineHeight: 1.6, fontSize: '14px' }}>
+                Account under review. We will notify you within 1 business day.
+              </p>
+            </div>
+          </div>
+        ) : (
+          children
+        )}
+      </main>
     </div>
   )
 }

@@ -1,11 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { createClient } from '../../lib/supabase'
 import { safeGetUser, redirectIfStaleSession } from '../../lib/auth/safe-auth'
 import EnvironmentBadge from '../ui/EnvironmentBadge'
-import { adminTheme } from '../../lib/ui/admin-theme'
+import {
+  portalShellTheme,
+  portalShellRootStyle,
+  portalAsideStyle,
+  portalNavItemStyle,
+  portalSectionLabelStyle,
+  portalSignOutButtonStyle,
+} from '../../lib/ui/admin-theme'
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', match: (p) => p === '/admin' },
@@ -64,39 +71,45 @@ export default function AdminLayout({ children }) {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: adminTheme.pageBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: adminTheme.textMuted, fontSize: '13px', fontFamily: adminTheme.fontMono }}>INITIALIZING CONSOLE...</p>
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: portalShellTheme.pageBg,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <p style={{
+          color: portalShellTheme.textMuted,
+          fontSize: '13px',
+          fontFamily: portalShellTheme.fontMono,
+        }}>
+          INITIALIZING CONSOLE...
+        </p>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: adminTheme.pageBg, color: adminTheme.text, display: 'flex' }}>
-      <aside style={{
-        width: '220px',
-        flexShrink: 0,
-        backgroundColor: adminTheme.headerBg,
-        borderRight: '1px solid ' + adminTheme.border,
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        position: 'sticky',
-        top: 0,
-        alignSelf: 'flex-start',
-      }}>
-        <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid ' + adminTheme.border }}>
+    <div style={portalShellRootStyle()}>
+      <aside style={portalAsideStyle()}>
+        <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid ' + portalShellTheme.border }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
             <div style={{
-              width: '30px', height: '30px',
+              width: '30px',
+              height: '30px',
               background: 'linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)',
               borderRadius: '6px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}>
               <span style={{ color: 'white', fontSize: '12px', fontWeight: '800' }}>D</span>
             </div>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: '700', color: adminTheme.text }}>DART iQ</div>
-              <div style={{ fontSize: '10px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono }}>Admin Portal</div>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: portalShellTheme.text }}>DART iQ</div>
+              <div style={{ fontSize: '10px', color: portalShellTheme.textDim, fontFamily: portalShellTheme.fontMono }}>
+                Admin Portal
+              </div>
             </div>
           </div>
           <EnvironmentBadge label="Internal" variant="admin" />
@@ -108,20 +121,9 @@ export default function AdminLayout({ children }) {
             return (
               <button
                 key={item.href}
+                type="button"
                 onClick={() => router.push(item.href)}
-                style={{
-                  textAlign: 'left',
-                  fontSize: '13px',
-                  padding: '10px 12px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontFamily: adminTheme.fontMono,
-                  backgroundColor: active ? adminTheme.navActive : 'transparent',
-                  color: active ? adminTheme.text : adminTheme.textMuted,
-                  fontWeight: active ? '600' : '400',
-                  borderLeft: active ? '3px solid #3b82f6' : '3px solid transparent',
-                }}
+                style={portalNavItemStyle(active)}
               >
                 {item.label}
               </button>
@@ -129,23 +131,20 @@ export default function AdminLayout({ children }) {
           })}
         </nav>
 
-        <div style={{ padding: '14px 16px', borderTop: '1px solid ' + adminTheme.border }}>
-          <div style={{ fontSize: '11px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono, marginBottom: '10px', wordBreak: 'break-all' }}>
+        <div style={{ padding: '14px 16px', borderTop: '1px solid ' + portalShellTheme.border }}>
+          <div style={{
+            fontSize: '11px',
+            color: portalShellTheme.textDim,
+            fontFamily: portalShellTheme.fontMono,
+            marginBottom: '10px',
+            wordBreak: 'break-all',
+          }}>
             {user?.email}
           </div>
           <button
+            type="button"
             onClick={handleSignOut}
-            style={{
-              width: '100%',
-              fontSize: '11px',
-              padding: '8px 12px',
-              border: '1px solid ' + adminTheme.border,
-              borderRadius: '6px',
-              backgroundColor: adminTheme.surface,
-              color: adminTheme.textMuted,
-              cursor: 'pointer',
-              fontFamily: adminTheme.fontMono,
-            }}
+            style={portalSignOutButtonStyle()}
           >
             Sign out
           </button>
