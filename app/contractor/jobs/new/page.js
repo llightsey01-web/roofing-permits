@@ -102,16 +102,21 @@ export default function ContractorNewJobPage() {
         })
         const data = await res.json()
         if (!res.ok) return
-        const materials = data.materials || []
-        function firstOf(layer) {
-          const row = materials.find(function (m) { return m.layer_type === layer })
-          const p = row?.product
-          if (!p) return null
+        const grouped = data.grouped || {}
+        const flat = Array.isArray(data.materials) ? data.materials : []
+        function productFromPref(row) {
+          const p = row?.product || row
+          if (!p || (!p.manufacturer && !p.product_name)) return null
           return {
             manufacturer: p.manufacturer || '',
             product_name: p.product_name || '',
             approval_number: p.approval_number || p.fl_approval_number || '',
           }
+        }
+        function firstOf(layer) {
+          if (grouped[layer] && grouped[layer][0]) return productFromPref(grouped[layer][0])
+          const row = flat.find(function (m) { return m.layer_type === layer })
+          return productFromPref(row)
         }
         const primary = firstOf('primary')
         const under = firstOf('underlayment')

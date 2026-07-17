@@ -11,6 +11,12 @@ const { resolvePolkLegalDescription } = require('../../lib/parcels/polk-legal-de
 const { triggerNocAfterPhase1 } = require('../../lib/automation/noc-trigger')
 const { saveCheckpoint, shouldSkipStep } = require('../shared/checkpoint.js')
 const { logRecoveryStart } = require('../shared/recovery.js')
+const {
+  loadSession,
+  saveSession,
+  clearSession,
+  isAccelaSessionValid,
+} = require('../../lib/automation/session-store')
 
 function getSupabase() {
   const ws = require('ws')
@@ -280,11 +286,17 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
   }
 
   const solver = new Solver(process.env.TWOCAPTCHA_API_KEY)
+  const sessionProvider = config.sessionProvider || 'polk_accela'
+  const companyId = jobData.company_id
+  const savedSession = await loadSession(sessionProvider, companyId)
   const browser = await chromium.launch({
     headless: browserOpts.headless !== undefined ? browserOpts.headless : true,
     slowMo: browserOpts.slowMo || 300,
   })
-  const page = await browser.newPage()
+  const context = savedSession
+    ? await browser.newContext({ storageState: savedSession })
+    : await browser.newContext()
+  const page = await context.newPage()
   page.setDefaultTimeout(45000)
   let stepNumber = 0
 
@@ -696,12 +708,20 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
   console.log('[recovery] Starting from step:', startFromStep)
 
   try {
-    // Step 1 — Login
+    // Step 1 — Login (reuse saved browser session when still valid)
     stepNumber++
     if (!(await shouldSkipStep(runId, stepNumber))) {
     await logStep(page, runId, stepNumber, 'login', async function() {
       await page.goto(config.portalUrl, { waitUntil: 'domcontentloaded' })
-      await page.waitForTimeout(3000)
+      await page.waitForTimeout(1500)
+      var sessionOk = await isAccelaSessionValid(page)
+      if (sessionOk) {
+        console.log('[' + sessionProvider + '] Using saved session — skipping login ✓')
+        return
+      }
+      console.log('[' + sessionProvider + '] Session expired or missing — logging in fresh')
+      await clearSession(sessionProvider, companyId)
+      await page.waitForTimeout(1500)
       var frameHandle = await page.waitForSelector('iframe:not(.mask_iframe)', { timeout: 15000 })
       var frame = await frameHandle.contentFrame()
       if (!frame) throw new Error('Login iframe not found after waiting')
@@ -737,6 +757,7 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
       })
       await page.waitForURL('**/Dashboard.aspx**', { timeout: 15000 })
       await page.waitForTimeout(2000)
+      console.log('[' + sessionProvider + '] Login complete — session will be saved for next run')
     })
     }
 
@@ -1107,9 +1128,20 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
     console.log('========================================\n')
 
   } catch (err) {
+    if (/login|session|expired|unauthorized|sign.?in/i.test(err.message || '')) {
+      console.log('[' + sessionProvider + '] Session may have expired — clearing')
+      await clearSession(sessionProvider, companyId)
+    }
     if (!err.phase1Handled) await handleRunError(runId, jobData.id, err)
     throw err
   } finally {
+    try {
+      var state = await context.storageState()
+      await saveSession(sessionProvider, companyId, state)
+    } catch (sessionErr) {
+      console.log('[' + sessionProvider + '] Could not save session:', sessionErr.message)
+    }
+    await context.close().catch(function () {})
     await browser.close()
   }
 }

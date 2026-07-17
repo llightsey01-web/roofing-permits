@@ -9,6 +9,7 @@ module.exports = {
   workflowFile: 'polk-county.runner.js',
   workflowType: 'portal',
   credentialKey: 'POLK_COUNTY',
+  sessionProvider: 'polk_accela',
   permitType: 'Re-Roof Permit',
   version: 1,
   lastVerified: '2026-06-03',

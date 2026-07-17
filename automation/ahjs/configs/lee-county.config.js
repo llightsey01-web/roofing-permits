@@ -8,6 +8,7 @@ module.exports = {
   workflowFile: 'lee-county.runner.js',
   workflowType: 'portal',
   credentialKey: 'LEE_COUNTY',
+  sessionProvider: 'lee_accela',
   permitType: 'Re-Roof Permit',
   version: 1,
   lastVerified: '2026-06-03',

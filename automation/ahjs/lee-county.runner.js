@@ -1,5 +1,9 @@
 const leeConfig = require('./configs/lee-county.config')
 const { readLegalDescriptionFromPortal } = require('../../lib/parcels/polk-legal-description')
+const {
+  clearSession,
+  isAccelaSessionValid,
+} = require('../../lib/automation/session-store')
 
 const screenshotPath = require.resolve('../shared/screenshot')
 const polkPath = require.resolve('./polk-county.runner')
@@ -16,7 +20,17 @@ screenshotMod.logStep = async function leeAwareLogStep(page, runId, stepNumber, 
   if (stepName === 'login' && leeLoginContext) {
     var ctx = leeLoginContext
     return originalLogStep(page, runId, stepNumber, stepName, async function() {
+      await page.goto(ctx.config.portalUrl, { waitUntil: 'domcontentloaded' })
+      await page.waitForTimeout(1500)
+      var sessionOk = await isAccelaSessionValid(page)
+      if (sessionOk) {
+        console.log('[lee_accela] Using saved session — skipping login ✓')
+        return
+      }
+      console.log('[lee_accela] Session expired or missing — logging in fresh')
+      await clearSession('lee_accela', ctx.companyId)
       await loginLeeAngularCommunityView(page, ctx.credentials, ctx.config)
+      console.log('[lee_accela] Login complete — session will be saved for next run')
     })
   }
   return originalLogStep.apply(this, arguments)
@@ -96,7 +110,11 @@ async function resolveLeeLegalDescription(page, parcelNumber, selectors) {
 async function runLeeCounty(jobData, runId, runnerOptions) {
   var credentials = await loadCredentials(jobData.company_id, jobData.ahj_id)
 
-  leeLoginContext = { credentials: credentials, config: leeConfig }
+  leeLoginContext = {
+    credentials: credentials,
+    config: leeConfig,
+    companyId: jobData.company_id,
+  }
   try {
     return await runAccelaPortal(jobData, runId, runnerOptions, leeConfig, {
       resolveLegalDescription: resolveLeeLegalDescription,

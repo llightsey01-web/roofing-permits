@@ -73,49 +73,48 @@ export async function POST(request) {
       return Response.json({ error: 'materials array is required' }, { status: 400 })
     }
 
-    const replace = body.replace === true
-    if (replace) {
-      await context.supabase.from('company_materials').delete().eq('company_id', context.companyId)
-    }
+    // Spec: replace full preference set for the company
+    await context.supabase.from('company_materials').delete().eq('company_id', context.companyId)
 
-    const upserted = []
+    const rows = []
     for (const item of items) {
       const productApprovalId = item.productApprovalId || item.product_approval_id
       const layerType = item.layerType || item.layer_type
       if (!productApprovalId || !layerType) continue
-
-      const row = {
+      rows.push({
         company_id: context.companyId,
         product_approval_id: productApprovalId,
         layer_type: layerType,
         is_default: item.isDefault === true || item.is_default === true,
-      }
-
-      const { data, error } = await context.supabase
-        .from('company_materials')
-        .upsert(row, { onConflict: 'company_id,product_approval_id' })
-        .select(
-          `
-          id,
-          company_id,
-          product_approval_id,
-          layer_type,
-          is_default,
-          created_at,
-          product:product_approvals (
-            id, manufacturer, product_name, approval_number, fl_approval_number, layer_type
-          )
-        `
-        )
-        .single()
-
-      if (error) {
-        return Response.json({ error: error.message }, { status: 500 })
-      }
-      upserted.push(data)
+      })
     }
 
-    return Response.json({ success: true, materials: upserted })
+    if (rows.length === 0) {
+      return Response.json({ success: true, materials: [] })
+    }
+
+    const { data, error } = await context.supabase
+      .from('company_materials')
+      .insert(rows)
+      .select(
+        `
+        id,
+        company_id,
+        product_approval_id,
+        layer_type,
+        is_default,
+        created_at,
+        product:product_approvals (
+          id, manufacturer, product_name, approval_number, fl_approval_number, layer_type
+        )
+      `
+      )
+
+    if (error) {
+      return Response.json({ error: error.message }, { status: 500 })
+    }
+
+    return Response.json({ success: true, materials: data || [] })
   } catch (err) {
     console.error('[contractor/materials] POST error:', err.message)
     return Response.json({ error: err.message }, { status: 500 })

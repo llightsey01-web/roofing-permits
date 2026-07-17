@@ -36,7 +36,7 @@ export default function ContractorMaterialsPage() {
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Failed to load preferences')
-        setInitialSelected(materialsResponseToSelected(data.materials))
+        setInitialSelected(materialsResponseToSelected(data.grouped || data.materials))
       } catch (err) {
         setLoadError(err.message)
         setInitialSelected({ primary: [], underlayment: [], ventilation: [] })

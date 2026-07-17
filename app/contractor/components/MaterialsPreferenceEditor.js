@@ -496,9 +496,18 @@ export function selectedToPayload(selected) {
   return out
 }
 
-export function materialsResponseToSelected(materials) {
+export function materialsResponseToSelected(materialsOrGrouped) {
   const selected = { primary: [], underlayment: [], ventilation: [] }
-  for (const m of materials || []) {
+  let rows = []
+  if (Array.isArray(materialsOrGrouped)) {
+    rows = materialsOrGrouped
+  } else if (materialsOrGrouped && typeof materialsOrGrouped === 'object') {
+    rows = []
+      .concat(materialsOrGrouped.primary || [])
+      .concat(materialsOrGrouped.underlayment || [])
+      .concat(materialsOrGrouped.ventilation || [])
+  }
+  for (const m of rows) {
     const layer = m.layer_type
     const product = m.product || m.product_approvals
     if (!selected[layer] || !product) continue
