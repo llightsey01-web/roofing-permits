@@ -91,6 +91,42 @@ export default function ContractorNewJobPage() {
       .then(({ data }) => setProducts(data || []))
     supabase.from('ahj_portals').select('id, name, county_or_city').eq('is_active', true)
       .then(({ data }) => setAllAHJs(data || []))
+
+    async function loadMaterialPrefs() {
+      try {
+        const { data: sessionData } = await safeGetSession(supabase)
+        const token = sessionData?.session?.access_token
+        if (!token) return
+        const res = await fetch('/api/contractor/materials', {
+          headers: { Authorization: 'Bearer ' + token },
+        })
+        const data = await res.json()
+        if (!res.ok) return
+        const materials = data.materials || []
+        function firstOf(layer) {
+          const row = materials.find(function (m) { return m.layer_type === layer })
+          const p = row?.product
+          if (!p) return null
+          return {
+            manufacturer: p.manufacturer || '',
+            product_name: p.product_name || '',
+            approval_number: p.approval_number || p.fl_approval_number || '',
+          }
+        }
+        const primary = firstOf('primary')
+        const under = firstOf('underlayment')
+        const vent = firstOf('ventilation')
+        if (primary) setPrimaryMaterial(primary)
+        if (under) setUnderlayment(under)
+        if (vent) {
+          setVentilation(vent)
+          setShowVentilation(true)
+        }
+      } catch (err) {
+        console.warn('[jobs/new] material prefs load failed:', err.message)
+      }
+    }
+    loadMaterialPrefs()
   }, [])
 
   async function checkAhjCredentials(ahj, token) {

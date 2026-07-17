@@ -16,6 +16,7 @@ import './contractor-portal.css'
 const navItems = [
   { href: '/contractor/dashboard', label: 'Dashboard', shortLabel: 'Home', icon: '⌂' },
   { href: '/contractor/jobs/new', label: 'New Application', shortLabel: 'New Job', icon: '+' },
+  { href: '/contractor/materials', label: 'Materials', shortLabel: 'Materials', icon: '▣' },
   { href: '/contractor/settings', label: 'Settings', shortLabel: 'Settings', icon: '⚙' },
 ]
 
