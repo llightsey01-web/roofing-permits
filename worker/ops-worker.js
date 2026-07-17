@@ -25,12 +25,14 @@ function requireMonitoring(mod) {
 const { validateEnvironment, getEnvironment } = requireLib('lib/env/environment.js')
 const { recordWorkerPoll } = requireMonitoring('lib/monitoring/worker-heartbeat')
 const { createDailyMetricsScheduler } = requireMonitoring('lib/monitoring/platform-metrics')
+const { createProductApprovalsSyncScheduler } = require(path.join(__dirname, '..', 'scripts', 'sync-product-approvals.js'))
 
 validateEnvironment()
 console.log('[ops-worker] Environment:', getEnvironment())
 
 const POLL_INTERVAL_MS = 30000
 const dailyMetrics = createDailyMetricsScheduler(supabase)
+const productApprovalsSync = createProductApprovalsSyncScheduler(supabase)
 
 const HANDLED_RUN_TYPES = [
   'notify_admin',
@@ -153,6 +155,18 @@ async function poll() {
       await dailyMetrics.maybeRunDailyMetrics()
     } catch (metricsErr) {
       console.error('[ops-worker] Daily metrics error:', metricsErr.message)
+    }
+    try {
+      var productSyncResult = await productApprovalsSync.maybeSyncProductApprovals()
+      if (productSyncResult && !productSyncResult.skipped) {
+        console.log('[ops-worker] Product approvals sync finished:', {
+          upserted: productSyncResult.upserted,
+          pdfOk: productSyncResult.pdfOk,
+          uploadOk: productSyncResult.uploadOk,
+        })
+      }
+    } catch (productSyncErr) {
+      console.error('[ops-worker] Product approvals sync error:', productSyncErr.message)
     }
     await claimAndRun()
   } catch (err) {

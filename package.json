@@ -14,7 +14,8 @@
     "test:integration": "jest tests/integration",
     "test:ci": "jest --ci --forceExit",
     "seed:demo": "node scripts/seed-demo.js",
-    "seed:reset-demo": "node scripts/reset-demo.js"
+    "seed:reset-demo": "node scripts/reset-demo.js",
+    "sync:product-approvals": "node scripts/sync-product-approvals.js"
   },
   "dependencies": {
     "@antiadmin/anticaptchaofficial": "^1.0.55",
