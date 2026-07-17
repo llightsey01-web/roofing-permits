@@ -1,3 +1,7 @@
+import {
+  deleteCredential,
+  deleteVaultCredential,
+} from '../../../../../lib/credentials/secure-credential-service.js'
 import { authenticateRequest, requireCompanyUser } from '../../../../../lib/auth/session.js'
 import secureCredentialService from '../../../../../lib/credentials/secure-credential-service.js'
 import { isEncryptionConfigured } from '../../../../../lib/crypto/credential-encryption.js'
@@ -43,10 +47,21 @@ export async function DELETE(request, { params }) {
     }
 
     const { id } = await params
-    await secureCredentialService.deleteCredential(id, context.companyId)
+
+    // Prefer vault (company_credentials); fall back to legacy company_ahj_credentials
+    try {
+      await deleteVaultCredential(id, context.companyId)
+      return Response.json({ success: true })
+    } catch (vaultErr) {
+      if (vaultErr.status !== 404) {
+        throw vaultErr
+      }
+    }
+
+    await deleteCredential(id, context.companyId)
     return Response.json({ success: true })
   } catch (err) {
     console.error('Delete credential error:', err.message)
-    return Response.json({ error: err.message }, { status: 500 })
+    return Response.json({ error: err.message }, { status: err.status || 500 })
   }
 }

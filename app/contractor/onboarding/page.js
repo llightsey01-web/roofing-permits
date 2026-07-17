@@ -11,39 +11,13 @@ import {
   contractorInputStyle,
 } from '../../../lib/ui/contractor-theme'
 
+const TOTAL_STEPS = 4
+
 const STEPS = [
   { n: 1, label: 'Company Info' },
   { n: 2, label: 'License' },
   { n: 3, label: 'Preferences' },
-  { n: 4, label: 'Counties' },
-  { n: 5, label: 'Password' },
-]
-
-const AHJ_OPTIONS = [
-  {
-    id: 'polk',
-    label: 'Polk County',
-    provider: 'polk_accela',
-    portalUrl: 'https://aca-prod.accela.com/POLKCO/',
-  },
-  {
-    id: 'lee',
-    label: 'Lee County',
-    provider: 'lee_accela',
-    portalUrl: 'https://aca-prod.accela.com/LEECO/',
-  },
-  {
-    id: 'manatee',
-    label: 'Manatee County',
-    provider: 'manatee_accela',
-    portalUrl: 'https://aca-prod.accela.com/ (Manatee County portal)',
-  },
-  {
-    id: 'sarasota',
-    label: 'Sarasota County',
-    provider: 'sarasota_accela',
-    portalUrl: 'https://aca-prod.accela.com/ (Sarasota County portal)',
-  },
+  { n: 4, label: 'Password' },
 ]
 
 function FieldLabel({ children, tip }) {
@@ -84,6 +58,13 @@ function FieldLabel({ children, tip }) {
   )
 }
 
+/** Map legacy 5-step resume values onto the new 4-step wizard. */
+function mapResumeStep(raw) {
+  const n = Number(raw) || 1
+  if (n >= 4) return 4
+  return Math.min(Math.max(n, 1), TOTAL_STEPS)
+}
+
 export default function ContractorOnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
@@ -95,9 +76,6 @@ export default function ContractorOnboardingPage() {
   const [adminNotes, setAdminNotes] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [credForms, setCredForms] = useState({})
-  const [credStatus, setCredStatus] = useState({})
-  const [credSaving, setCredSaving] = useState({})
   const [form, setForm] = useState({
     name: '',
     dba_name: '',
@@ -115,7 +93,6 @@ export default function ContractorOnboardingPage() {
       noc_before_send: false,
       permit_before_submit: false,
     },
-    selectedAhjs: { polk: false, lee: false, manatee: false, sarasota: false },
   })
 
   useEffect(function () {
@@ -183,8 +160,7 @@ export default function ContractorOnboardingPage() {
         setAdminNotes(company.notes)
       }
 
-      const resumeStep = Number(company.onboarding_step) || 1
-      setStep(Math.min(Math.max(resumeStep, 1), 5))
+      setStep(mapResumeStep(company.onboarding_step))
 
       setForm(function (prev) {
         return {
@@ -204,12 +180,6 @@ export default function ContractorOnboardingPage() {
             auto_approve_all: company.review_gates?.auto_approve_all !== false,
             noc_before_send: !!company.review_gates?.noc_before_send,
             permit_before_submit: !!company.review_gates?.permit_before_submit,
-          },
-          selectedAhjs: {
-            polk: (company.covered_counties || []).includes('polk'),
-            lee: (company.covered_counties || []).includes('lee'),
-            manatee: (company.covered_counties || []).includes('manatee'),
-            sarasota: (company.covered_counties || []).includes('sarasota'),
           },
         }
       })
@@ -240,22 +210,6 @@ export default function ContractorOnboardingPage() {
     })
   }
 
-  function toggleAhj(id) {
-    setForm(function (prev) {
-      return {
-        ...prev,
-        selectedAhjs: { ...prev.selectedAhjs, [id]: !prev.selectedAhjs[id] },
-      }
-    })
-  }
-
-  function setCredField(countyId, field, value) {
-    setCredForms(function (prev) {
-      const current = prev[countyId] || { username: '', password: '' }
-      return { ...prev, [countyId]: { ...current, [field]: value } }
-    })
-  }
-
   function validateStep(current) {
     if (current === 1) {
       if (!form.name.trim()) return 'Company legal name is required'
@@ -271,12 +225,6 @@ export default function ContractorOnboardingPage() {
       if (!form.qualifier_license.trim()) return 'Qualifier license number is required'
     }
     if (current === 4) {
-      const selected = AHJ_OPTIONS.filter(function (a) {
-        return form.selectedAhjs[a.id]
-      })
-      if (selected.length === 0) return 'Select at least one county'
-    }
-    if (current === 5) {
       if (newPassword.length < 8) return 'Password must be at least 8 characters'
       if (!/[0-9]/.test(newPassword)) return 'Password must include at least one number'
       if (!/[A-Z]/.test(newPassword)) return 'Password must include at least one uppercase letter'
@@ -312,13 +260,6 @@ export default function ContractorOnboardingPage() {
     if (current === 3) {
       payload.review_gates = form.review_gates
     }
-    if (current === 4) {
-      payload.covered_counties = AHJ_OPTIONS.filter(function (a) {
-        return form.selectedAhjs[a.id]
-      }).map(function (a) {
-        return a.id
-      })
-    }
 
     const res = await fetch('/api/contractor/onboarding/save-step', {
       method: 'POST',
@@ -337,81 +278,6 @@ export default function ContractorOnboardingPage() {
     return true
   }
 
-  async function validateCountyCredentials(countyId) {
-    const cred = credForms[countyId] || { username: '', password: '' }
-    if (!cred.username || !cred.password) {
-      setCredStatus(function (prev) {
-        return {
-          ...prev,
-          [countyId]: { ok: false, message: 'Enter username and password to verify' },
-        }
-      })
-      return
-    }
-
-    setCredSaving(function (prev) { return { ...prev, [countyId]: true } })
-    setCredStatus(function (prev) {
-      const next = { ...prev }
-      delete next[countyId]
-      return next
-    })
-
-    try {
-      const token = await getToken()
-      if (!token) return
-
-      const res = await fetch('/api/contractor/onboarding/validate-credentials', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token,
-        },
-        body: JSON.stringify({
-          county_id: countyId,
-          username: cred.username,
-          password: cred.password,
-        }),
-      })
-      const data = await res.json()
-      const ahj = AHJ_OPTIONS.find(function (a) { return a.id === countyId })
-      const label = ahj ? ahj.label : countyId
-
-      if (!res.ok || !data.verified) {
-        setCredStatus(function (prev) {
-          return {
-            ...prev,
-            [countyId]: {
-              ok: false,
-              message: '✗ Invalid credentials — please check username and password',
-            },
-          }
-        })
-      } else {
-        setCredStatus(function (prev) {
-          return {
-            ...prev,
-            [countyId]: {
-              ok: true,
-              message: '✓ ' + label + ' credentials verified',
-            },
-          }
-        })
-      }
-    } catch (err) {
-      setCredStatus(function (prev) {
-        return {
-          ...prev,
-          [countyId]: {
-            ok: false,
-            message: '✗ Invalid credentials — please check username and password',
-          },
-        }
-      })
-    }
-
-    setCredSaving(function (prev) { return { ...prev, [countyId]: false } })
-  }
-
   async function handleNext() {
     setError('')
     const validationError = validateStep(step)
@@ -420,7 +286,7 @@ export default function ContractorOnboardingPage() {
       return
     }
 
-    if (step < 5) {
+    if (step < TOTAL_STEPS) {
       setSaving(true)
       const ok = await saveStep(step)
       setSaving(false)
@@ -481,7 +347,6 @@ export default function ContractorOnboardingPage() {
       'Company information saved',
       'License verified',
       'Review preferences set',
-      'Counties selected',
       'Password created',
     ]
     return (
@@ -534,7 +399,7 @@ export default function ContractorOnboardingPage() {
             <ol style={{ margin: 0, paddingLeft: '20px', color: contractorTheme.textBody, fontSize: '14px', lineHeight: 1.7 }}>
               <li>Our team reviews your information</li>
               <li>You receive an approval email</li>
-              <li>You can start submitting permits immediately</li>
+              <li>Add county portal credentials in Settings, then start submitting permits</li>
             </ol>
           </div>
 
@@ -554,7 +419,7 @@ export default function ContractorOnboardingPage() {
           Account setup
         </h1>
         <p style={{ margin: 0, color: contractorTheme.textMuted, fontSize: '14px' }}>
-          Step {step} of 5
+          Step {step} of {TOTAL_STEPS}
         </p>
       </div>
 
@@ -566,7 +431,7 @@ export default function ContractorOnboardingPage() {
         marginBottom: '16px',
       }}>
         <div style={{
-          width: (step / 5) * 100 + '%',
+          width: (step / TOTAL_STEPS) * 100 + '%',
           height: '100%',
           backgroundColor: '#f97316',
           transition: 'width 0.2s ease',
@@ -751,121 +616,6 @@ export default function ContractorOnboardingPage() {
 
         {step === 4 && (
           <div>
-            <h2 style={{ margin: '0 0 8px', fontSize: '18px', color: contractorTheme.text }}>AHJ Coverage</h2>
-            <p style={{ margin: '0 0 6px', color: contractorTheme.text, fontSize: '14px', fontWeight: 600 }}>
-              Which counties do you plan to submit permits in?
-            </p>
-            <p style={{ margin: '0 0 14px', color: contractorTheme.textMuted, fontSize: '13px' }}>
-              Optionally add portal credentials now to verify them, or add them later in Settings.
-            </p>
-            <div style={{ display: 'grid', gap: '12px' }}>
-              {AHJ_OPTIONS.map(function (ahj) {
-                const selected = form.selectedAhjs[ahj.id]
-                const cred = credForms[ahj.id] || { username: '', password: '' }
-                const status = credStatus[ahj.id]
-                return (
-                  <div
-                    key={ahj.id}
-                    style={{
-                      border: '1px solid ' + contractorTheme.border,
-                      borderRadius: '10px',
-                      padding: '14px',
-                      backgroundColor: selected ? contractorTheme.accentSoft : 'transparent',
-                    }}
-                  >
-                    <label
-                      style={{
-                        display: 'flex',
-                        gap: '10px',
-                        alignItems: 'center',
-                        color: contractorTheme.text,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
-                      title={'Portal: ' + ahj.portalUrl}
-                    >
-                      <input type="checkbox" checked={selected} onChange={function () { toggleAhj(ahj.id) }} />
-                      <span>{ahj.label}</span>
-                      <span
-                        title={'Portal: ' + ahj.portalUrl}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '16px',
-                          height: '16px',
-                          borderRadius: '50%',
-                          border: '1px solid ' + contractorTheme.border,
-                          color: contractorTheme.textMuted,
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          cursor: 'help',
-                        }}
-                      >
-                        ?
-                      </span>
-                    </label>
-
-                    {selected ? (
-                      <div style={{ marginTop: '12px', display: 'grid', gap: '10px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                          <div>
-                            <FieldLabel>Portal username</FieldLabel>
-                            <input
-                              style={contractorInputStyle()}
-                              value={cred.username}
-                              autoComplete="off"
-                              onChange={function (e) { setCredField(ahj.id, 'username', e.target.value) }}
-                              placeholder="Optional"
-                            />
-                          </div>
-                          <div>
-                            <FieldLabel>Portal password</FieldLabel>
-                            <input
-                              style={contractorInputStyle()}
-                              type="password"
-                              value={cred.password}
-                              autoComplete="new-password"
-                              onChange={function (e) { setCredField(ahj.id, 'password', e.target.value) }}
-                              placeholder="Optional"
-                            />
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                          <button
-                            type="button"
-                            disabled={!!credSaving[ahj.id]}
-                            onClick={function () { validateCountyCredentials(ahj.id) }}
-                            style={{
-                              ...contractorPrimaryButtonStyle(!!credSaving[ahj.id]),
-                              fontSize: '13px',
-                              padding: '8px 14px',
-                              minHeight: '36px',
-                            }}
-                          >
-                            {credSaving[ahj.id] ? 'Verifying...' : 'Verify credentials'}
-                          </button>
-                          {status ? (
-                            <span style={{
-                              fontSize: '13px',
-                              fontWeight: 600,
-                              color: status.ok ? '#10b981' : '#ef4444',
-                            }}>
-                              {status.message}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {step === 5 && (
-          <div>
             <h2 style={{ margin: '0 0 8px', fontSize: '18px', color: contractorTheme.text }}>
               Set Your Password
             </h2>
@@ -947,7 +697,7 @@ export default function ContractorOnboardingPage() {
           >
             {saving
               ? 'Saving...'
-              : step === 5
+              : step === TOTAL_STEPS
                 ? 'Set Password & Complete Setup'
                 : 'Next'}
           </button>

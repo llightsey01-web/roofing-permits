@@ -4,7 +4,38 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../../lib/supabase'
 import { safeGetSession, safeGetUser, redirectIfStaleSession } from '../../../lib/auth/safe-auth'
-import { contractorTheme, contractorCardStyle, contractorPrimaryButtonStyle } from '../../../lib/ui/contractor-theme'
+import {
+  contractorTheme,
+  contractorCardStyle,
+  contractorPrimaryButtonStyle,
+  contractorInputStyle,
+} from '../../../lib/ui/contractor-theme'
+
+const MS_DAY = 24 * 60 * 60 * 1000
+
+function daysSince(iso) {
+  if (!iso) return null
+  const t = new Date(iso).getTime()
+  if (Number.isNaN(t)) return null
+  return Math.floor((Date.now() - t) / MS_DAY)
+}
+
+function formatDate(iso) {
+  if (!iso) return '—'
+  try {
+    return new Date(iso).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  } catch {
+    return '—'
+  }
+}
+
+function credentialLabel(cred) {
+  return cred.ahj_name || cred.ahj_county || cred.provider || 'County portal'
+}
 
 export default function ContractorSettingsPage() {
   const router = useRouter()
@@ -19,15 +50,18 @@ export default function ContractorSettingsPage() {
     qualifer_name: '', qualifer_license: '',
   })
 
-  const [credentials, setCredentials] = useState([])
   const [vaultCredentials, setVaultCredentials] = useState([])
   const [ahjs, setAhjs] = useState([])
-  const [coveredCounties, setCoveredCounties] = useState([])
   const [encryptionConfigured, setEncryptionConfigured] = useState(true)
-  const [credModal, setCredModal] = useState(null) // { countyId, label, ahjId, hasCreds }
-  const [credForm, setCredForm] = useState({ username: '', password: '' })
+  const [credModal, setCredModal] = useState(null) // { mode: 'add'|'update', credential?, ahjId? }
+  const [credForm, setCredForm] = useState({ ahj_id: '', username: '', password: '' })
+  const [showPassword, setShowPassword] = useState(false)
   const [credSaving, setCredSaving] = useState(false)
   const [credMessage, setCredMessage] = useState('')
+  const [credFlash, setCredFlash] = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
   const [reviewGates, setReviewGates] = useState({
     noc_before_send: false,
     permit_before_submit: false,
@@ -37,16 +71,15 @@ export default function ContractorSettingsPage() {
   const [reviewSaved, setReviewSaved] = useState(false)
   const [reviewError, setReviewError] = useState('')
 
-  const COUNTY_OPTIONS = [
-    { id: 'polk', label: 'Polk County', provider: 'polk_accela' },
-    { id: 'lee', label: 'Lee County', provider: 'lee_accela' },
-    { id: 'manatee', label: 'Manatee County', provider: 'manatee_accela' },
-    { id: 'sarasota', label: 'Sarasota County', provider: 'sarasota_accela' },
-  ]
-
-  useEffect(() => {
+  useEffect(function () {
     loadAll()
   }, [])
+
+  useEffect(function () {
+    if (!credFlash) return undefined
+    const t = setTimeout(function () { setCredFlash('') }, 4000)
+    return function () { clearTimeout(t) }
+  }, [credFlash])
 
   async function getToken() {
     const supabase = createClient()
@@ -64,11 +97,16 @@ export default function ContractorSettingsPage() {
 
       const token = await getToken()
       if (!token) return
+
       const [companyRes, credRes, gatesRes, ahjRes] = await Promise.all([
         fetch('/api/contractor/company', { headers: { Authorization: 'Bearer ' + token } }),
         fetch('/api/contractor/credentials', { headers: { Authorization: 'Bearer ' + token } }),
         fetch('/api/contractor/company/review-gates', { headers: { Authorization: 'Bearer ' + token } }),
-        supabase.from('ahj_portals').select('id, name, county_or_city').eq('is_active', true),
+        supabase
+          .from('ahj_portals')
+          .select('id, name, county_or_city, portal_url')
+          .eq('is_active', true)
+          .order('name'),
       ])
 
       const companyData = await companyRes.json()
@@ -81,13 +119,16 @@ export default function ContractorSettingsPage() {
           qualifer_name: c.qualifer_name || c.qualifier_name || '',
           qualifer_license: c.qualifer_license || c.qualifier_license || '',
         })
-        setCoveredCounties(Array.isArray(c.covered_counties) ? c.covered_counties : [])
       }
 
       const credData = await credRes.json()
       if (credRes.ok) {
-        setCredentials(credData.credentials || [])
-        setVaultCredentials(credData.vaultCredentials || [])
+        const vault = (credData.vaultCredentials || []).filter(function (c) {
+          return c.is_active !== false && (c.credential_type === 'ahj_portal' || !c.credential_type || String(c.provider || '').includes('accela') || c.ahj_id)
+        })
+        setVaultCredentials(vault.length ? vault : (credData.vaultCredentials || []).filter(function (c) {
+          return c.is_active !== false
+        }))
         setEncryptionConfigured(credData.encryptionConfigured !== false)
       }
 
@@ -124,7 +165,7 @@ export default function ContractorSettingsPage() {
     } else {
       setReviewGates(result.review_gates)
       setReviewSaved(true)
-      setTimeout(() => setReviewSaved(false), 3000)
+      setTimeout(function () { setReviewSaved(false) }, 3000)
     }
     setReviewSaving(false)
   }
@@ -144,9 +185,33 @@ export default function ContractorSettingsPage() {
       setError(result.error || 'Failed to save')
     } else {
       setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
+      setTimeout(function () { setSaved(false) }, 3000)
     }
     setSaving(false)
+  }
+
+  function openAddModal() {
+    setCredModal({ mode: 'add' })
+    setCredForm({ ahj_id: '', username: '', password: '' })
+    setShowPassword(false)
+    setCredMessage('')
+  }
+
+  function openUpdateModal(cred) {
+    setCredModal({ mode: 'update', credential: cred })
+    setCredForm({
+      ahj_id: cred.ahj_id || '',
+      username: cred.username || '',
+      password: '',
+    })
+    setShowPassword(false)
+    setCredMessage('')
+  }
+
+  function closeCredModal() {
+    setCredModal(null)
+    setCredMessage('')
+    setShowPassword(false)
   }
 
   async function handleSaveCredentialModal(e) {
@@ -154,62 +219,65 @@ export default function ContractorSettingsPage() {
     if (!credModal) return
     setCredSaving(true)
     setCredMessage('')
-    const token = await getToken()
+
+    const ahjId = credModal.mode === 'update'
+      ? (credModal.credential?.ahj_id || credForm.ahj_id)
+      : credForm.ahj_id
+
+    if (!ahjId) {
+      setCredMessage('Select a county portal')
+      setCredSaving(false)
+      return
+    }
     if (!credForm.username.trim() || !credForm.password) {
       setCredMessage('Username and password are required')
       setCredSaving(false)
       return
     }
 
+    const token = await getToken()
     const response = await fetch('/api/contractor/credentials/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify({
-        county_id: credModal.countyId,
-        ahj_id: credModal.ahjId || null,
+        ahj_id: ahjId,
         username: credForm.username.trim(),
         password: credForm.password,
+        is_update: credModal.mode === 'update',
+        credential_id: credModal.credential?.id || null,
       }),
     })
     const result = await response.json()
     if (!response.ok) {
       setCredMessage(result.error || 'Failed to save credential')
-    } else {
-      setCredMessage('Credentials saved')
-      setCredForm({ username: '', password: '' })
-      setTimeout(function () {
-        setCredModal(null)
-        setCredMessage('')
-      }, 700)
-      await loadAll()
+      setCredSaving(false)
+      return
     }
+
+    setCredFlash(result.message || ('✓ ' + (result.ahj_name || 'Credentials') + ' saved'))
+    closeCredModal()
+    await loadAll()
     setCredSaving(false)
   }
 
-  function openCredModal(county) {
-    setCredModal(county)
-    setCredForm({ username: '', password: '' })
-    setCredMessage('')
-  }
-
-  function countyHasCredentials(countyId, ahjId, provider) {
-    const vaultHit = vaultCredentials.some(function (c) {
-      if (!c.is_active && c.is_active !== undefined) return false
-      if (ahjId && c.ahj_id === ahjId && c.has_password) return true
-      if (provider && c.provider === provider && c.has_password) return true
-      return false
+  async function confirmDelete() {
+    if (!deleteConfirm) return
+    setDeleting(true)
+    const token = await getToken()
+    const response = await fetch('/api/contractor/credentials/' + deleteConfirm.id, {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer ' + token },
     })
-    if (vaultHit) return true
-    return credentials.some(function (c) {
-      return ahjId && c.ahj_id === ahjId && c.has_password
-    })
-  }
-
-  function findPortalForCounty(countyId) {
-    return ahjs.find(function (a) {
-      const hay = ((a.name || '') + ' ' + (a.county_or_city || '')).toLowerCase()
-      return hay.includes(countyId)
-    }) || null
+    const result = await response.json()
+    setDeleting(false)
+    if (!response.ok) {
+      setCredFlash(result.error || 'Failed to delete credentials')
+      setDeleteConfirm(null)
+      return
+    }
+    setCredFlash('Credentials removed')
+    setDeleteConfirm(null)
+    await loadAll()
   }
 
   if (loading) {
@@ -221,15 +289,17 @@ export default function ContractorSettingsPage() {
   }
 
   const inputStyle = {
+    ...contractorInputStyle(),
     width: '100%',
-    padding: '11px 14px',
-    border: '1px solid ' + contractorTheme.border,
-    borderRadius: '10px',
-    fontSize: '14px',
     boxSizing: 'border-box',
-    backgroundColor: '#ffffff',
   }
-  const labelStyle = { display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: contractorTheme.text }
+  const labelStyle = {
+    display: 'block',
+    fontSize: '13px',
+    fontWeight: '600',
+    marginBottom: '6px',
+    color: contractorTheme.text,
+  }
   const sectionStyle = { ...contractorCardStyle(), padding: '24px', marginBottom: '20px' }
   const sectionTitleStyle = {
     fontSize: '16px',
@@ -241,20 +311,16 @@ export default function ContractorSettingsPage() {
     borderBottom: '1px solid ' + contractorTheme.border,
   }
   const grid2 = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }
-
-  const coveredCountyRows = COUNTY_OPTIONS
-    .filter(function (c) { return coveredCounties.includes(c.id) })
-    .map(function (c) {
-      const portal = findPortalForCounty(c.id)
-      const hasCreds = countyHasCredentials(c.id, portal?.id || null, c.provider)
-      return {
-        countyId: c.id,
-        label: c.label,
-        provider: c.provider,
-        ahjId: portal?.id || null,
-        hasCreds: hasCreds,
-      }
-    })
+  const secondaryBtn = {
+    padding: '8px 12px',
+    borderRadius: '8px',
+    border: '1px solid ' + contractorTheme.border,
+    backgroundColor: 'transparent',
+    color: contractorTheme.textMuted,
+    fontSize: '13px',
+    fontWeight: 600,
+    cursor: 'pointer',
+  }
 
   return (
     <div style={{ maxWidth: '800px', margin: '28px auto', padding: '0 24px 48px' }}>
@@ -265,7 +331,7 @@ export default function ContractorSettingsPage() {
             Company profile, review preferences, and county portal logins
           </p>
         </div>
-        {saved && (
+        {saved ? (
           <span style={{
             padding: '8px 16px',
             backgroundColor: contractorTheme.successSoft,
@@ -276,10 +342,10 @@ export default function ContractorSettingsPage() {
           }}>
             Saved
           </span>
-        )}
+        ) : null}
       </div>
 
-      {error && (
+      {error ? (
         <div style={{
           padding: '12px',
           backgroundColor: contractorTheme.errorSoft,
@@ -290,33 +356,48 @@ export default function ContractorSettingsPage() {
         }}>
           {error}
         </div>
-      )}
+      ) : null}
+
+      {credFlash ? (
+        <div style={{
+          padding: '12px 14px',
+          marginBottom: '16px',
+          borderRadius: '8px',
+          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+          border: '1px solid rgba(16, 185, 129, 0.35)',
+          color: '#10b981',
+          fontSize: '13px',
+          fontWeight: 600,
+        }}>
+          {credFlash}
+        </div>
+      ) : null}
 
       <form onSubmit={handleSaveCompany}>
         <div style={sectionStyle}>
           <h2 style={sectionTitleStyle}>Company information</h2>
           <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Company name</label>
-            <input style={inputStyle} name="name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
+            <input style={inputStyle} name="name" value={form.name} onChange={function (e) { setForm(function (p) { return { ...p, name: e.target.value } }) }} required />
           </div>
           <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Address</label>
-            <input style={inputStyle} name="address" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
+            <input style={inputStyle} name="address" value={form.address} onChange={function (e) { setForm(function (p) { return { ...p, address: e.target.value } }) }} />
           </div>
           <div style={grid2}>
-            <div><label style={labelStyle}>City</label><input style={inputStyle} value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
-            <div><label style={labelStyle}>Zip</label><input style={inputStyle} value={form.zip} onChange={e => setForm(p => ({ ...p, zip: e.target.value }))} /></div>
-            <div><label style={labelStyle}>Phone</label><input style={inputStyle} value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-            <div><label style={labelStyle}>Email</label><input style={inputStyle} type="email" value={form.primary_email} onChange={e => setForm(p => ({ ...p, primary_email: e.target.value }))} /></div>
+            <div><label style={labelStyle}>City</label><input style={inputStyle} value={form.city} onChange={function (e) { setForm(function (p) { return { ...p, city: e.target.value } }) }} /></div>
+            <div><label style={labelStyle}>Zip</label><input style={inputStyle} value={form.zip} onChange={function (e) { setForm(function (p) { return { ...p, zip: e.target.value } }) }} /></div>
+            <div><label style={labelStyle}>Phone</label><input style={inputStyle} value={form.phone} onChange={function (e) { setForm(function (p) { return { ...p, phone: e.target.value } }) }} /></div>
+            <div><label style={labelStyle}>Email</label><input style={inputStyle} type="email" value={form.primary_email} onChange={function (e) { setForm(function (p) { return { ...p, primary_email: e.target.value } }) }} /></div>
           </div>
         </div>
 
         <div style={sectionStyle}>
           <h2 style={sectionTitleStyle}>License</h2>
           <div style={grid2}>
-            <div><label style={labelStyle}>Contractor license #</label><input style={inputStyle} value={form.license_number} onChange={e => setForm(p => ({ ...p, license_number: e.target.value }))} /></div>
-            <div><label style={labelStyle}>Qualifier name</label><input style={inputStyle} value={form.qualifer_name} onChange={e => setForm(p => ({ ...p, qualifer_name: e.target.value }))} /></div>
-            <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Qualifier license #</label><input style={inputStyle} value={form.qualifer_license} onChange={e => setForm(p => ({ ...p, qualifer_license: e.target.value }))} /></div>
+            <div><label style={labelStyle}>Contractor license #</label><input style={inputStyle} value={form.license_number} onChange={function (e) { setForm(function (p) { return { ...p, license_number: e.target.value } }) }} /></div>
+            <div><label style={labelStyle}>Qualifier name</label><input style={inputStyle} value={form.qualifer_name} onChange={function (e) { setForm(function (p) { return { ...p, qualifer_name: e.target.value } }) }} /></div>
+            <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Qualifier license #</label><input style={inputStyle} value={form.qualifer_license} onChange={function (e) { setForm(function (p) { return { ...p, qualifer_license: e.target.value } }) }} /></div>
           </div>
           <p style={{ fontSize: '12px', color: contractorTheme.textMuted, margin: '16px 0 0 0' }}>Logo upload — coming soon</p>
         </div>
@@ -336,7 +417,7 @@ export default function ContractorSettingsPage() {
             <input
               type="checkbox"
               checked={reviewGates.noc_before_send}
-              onChange={e => setReviewGates(p => ({ ...p, noc_before_send: e.target.checked }))}
+              onChange={function (e) { setReviewGates(function (p) { return { ...p, noc_before_send: e.target.checked } }) }}
               style={{ marginTop: '4px' }}
             />
             <span>
@@ -350,7 +431,7 @@ export default function ContractorSettingsPage() {
             <input
               type="checkbox"
               checked={reviewGates.permit_before_submit}
-              onChange={e => setReviewGates(p => ({ ...p, permit_before_submit: e.target.checked }))}
+              onChange={function (e) { setReviewGates(function (p) { return { ...p, permit_before_submit: e.target.checked } }) }}
               style={{ marginTop: '4px' }}
             />
             <span>
@@ -360,21 +441,23 @@ export default function ContractorSettingsPage() {
               </span>
             </span>
           </label>
-          {reviewError && <p style={{ color: contractorTheme.error, fontSize: '13px', marginBottom: '12px' }}>{reviewError}</p>}
-          {reviewSaved && <p style={{ color: contractorTheme.success, fontSize: '13px', marginBottom: '12px' }}>Review preferences saved</p>}
+          {reviewError ? <p style={{ color: contractorTheme.error, fontSize: '13px', marginBottom: '12px' }}>{reviewError}</p> : null}
+          {reviewSaved ? <p style={{ color: contractorTheme.success, fontSize: '13px', marginBottom: '12px' }}>Review preferences saved</p> : null}
           <button type="submit" disabled={reviewSaving} style={contractorPrimaryButtonStyle(reviewSaving)}>
             {reviewSaving ? 'Saving...' : 'Save preferences'}
           </button>
         </div>
       </form>
 
+      {/* AHJ PORTAL CREDENTIALS */}
       <div style={sectionStyle}>
-        <h2 style={sectionTitleStyle}>AHJ portal credentials</h2>
-        <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '0 0 20px 0' }}>
-          Add county portal logins for the areas you selected during onboarding. Passwords are encrypted and never displayed.
+        <h2 style={sectionTitleStyle}>AHJ Portal Credentials</h2>
+        <p style={{ fontSize: '13px', color: contractorTheme.textMuted, margin: '0 0 16px 0' }}>
+          Manage your county portal login credentials.
+          These are used by DART iQ to submit permits on your behalf.
         </p>
 
-        {!encryptionConfigured && (
+        {!encryptionConfigured ? (
           <div style={{
             padding: '12px 16px',
             backgroundColor: contractorTheme.warningSoft,
@@ -385,58 +468,124 @@ export default function ContractorSettingsPage() {
           }}>
             Server encryption is not configured. Contact your administrator to set CREDENTIAL_ENCRYPTION_KEY.
           </div>
-        )}
+        ) : null}
 
-        {coveredCountyRows.length === 0 ? (
+        <button
+          type="button"
+          disabled={!encryptionConfigured}
+          onClick={openAddModal}
+          style={{
+            ...contractorPrimaryButtonStyle(!encryptionConfigured),
+            marginBottom: '20px',
+          }}
+        >
+          + Add AHJ Credentials
+        </button>
+
+        <h3 style={{
+          margin: '0 0 12px',
+          fontSize: '12px',
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: contractorTheme.textMuted,
+        }}>
+          Saved Credentials
+        </h3>
+
+        {vaultCredentials.length === 0 ? (
           <p style={{ fontSize: '14px', color: contractorTheme.textMuted, margin: 0 }}>
-            No counties selected yet. Complete onboarding coverage or contact support to update your service areas.
+            No portal credentials saved yet. Add credentials for each county where you submit permits.
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {coveredCountyRows.map(function (row) {
+            {vaultCredentials.map(function (cred) {
+              const label = credentialLabel(cred)
+              const ageDays = daysSince(cred.last_used_at || cred.updated_at)
+              const expiredLikely = ageDays != null && ageDays > 90
+              const mayExpire = ageDays != null && ageDays > 60 && !expiredLikely
+
               return (
                 <div
-                  key={row.countyId}
+                  key={cred.id}
                   style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '12px',
-                    flexWrap: 'wrap',
                     padding: '14px 16px',
                     border: '1px solid ' + contractorTheme.border,
                     borderRadius: '10px',
-                    backgroundColor: contractorTheme.inputBg || '#0f172a',
+                    backgroundColor: contractorTheme.inputBg || 'transparent',
                   }}
                 >
-                  <div>
-                    <p style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: contractorTheme.text }}>{row.label}</p>
-                    <p style={{
-                      margin: '6px 0 0',
-                      fontSize: '13px',
-                      color: row.hasCreds ? contractorTheme.success : '#fbbf24',
-                    }}>
-                      {row.hasCreds ? 'Status: ✓ Credentials saved' : 'Status: ⚠️ Credentials not saved'}
-                    </p>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    flexWrap: 'wrap',
+                  }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: contractorTheme.text }}>
+                        {label}
+                      </p>
+                      <p style={{ margin: '6px 0 0', fontSize: '13px', color: contractorTheme.success }}>
+                        ✓ Saved
+                      </p>
+                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: contractorTheme.textMuted }}>
+                        Last updated: {formatDate(cred.updated_at || cred.last_used_at)}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button type="button" onClick={function () { openUpdateModal(cred) }} style={secondaryBtn}>
+                        Update
+                      </button>
+                      <button
+                        type="button"
+                        onClick={function () { setDeleteConfirm(cred) }}
+                        style={{ ...secondaryBtn, color: contractorTheme.error, borderColor: 'rgba(239,68,68,0.35)' }}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    disabled={!encryptionConfigured}
-                    onClick={function () { openCredModal(row) }}
-                    style={{
-                      padding: '10px 14px',
+
+                  {mayExpire ? (
+                    <div style={{
+                      marginTop: '12px',
+                      padding: '10px 12px',
                       borderRadius: '8px',
-                      border: 'none',
-                      backgroundColor: contractorTheme.accent,
-                      color: '#fff',
-                      fontWeight: 600,
-                      fontSize: '13px',
-                      cursor: encryptionConfigured ? 'pointer' : 'not-allowed',
-                      opacity: encryptionConfigured ? 1 : 0.6,
-                    }}
-                  >
-                    {row.hasCreds ? 'Update Credentials' : 'Add Credentials'}
-                  </button>
+                      backgroundColor: contractorTheme.warningSoft,
+                      border: '1px solid rgba(251, 191, 36, 0.35)',
+                    }}>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#fbbf24', fontWeight: 600 }}>
+                        ⚠️ {label} credentials may be expired
+                      </p>
+                      <p style={{ margin: '4px 0 10px', fontSize: '12px', color: contractorTheme.textMuted }}>
+                        Most county portals require password reset every 90 days.
+                      </p>
+                      <button type="button" onClick={function () { openUpdateModal(cred) }} style={secondaryBtn}>
+                        Update Credentials
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {expiredLikely ? (
+                    <div style={{
+                      marginTop: '12px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: contractorTheme.errorSoft,
+                      border: '1px solid rgba(239, 68, 68, 0.35)',
+                    }}>
+                      <p style={{ margin: 0, fontSize: '13px', color: contractorTheme.error, fontWeight: 600 }}>
+                        🔴 {label} credentials likely expired
+                      </p>
+                      <p style={{ margin: '4px 0 10px', fontSize: '12px', color: contractorTheme.textMuted }}>
+                        Please update your portal password.
+                      </p>
+                      <button type="button" onClick={function () { openUpdateModal(cred) }} style={secondaryBtn}>
+                        Update Credentials
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               )
             })}
@@ -459,7 +608,7 @@ export default function ContractorSettingsPage() {
             onSubmit={handleSaveCredentialModal}
             style={{
               width: '100%',
-              maxWidth: '420px',
+              maxWidth: '440px',
               backgroundColor: contractorTheme.surface || '#0b1220',
               border: '1px solid ' + contractorTheme.border,
               borderRadius: '12px',
@@ -468,13 +617,41 @@ export default function ContractorSettingsPage() {
             }}
           >
             <h3 style={{ margin: '0 0 6px', color: contractorTheme.text, fontSize: '18px' }}>
-              {credModal.hasCreds ? 'Update' : 'Add'} credentials
+              {credModal.mode === 'update' ? 'Update credentials' : 'Add AHJ Credentials'}
             </h3>
             <p style={{ margin: '0 0 16px', color: contractorTheme.textMuted, fontSize: '13px' }}>
-              {credModal.label} portal login
+              {credModal.mode === 'update'
+                ? 'Enter a new password to overwrite the saved portal login.'
+                : 'Select a county portal and enter your login.'}
             </p>
+
+            {credModal.mode === 'add' ? (
+              <div style={{ marginBottom: '12px' }}>
+                <label style={labelStyle}>Select County Portal</label>
+                <select
+                  style={inputStyle}
+                  value={credForm.ahj_id}
+                  onChange={function (e) { setCredForm(function (p) { return { ...p, ahj_id: e.target.value } }) }}
+                  required
+                >
+                  <option value="">Choose a portal…</option>
+                  {ahjs.map(function (ahj) {
+                    return (
+                      <option key={ahj.id} value={ahj.id}>
+                        {ahj.name || ahj.county_or_city}
+                      </option>
+                    )
+                  })}
+                </select>
+              </div>
+            ) : (
+              <p style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 600, color: contractorTheme.text }}>
+                {credentialLabel(credModal.credential)}
+              </p>
+            )}
+
             <div style={{ marginBottom: '12px' }}>
-              <label style={labelStyle}>Portal username</label>
+              <label style={labelStyle}>Portal Username</label>
               <input
                 style={inputStyle}
                 value={credForm.username}
@@ -484,47 +661,109 @@ export default function ContractorSettingsPage() {
               />
             </div>
             <div style={{ marginBottom: '16px' }}>
-              <label style={labelStyle}>Portal password</label>
-              <input
-                style={inputStyle}
-                type="password"
-                value={credForm.password}
-                onChange={function (e) { setCredForm(function (p) { return { ...p, password: e.target.value } }) }}
-                autoComplete="new-password"
-                required
-              />
+              <label style={labelStyle}>Portal Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  style={{ ...inputStyle, paddingRight: '44px' }}
+                  type={showPassword ? 'text' : 'password'}
+                  value={credForm.password}
+                  onChange={function (e) { setCredForm(function (p) { return { ...p, password: e.target.value } }) }}
+                  autoComplete="new-password"
+                  placeholder={credModal.mode === 'update' ? 'Enter new password' : ''}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={function () { setShowPassword(function (v) { return !v }) }}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    border: 'none',
+                    background: 'transparent',
+                    color: contractorTheme.textMuted,
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    padding: '4px',
+                  }}
+                >
+                  {showPassword ? '🙈' : '👁'}
+                </button>
+              </div>
             </div>
+
             {credMessage ? (
               <p style={{
                 fontSize: '13px',
                 marginBottom: '12px',
-                color: credMessage.includes('Failed') || credMessage.includes('required')
-                  ? contractorTheme.error
-                  : contractorTheme.success,
+                color: contractorTheme.error,
               }}>
                 {credMessage}
               </p>
             ) : null}
+
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                onClick={function () { setCredModal(null); setCredMessage('') }}
-                style={{
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  border: '1px solid ' + contractorTheme.border,
-                  backgroundColor: 'transparent',
-                  color: contractorTheme.textMuted,
-                  cursor: 'pointer',
-                }}
-              >
+              <button type="button" onClick={closeCredModal} style={secondaryBtn}>
                 Cancel
               </button>
               <button type="submit" disabled={credSaving} style={contractorPrimaryButtonStyle(credSaving)}>
-                {credSaving ? 'Saving...' : 'Save'}
+                {credSaving ? 'Saving...' : 'Save Credentials'}
               </button>
             </div>
           </form>
+        </div>
+      ) : null}
+
+      {deleteConfirm ? (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(2, 6, 23, 0.72)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 70,
+          padding: '16px',
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '440px',
+            backgroundColor: contractorTheme.surface || '#0b1220',
+            border: '1px solid ' + contractorTheme.border,
+            borderRadius: '12px',
+            padding: '22px',
+          }}>
+            <h3 style={{ margin: '0 0 10px', color: contractorTheme.text, fontSize: '17px' }}>
+              Remove credentials?
+            </h3>
+            <p style={{ margin: '0 0 18px', color: contractorTheme.textBody, fontSize: '14px', lineHeight: 1.55 }}>
+              Are you sure? This will remove your {credentialLabel(deleteConfirm)} credentials.
+              DART iQ will not be able to submit permits in this county until you add them again.
+            </p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={function () { setDeleteConfirm(null) }}
+                style={secondaryBtn}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={confirmDelete}
+                style={{
+                  ...contractorPrimaryButtonStyle(deleting),
+                  backgroundColor: '#dc2626',
+                }}
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

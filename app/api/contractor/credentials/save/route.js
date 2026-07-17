@@ -7,6 +7,14 @@ import { createClient } from '../../../../../lib/supabase-server.js'
 const require = createRequire(import.meta.url)
 const { providerForPortal, providerForCountyId, getCountyById } = require('../../../../../lib/ahj/county-options.js')
 
+function fallbackProviderFromPortal(portal) {
+  if (!portal) return null
+  if (portal.credential_key) return String(portal.credential_key).toLowerCase().trim()
+  const name = String(portal.name || portal.county_or_city || '').toLowerCase()
+  const slug = name.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+  return slug ? slug + '_portal' : null
+}
+
 export async function POST(request) {
   try {
     if (!isEncryptionConfigured()) {
@@ -24,6 +32,7 @@ export async function POST(request) {
     const password = body.password ? String(body.password) : ''
     const ahjId = body.ahj_id || null
     const countyId = body.county_id ? String(body.county_id).toLowerCase() : null
+    const isUpdate = !!body.credential_id || !!body.is_update
 
     if (!username || !password) {
       return Response.json({ error: 'Portal username and password are required' }, { status: 400 })
@@ -48,13 +57,14 @@ export async function POST(request) {
       provider = providerForCountyId(countyId)
     }
     if (!provider && portal) {
-      provider = providerForPortal(portal)
+      provider = providerForPortal(portal) || fallbackProviderFromPortal(portal)
     }
     if (!provider) {
       return Response.json({ error: 'Could not determine portal provider for this county' }, { status: 400 })
     }
 
     const county = countyId ? getCountyById(countyId) : null
+    const label = portal?.name || county?.label || provider
     const credential = await saveCredential({
       companyId: context.companyId,
       provider,
@@ -68,7 +78,10 @@ export async function POST(request) {
       success: true,
       credential,
       county: county || null,
-      ahj_name: portal?.name || county?.label || provider,
+      ahj_name: label,
+      message: isUpdate
+        ? '✓ ' + label + ' credentials updated'
+        : '✓ ' + label + ' credentials saved',
     })
   } catch (err) {
     console.error('[credentials/save] Error:', err.message)
