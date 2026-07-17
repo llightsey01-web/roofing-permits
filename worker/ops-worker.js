@@ -49,6 +49,7 @@ const { validateEnvironment, getEnvironment } = requireLib('lib/env/environment.
 const { recordWorkerPoll } = requireMonitoring('lib/monitoring/worker-heartbeat')
 const { createDailyMetricsScheduler } = requireMonitoring('lib/monitoring/platform-metrics')
 const { createProductApprovalsSyncScheduler } = requireProductApprovalsSync()
+const { isAutomationEnabled } = requireLib('lib/automation/automation-gate.js')
 
 validateEnvironment()
 console.log('[ops-worker] Environment:', getEnvironment())
@@ -190,6 +191,12 @@ async function poll() {
       }
     } catch (productSyncErr) {
       console.error('[ops-worker] Product approvals sync error:', productSyncErr.message)
+    }
+    var enabled = await isAutomationEnabled(supabase)
+    if (!enabled) {
+      console.log('[ops-worker] Automation is paused — skipping poll')
+      setTimeout(poll, POLL_INTERVAL_MS)
+      return
     }
     await claimAndRun()
   } catch (err) {

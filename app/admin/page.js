@@ -19,6 +19,7 @@ export default function AdminDashboardPage() {
   })
   const [recentLeads, setRecentLeads] = useState([])
   const [health, setHealth] = useState(null)
+  const [automationEnabled, setAutomationEnabled] = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -66,6 +67,21 @@ export default function AdminDashboardPage() {
         setHealth({ status: 'down' })
       }
 
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.access_token) {
+          const gateRes = await fetch('/api/admin/automation-gate', {
+            headers: { Authorization: 'Bearer ' + session.access_token },
+          })
+          if (gateRes.ok) {
+            const gateData = await gateRes.json()
+            setAutomationEnabled(Boolean(gateData.enabled))
+          }
+        }
+      } catch {
+        // leave gate status unknown
+      }
+
       setLoading(false)
     }
     load()
@@ -93,6 +109,53 @@ export default function AdminDashboardPage() {
           Platform overview · contractors · pipeline · system health
         </p>
       </div>
+
+      {automationEnabled === false ? (
+        <div style={{
+          ...adminPanelStyle(),
+          padding: '16px 18px',
+          marginBottom: '20px',
+          borderLeft: '3px solid ' + adminTheme.warning,
+        }}>
+          <p style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 700, color: adminTheme.warning }}>
+            ⚠️ AUTOMATION PAUSED
+          </p>
+          <p style={{ margin: '0 0 12px', fontSize: '13px', color: adminTheme.textMuted }}>
+            Workers are not processing runs. Enable automation when pipeline is ready.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push('/admin/operations')}
+            style={{
+              padding: '8px 14px',
+              borderRadius: '6px',
+              border: '1px solid ' + adminTheme.border,
+              backgroundColor: adminTheme.surfaceRaised,
+              color: adminTheme.accent,
+              fontFamily: adminTheme.fontMono,
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Go to Operations →
+          </button>
+        </div>
+      ) : automationEnabled === true ? (
+        <div style={{
+          ...adminPanelStyle(),
+          padding: '14px 18px',
+          marginBottom: '20px',
+          borderLeft: '3px solid ' + adminTheme.success,
+        }}>
+          <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: adminTheme.success }}>
+            ✓ AUTOMATION ACTIVE
+          </p>
+          <p style={{ margin: '4px 0 0', fontSize: '12px', color: adminTheme.textMuted }}>
+            Workers are processing runs normally.
+          </p>
+        </div>
+      ) : null}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
         {[

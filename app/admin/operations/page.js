@@ -34,6 +34,24 @@ export default function AdminOperationsPage() {
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState('')
   const [message, setMessage] = useState('')
+  const [gateEnabled, setGateEnabled] = useState(null)
+  const [gateUpdatedAt, setGateUpdatedAt] = useState(null)
+  const [gateBusy, setGateBusy] = useState(false)
+
+  const loadGate = useCallback(async function (accessToken) {
+    try {
+      const res = await fetch('/api/admin/automation-gate', {
+        headers: { Authorization: 'Bearer ' + accessToken },
+      })
+      const payload = await res.json()
+      if (res.ok) {
+        setGateEnabled(Boolean(payload.enabled))
+        setGateUpdatedAt(payload.updatedAt || null)
+      }
+    } catch {
+      // keep previous gate state
+    }
+  }, [])
 
   const load = useCallback(async function () {
     try {
@@ -53,17 +71,51 @@ export default function AdminOperationsPage() {
         setData(payload)
         setError('')
       }
+      await loadGate(session.access_token)
     } catch (err) {
       setError(err.message)
     }
     setLoading(false)
-  }, [router])
+  }, [router, loadGate])
 
   useEffect(function () {
     load()
     const timer = setInterval(load, 30000)
     return function () { clearInterval(timer) }
   }, [load])
+
+  async function toggleGate() {
+    if (gateEnabled === null) return
+    const next = !gateEnabled
+    if (next && !window.confirm('Enable automation? Workers will start picking up queued runs immediately.')) {
+      return
+    }
+    setGateBusy(true)
+    setMessage('')
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/admin/automation-gate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + session.access_token,
+        },
+        body: JSON.stringify({ enabled: next }),
+      })
+      const payload = await res.json()
+      if (!res.ok) {
+        setMessage(payload.error || 'Failed to update automation gate')
+      } else {
+        setGateEnabled(Boolean(payload.enabled))
+        setMessage(payload.message || (next ? 'Automation enabled' : 'Automation paused'))
+        await loadGate(session.access_token)
+      }
+    } catch (err) {
+      setMessage(err.message)
+    }
+    setGateBusy(false)
+  }
 
   async function callAction(jobId, action) {
     setBusyId(jobId + ':' + action)
@@ -119,6 +171,78 @@ export default function AdminOperationsPage() {
 
       {error ? <p style={{ color: adminTheme.danger, marginBottom: '12px' }}>{error}</p> : null}
       {message ? <p style={{ color: adminTheme.success, marginBottom: '12px', fontFamily: adminTheme.fontMono, fontSize: '12px' }}>{message}</p> : null}
+
+      <div style={{
+        ...adminPanelStyle(),
+        padding: '16px 18px',
+        marginBottom: '18px',
+        borderLeft: '3px solid ' + (gateEnabled ? adminTheme.success : adminTheme.warning),
+      }}>
+        <p style={{ margin: '0 0 10px', fontSize: '11px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono, letterSpacing: '0.08em' }}>
+          AUTOMATION GATE
+        </p>
+        {gateEnabled === null ? (
+          <p style={{ margin: 0, fontSize: '13px', color: adminTheme.textMuted }}>Loading gate status…</p>
+        ) : gateEnabled ? (
+          <>
+            <p style={{ margin: '0 0 8px', fontSize: '14px', color: adminTheme.text, fontWeight: 600 }}>
+              Status: 🟢 ACTIVE — Workers are processing runs normally
+            </p>
+            <button
+              type="button"
+              onClick={toggleGate}
+              disabled={gateBusy}
+              style={{
+                marginTop: '4px',
+                padding: '8px 14px',
+                borderRadius: '6px',
+                border: '1px solid ' + adminTheme.border,
+                backgroundColor: adminTheme.surfaceRaised,
+                color: adminTheme.warning,
+                fontFamily: adminTheme.fontMono,
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: gateBusy ? 'wait' : 'pointer',
+              }}
+            >
+              {gateBusy ? 'Updating…' : 'Pause Automation'}
+            </button>
+          </>
+        ) : (
+          <>
+            <p style={{ margin: '0 0 8px', fontSize: '14px', color: adminTheme.text, fontWeight: 600 }}>
+              Status: 🔴 PAUSED — Workers will not pick up new runs
+            </p>
+            <button
+              type="button"
+              onClick={toggleGate}
+              disabled={gateBusy}
+              style={{
+                marginTop: '4px',
+                padding: '8px 14px',
+                borderRadius: '6px',
+                border: '1px solid rgba(52,211,153,0.35)',
+                backgroundColor: 'rgba(52,211,153,0.12)',
+                color: adminTheme.success,
+                fontFamily: adminTheme.fontMono,
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: gateBusy ? 'wait' : 'pointer',
+              }}
+            >
+              {gateBusy ? 'Updating…' : 'Enable Automation'}
+            </button>
+            <p style={{ margin: '10px 0 0', fontSize: '12px', color: adminTheme.warning }}>
+              ⚠️ Only enable when pipeline has been fully tested end-to-end.
+            </p>
+          </>
+        )}
+        {gateUpdatedAt ? (
+          <p style={{ margin: '10px 0 0', fontSize: '11px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono }}>
+            Last updated: {new Date(gateUpdatedAt).toLocaleString()}
+          </p>
+        ) : null}
+      </div>
 
       <div style={{ ...adminPanelStyle(), padding: '16px 18px', marginBottom: '18px' }}>
         <p style={{ margin: '0 0 12px', fontSize: '11px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono, letterSpacing: '0.08em' }}>

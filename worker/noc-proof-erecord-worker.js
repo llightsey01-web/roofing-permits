@@ -29,6 +29,7 @@ function requireMonitoring(mod) {
 const { validateEnvironment, getEnvironment } = requireLib('lib/env/environment.js')
 const { sendAlert } = requireMonitoring('lib/monitoring/alert-service')
 const { recordWorkerPoll } = requireMonitoring('lib/monitoring/worker-heartbeat')
+const { isAutomationEnabled } = requireLib('lib/automation/automation-gate.js')
 
 validateEnvironment()
 console.log('[noc-worker] Environment:', getEnvironment())
@@ -271,6 +272,12 @@ async function claimAndRun() {
 async function poll() {
   try {
     await recordWorkerPoll('nocProof')
+    const enabled = await isAutomationEnabled(supabase)
+    if (!enabled) {
+      console.log('[noc-worker] Automation is paused — skipping poll')
+      setTimeout(poll, POLL_INTERVAL_MS)
+      return
+    }
     await claimAndRun()
   } catch (err) {
     console.error('[noc-worker] Poll error:', err.message)
