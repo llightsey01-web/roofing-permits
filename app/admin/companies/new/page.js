@@ -1,16 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../../../lib/supabase'
 import { adminTheme, adminPanelStyle } from '../../../../lib/ui/admin-theme'
-
-const AHJ_OPTIONS = [
-  { id: 'polk', label: 'Polk County', provider: 'polk_accela' },
-  { id: 'lee', label: 'Lee County', provider: 'lee_accela' },
-  { id: 'manatee', label: 'Manatee County', provider: 'manatee_accela' },
-  { id: 'sarasota', label: 'Sarasota County', provider: 'sarasota_accela' },
-]
 
 const PLANS = [
   { value: 'starter', label: 'Starter — $750/mo' },
@@ -20,17 +13,6 @@ const PLANS = [
 ]
 
 const emptyForm = {
-  name: '',
-  dba_name: '',
-  license_number: '',
-  qualifier_name: '',
-  qualifier_license: '',
-  primary_email: '',
-  phone: '',
-  address: '',
-  city: '',
-  state: 'FL',
-  zip: '',
   contact_first_name: '',
   contact_last_name: '',
   contact_email: '',
@@ -38,20 +20,29 @@ const emptyForm = {
   subscription_plan: 'starter',
   trial_days: '30',
   notes: '',
-  ahjs: { polk: true, lee: false, manatee: false, sarasota: false },
-  review_gates: {
-    noc_before_send: false,
-    permit_before_submit: false,
-    auto_approve_all: true,
-  },
+  ahjIds: {},
 }
 
 export default function OnboardContractorPage() {
   const router = useRouter()
   const [form, setForm] = useState(emptyForm)
+  const [ahjPortals, setAhjPortals] = useState([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(null)
+
+  useEffect(function () {
+    async function loadAhjs() {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('ahj_portals')
+        .select('id, name, county_or_city, portal_url, credential_key')
+        .eq('is_active', true)
+        .order('name')
+      setAhjPortals(data || [])
+    }
+    loadAhjs()
+  }, [])
 
   const inputStyle = {
     width: '100%', padding: '9px 11px',
@@ -71,24 +62,15 @@ export default function OnboardContractorPage() {
   }
 
   function setField(name, value) {
-    setForm(prev => ({ ...prev, [name]: value }))
+    setForm(function (prev) { return { ...prev, [name]: value } })
   }
 
   function toggleAhj(id) {
-    setForm(prev => ({ ...prev, ahjs: { ...prev.ahjs, [id]: !prev.ahjs[id] } }))
-  }
-
-  function setGate(key, checked) {
-    setForm(prev => {
-      const review_gates = { ...prev.review_gates, [key]: checked }
-      if (key === 'auto_approve_all' && checked) {
-        review_gates.noc_before_send = false
-        review_gates.permit_before_submit = false
+    setForm(function (prev) {
+      return {
+        ...prev,
+        ahjIds: { ...prev.ahjIds, [id]: !prev.ahjIds[id] },
       }
-      if ((key === 'noc_before_send' || key === 'permit_before_submit') && checked) {
-        review_gates.auto_approve_all = false
-      }
-      return { ...prev, review_gates }
     })
   }
 
@@ -103,11 +85,18 @@ export default function OnboardContractorPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) throw new Error('Session expired — sign in again')
 
-      const selectedAhjs = AHJ_OPTIONS.filter(a => form.ahjs[a.id]).map(a => ({
-        id: a.id,
-        label: a.label,
-        provider: a.provider,
-      }))
+      const selectedAhjs = ahjPortals
+        .filter(function (p) { return form.ahjIds[p.id] })
+        .map(function (p) {
+          return {
+            id: p.id,
+            label: p.name || p.county_or_city,
+            portal_id: p.id,
+            name: p.name,
+            county_or_city: p.county_or_city,
+            credential_key: p.credential_key,
+          }
+        })
 
       const res = await fetch('/api/admin/onboard', {
         method: 'POST',
@@ -117,21 +106,9 @@ export default function OnboardContractorPage() {
         },
         body: JSON.stringify({
           company: {
-            name: form.name,
-            dba_name: form.dba_name || null,
-            license_number: form.license_number,
-            qualifier_name: form.qualifier_name,
-            qualifier_license: form.qualifier_license,
-            primary_email: form.primary_email,
-            phone: form.phone,
-            address: form.address || null,
-            city: form.city || null,
-            state: form.state || 'FL',
-            zip: form.zip || null,
             subscription_plan: form.subscription_plan,
             trial_days: Number(form.trial_days) || 30,
             notes: form.notes || null,
-            review_gates: form.review_gates,
           },
           owner: {
             first_name: form.contact_first_name,
@@ -155,26 +132,28 @@ export default function OnboardContractorPage() {
   }
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: '860px' }}>
+    <div style={{ padding: '24px 28px', maxWidth: '720px' }}>
       <div style={{ marginBottom: '20px' }}>
         <button
-          onClick={() => router.push('/admin/companies')}
+          onClick={function () { router.push('/admin/companies') }}
           style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '12px', cursor: 'pointer', padding: 0, marginBottom: '8px', fontFamily: adminTheme.fontMono }}
         >
           ← Companies
         </button>
-        <h1 style={{ fontSize: '22px', fontWeight: '700', color: adminTheme.text, margin: 0 }}>Onboard New Contractor</h1>
+        <h1 style={{ fontSize: '22px', fontWeight: '700', color: adminTheme.text, margin: 0 }}>
+          Onboard New Contractor
+        </h1>
         <p style={{ fontSize: '13px', color: adminTheme.textDim, margin: '6px 0 0 0' }}>
-          Creates company, portal admin user, AHJ placeholders, and sends welcome email
+          Creates a login, sends a welcome email, and lets the contractor complete company details
         </p>
       </div>
 
-      {success && (
+      {success ? (
         <div style={{
           ...adminPanelStyle(), padding: '18px', marginBottom: '16px',
           borderColor: '#059669', backgroundColor: '#064e3b',
         }}>
-          <p style={{ margin: 0, color: '#6ee7b7', fontWeight: '600' }}>Contractor onboarded successfully</p>
+          <p style={{ margin: 0, color: '#6ee7b7', fontWeight: '600' }}>Contractor invite sent</p>
           <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: '#a7f3d0', fontFamily: adminTheme.fontMono }}>
             Company ID: {success.company_id}
           </p>
@@ -183,90 +162,60 @@ export default function OnboardContractorPage() {
           </p>
           <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
             <button
-              onClick={() => router.push('/admin/companies/' + success.company_id)}
+              onClick={function () { router.push('/admin/companies/' + success.company_id) }}
               style={{ padding: '8px 12px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
             >
               View company
             </button>
             <button
-              onClick={() => setSuccess(null)}
+              onClick={function () { setSuccess(null) }}
               style={{ padding: '8px 12px', backgroundColor: 'transparent', color: '#a7f3d0', border: '1px solid #059669', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
             >
               Onboard another
             </button>
           </div>
         </div>
-      )}
+      ) : null}
 
       <form onSubmit={handleSubmit}>
-        <div style={{ ...adminPanelStyle(), padding: '20px', marginBottom: '16px' }}>
-          <h2 style={sectionTitle}>Company Information</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={labelStyle}>Company legal name *</label>
-              <input style={inputStyle} required value={form.name} onChange={e => setField('name', e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>DBA name</label>
-              <input style={inputStyle} value={form.dba_name} onChange={e => setField('dba_name', e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>License number *</label>
-              <input style={inputStyle} required value={form.license_number} onChange={e => setField('license_number', e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>Qualifier name *</label>
-              <input style={inputStyle} required value={form.qualifier_name} onChange={e => setField('qualifier_name', e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>Qualifier license *</label>
-              <input style={inputStyle} required value={form.qualifier_license} onChange={e => setField('qualifier_license', e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>Primary email *</label>
-              <input style={inputStyle} type="email" required value={form.primary_email} onChange={e => setField('primary_email', e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>Phone *</label>
-              <input style={inputStyle} required value={form.phone} onChange={e => setField('phone', e.target.value)} />
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={labelStyle}>Address</label>
-              <input style={inputStyle} value={form.address} onChange={e => setField('address', e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>City</label>
-              <input style={inputStyle} value={form.city} onChange={e => setField('city', e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>State</label>
-              <input style={inputStyle} value={form.state} onChange={e => setField('state', e.target.value)} />
-            </div>
-            <div>
-              <label style={labelStyle}>Zip</label>
-              <input style={inputStyle} value={form.zip} onChange={e => setField('zip', e.target.value)} />
-            </div>
-          </div>
-        </div>
-
         <div style={{ ...adminPanelStyle(), padding: '20px', marginBottom: '16px' }}>
           <h2 style={sectionTitle}>Owner / Admin User</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div>
               <label style={labelStyle}>First name *</label>
-              <input style={inputStyle} required value={form.contact_first_name} onChange={e => setField('contact_first_name', e.target.value)} />
+              <input
+                style={inputStyle}
+                required
+                value={form.contact_first_name}
+                onChange={function (e) { setField('contact_first_name', e.target.value) }}
+              />
             </div>
             <div>
               <label style={labelStyle}>Last name *</label>
-              <input style={inputStyle} required value={form.contact_last_name} onChange={e => setField('contact_last_name', e.target.value)} />
+              <input
+                style={inputStyle}
+                required
+                value={form.contact_last_name}
+                onChange={function (e) { setField('contact_last_name', e.target.value) }}
+              />
             </div>
             <div>
               <label style={labelStyle}>Email * (login)</label>
-              <input style={inputStyle} type="email" required value={form.contact_email} onChange={e => setField('contact_email', e.target.value)} />
+              <input
+                style={inputStyle}
+                type="email"
+                required
+                value={form.contact_email}
+                onChange={function (e) { setField('contact_email', e.target.value) }}
+              />
             </div>
             <div>
               <label style={labelStyle}>Phone</label>
-              <input style={inputStyle} value={form.contact_phone} onChange={e => setField('contact_phone', e.target.value)} />
+              <input
+                style={inputStyle}
+                value={form.contact_phone}
+                onChange={function (e) { setField('contact_phone', e.target.value) }}
+              />
             </div>
           </div>
         </div>
@@ -276,59 +225,84 @@ export default function OnboardContractorPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div>
               <label style={labelStyle}>Plan</label>
-              <select style={inputStyle} value={form.subscription_plan} onChange={e => setField('subscription_plan', e.target.value)}>
-                {PLANS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              <select
+                style={inputStyle}
+                value={form.subscription_plan}
+                onChange={function (e) { setField('subscription_plan', e.target.value) }}
+              >
+                {PLANS.map(function (p) {
+                  return <option key={p.value} value={p.value}>{p.label}</option>
+                })}
               </select>
             </div>
             <div>
               <label style={labelStyle}>Trial period (days)</label>
-              <input style={inputStyle} type="number" min="0" value={form.trial_days} onChange={e => setField('trial_days', e.target.value)} />
+              <input
+                style={inputStyle}
+                type="number"
+                min="0"
+                value={form.trial_days}
+                onChange={function (e) { setField('trial_days', e.target.value) }}
+              />
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={labelStyle}>Notes</label>
-              <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} value={form.notes} onChange={e => setField('notes', e.target.value)} />
+              <label style={labelStyle}>Notes (internal only)</label>
+              <textarea
+                style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }}
+                value={form.notes}
+                onChange={function (e) { setField('notes', e.target.value) }}
+              />
             </div>
           </div>
         </div>
 
         <div style={{ ...adminPanelStyle(), padding: '20px', marginBottom: '16px' }}>
           <h2 style={sectionTitle}>AHJ Access</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            {AHJ_OPTIONS.map(ahj => (
-              <label key={ahj.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: adminTheme.text, cursor: 'pointer' }}>
-                <input type="checkbox" checked={!!form.ahjs[ahj.id]} onChange={() => toggleAhj(ahj.id)} />
-                {ahj.label}
-              </label>
-            ))}
-          </div>
+          <p style={{ margin: '0 0 12px', fontSize: '13px', color: adminTheme.textDim }}>
+            Which counties will this contractor work in?
+          </p>
+          {ahjPortals.length === 0 ? (
+            <p style={{ margin: 0, fontSize: '13px', color: adminTheme.textMuted }}>
+              No active AHJs found in ahj_portals.
+            </p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              {ahjPortals.map(function (ahj) {
+                return (
+                  <label
+                    key={ahj.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '13px',
+                      color: adminTheme.text,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={!!form.ahjIds[ahj.id]}
+                      onChange={function () { toggleAhj(ahj.id) }}
+                    />
+                    {ahj.name || ahj.county_or_city}
+                  </label>
+                )
+              })}
+            </div>
+          )}
         </div>
 
-        <div style={{ ...adminPanelStyle(), padding: '20px', marginBottom: '16px' }}>
-          <h2 style={sectionTitle}>Review Gates</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: adminTheme.text }}>
-              <input type="checkbox" checked={form.review_gates.noc_before_send} onChange={e => setGate('noc_before_send', e.target.checked)} />
-              Require NOC approval before sending
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: adminTheme.text }}>
-              <input type="checkbox" checked={form.review_gates.permit_before_submit} onChange={e => setGate('permit_before_submit', e.target.checked)} />
-              Require permit approval before submitting
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: adminTheme.text }}>
-              <input type="checkbox" checked={form.review_gates.auto_approve_all} onChange={e => setGate('auto_approve_all', e.target.checked)} />
-              Auto-approve all (default)
-            </label>
-          </div>
-        </div>
-
-        {error && (
-          <p style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px', fontFamily: adminTheme.fontMono }}>{error}</p>
-        )}
+        {error ? (
+          <p style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px', fontFamily: adminTheme.fontMono }}>
+            {error}
+          </p>
+        ) : null}
 
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
             type="button"
-            onClick={() => router.push('/admin/companies')}
+            onClick={function () { router.push('/admin/companies') }}
             style={{
               padding: '10px 16px', border: '1px solid ' + adminTheme.border, borderRadius: '6px',
               backgroundColor: adminTheme.surface, color: adminTheme.textMuted, cursor: 'pointer', fontSize: '13px',
@@ -345,7 +319,7 @@ export default function OnboardContractorPage() {
               cursor: submitting ? 'not-allowed' : 'pointer',
             }}
           >
-            {submitting ? 'Onboarding...' : 'Create Contractor Account'}
+            {submitting ? 'Sending invite...' : 'Create Contractor Account'}
           </button>
         </div>
       </form>

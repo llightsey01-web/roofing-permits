@@ -162,10 +162,11 @@ export default function ContractorOnboardingPage() {
 
       setStep(mapResumeStep(company.onboarding_step))
 
+      const placeholderName = /\(Pending Setup\)\s*$/i.test(company.name || '')
       setForm(function (prev) {
         return {
           ...prev,
-          name: company.name || '',
+          name: placeholderName ? '' : (company.name || ''),
           dba_name: company.dba_name || '',
           address: company.address || '',
           city: company.city || '',

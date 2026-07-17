@@ -238,6 +238,33 @@ export default function CompanyDetailPage() {
         ← Companies
       </button>
 
+      {company.onboarding_status === 'pending' ? (
+        <div style={{
+          ...adminPanelStyle(),
+          padding: '16px 18px',
+          marginBottom: '16px',
+          borderColor: '#3b82f6',
+          backgroundColor: '#1e3a5f',
+        }}>
+          <p style={{ margin: '0 0 8px', color: '#93c5fd', fontSize: '14px', fontWeight: 600 }}>
+            ⏳ Contractor has not completed setup yet.
+          </p>
+          <p style={{ margin: '0 0 12px', color: adminTheme.textMuted, fontSize: '13px' }}>
+            Onboarding email sent to:{' '}
+            <span style={{ color: adminTheme.text, fontFamily: adminTheme.fontMono }}>
+              {company.primary_email || '—'}
+            </span>
+          </p>
+          <button
+            onClick={resendOnboardingEmail}
+            disabled={saving}
+            style={{ padding: '8px 14px', backgroundColor: '#f97316', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+          >
+            Resend Onboarding Email
+          </button>
+        </div>
+      ) : null}
+
       {company.onboarding_status === 'pending_review' ? (
         <div style={{
           ...adminPanelStyle(),
