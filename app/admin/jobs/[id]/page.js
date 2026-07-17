@@ -11,6 +11,7 @@ export default function AdminJobDetailPage() {
   const [job, setJob] = useState(null)
   const [company, setCompany] = useState(null)
   const [runs, setRuns] = useState([])
+  const [actions, setActions] = useState([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
@@ -30,6 +31,13 @@ export default function AdminJobDetailPage() {
       .order('created_at', { ascending: false })
       .limit(30)
     setRuns(runRows || [])
+    const { data: actionRows } = await supabase
+      .from('run_actions')
+      .select('*')
+      .eq('job_id', id)
+      .order('created_at', { ascending: false })
+      .limit(100)
+    setActions(actionRows || [])
     setLoading(false)
   }
 
@@ -113,7 +121,7 @@ export default function AdminJobDetailPage() {
         </div>
       </div>
 
-      <div style={adminPanelStyle()}>
+      <div style={{ ...adminPanelStyle(), marginBottom: '16px' }}>
         <div style={{ padding: '14px 18px', borderBottom: '1px solid ' + adminTheme.border }}>
           <h2 style={{ fontSize: '12px', fontFamily: adminTheme.fontMono, color: adminTheme.textMuted, textTransform: 'uppercase', margin: 0 }}>Automation runs</h2>
         </div>
@@ -132,6 +140,68 @@ export default function AdminJobDetailPage() {
               ))}
             </tbody>
           </table>
+        )}
+      </div>
+
+      <div style={adminPanelStyle()}>
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid ' + adminTheme.border }}>
+          <h2 style={{ fontSize: '12px', fontFamily: adminTheme.fontMono, color: adminTheme.textMuted, textTransform: 'uppercase', margin: 0 }}>
+            Audit trail ({actions.length})
+          </h2>
+        </div>
+        {actions.length === 0 ? (
+          <div style={{ padding: '20px', color: adminTheme.textDim }}>No run actions recorded yet</div>
+        ) : (
+          <div style={{ padding: '8px 0' }}>
+            {actions.map(function (action) {
+              const ok = action.status === 'success' || action.status === 'complete' || action.status === 'ok'
+              const fail = action.status === 'error' || action.status === 'failed'
+              const color = fail ? '#f87171' : ok ? '#34d399' : adminTheme.textMuted
+              return (
+                <div
+                  key={action.id}
+                  style={{
+                    padding: '12px 18px',
+                    borderBottom: '1px solid ' + adminTheme.borderSubtle,
+                    display: 'grid',
+                    gridTemplateColumns: '140px 1fr',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ fontSize: '11px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono }}>
+                    {action.created_at ? new Date(action.created_at).toLocaleString() : '—'}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', color: adminTheme.text, fontWeight: 600 }}>
+                      <span style={{ color: color }}>●</span>{' '}
+                      {action.step_name || action.action}
+                      <span style={{ marginLeft: '8px', fontSize: '11px', color: color, fontFamily: adminTheme.fontMono, fontWeight: 500 }}>
+                        {action.status}
+                      </span>
+                      {action.duration_ms != null ? (
+                        <span style={{ marginLeft: '8px', fontSize: '11px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono }}>
+                          {action.duration_ms}ms
+                        </span>
+                      ) : null}
+                    </div>
+                    {action.error_message ? (
+                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#f87171' }}>{action.error_message}</p>
+                    ) : null}
+                    {action.portal_response ? (
+                      <p style={{ margin: '4px 0 0', fontSize: '11px', color: adminTheme.textMuted, fontFamily: adminTheme.fontMono, whiteSpace: 'pre-wrap' }}>
+                        {String(action.portal_response).slice(0, 400)}
+                      </p>
+                    ) : null}
+                    {action.screenshot_path ? (
+                      <p style={{ margin: '4px 0 0', fontSize: '11px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono }}>
+                        screenshot: {action.screenshot_path}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         )}
       </div>
     </div>

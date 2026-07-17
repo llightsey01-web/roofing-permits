@@ -129,85 +129,37 @@ async function handleNocGenerate(job, run) {
 
 async function handleProofSend(job, run) {
   var { sendNocToProof } = resolveLib('lib/proof/send-noc-to-proof.js')
-
-  var result = await sendNocToProof(job.id, { headless: true, companyId: job.company_id || null })
-  await markRunComplete(run.id)
-
-  var { data: updatedJob } = await supabase
-    .from('jobs')
-    .select('job_specs')
-    .eq('id', job.id)
-    .single()
-
-  var transactionId =
-    (updatedJob && updatedJob.job_specs && updatedJob.job_specs.proof && updatedJob.job_specs.proof.transaction_id) ||
-    (result && result.transactionId) ||
-    null
-
-  if (!transactionId) {
-    console.log('[noc-worker] Proof send finished without transaction_id for job ' + job.id + ' — not queuing proof_check')
-    return result
-  }
-
-  await supabase.from('automation_runs').insert({
-    job_id: job.id,
-    run_type: 'proof_check',
-    run_status: 'queued',
-    dependency_run_id: run.id,
-    started_at: new Date().toISOString(),
-    attempts: 0,
+  var { handleProofSend: runProofSend } = requireHandler('proof-handler.js')
+  return runProofSend(job, run, {
+    supabase: supabase,
+    markRunComplete: markRunComplete,
+    sendNocToProof: sendNocToProof,
   })
-  console.log('[noc-worker] Queued proof_check for job ' + job.id)
-
-  return result
 }
 
 async function handleProofCheck(job, run) {
   var { runProofCompletionCheck } = resolveLib('lib/proof/completion.js')
-
-  var checkResult = await runProofCompletionCheck({
-    jobId: job.id,
-    headless: true,
-    companyId: job.company_id || null,
+  var { handleProofCheck: runProofCheck } = requireHandler('proof-handler.js')
+  return runProofCheck(job, run, {
+    supabase: supabase,
+    markRunComplete: markRunComplete,
+    requeueRun: requeueRun,
+    runProofCompletionCheck: runProofCompletionCheck,
   })
-  var jobResult = (checkResult.results || [])[0]
-
-  if (jobResult && jobResult.complete) {
-    await markRunComplete(run.id)
-
-    await supabase.from('automation_runs').insert({
-      job_id: job.id,
-      run_type: 'erecord_prepare',
-      run_status: 'queued',
-      dependency_run_id: run.id,
-      started_at: new Date().toISOString(),
-      attempts: 0,
-    })
-    console.log('[noc-worker] Queued erecord_prepare for job ' + job.id)
-
-    return { complete: true, jobResult: jobResult }
-  }
-
-  console.log('[noc-worker] Proof not complete for job ' + job.id + ' — requeue proof_check')
-  await requeueRun(run.id, run.attempts)
-  return { complete: false, requeued: true }
 }
 
 async function handleErecordPrepare(job, run) {
   var { prepareRecordingPackage } = resolveLib('lib/erecord/service.js')
-
-  var prepResult = await prepareRecordingPackage(job.id, {
-    headless: true,
-    companyId: job.company_id || null,
+  var { handleErecordPrepare: runErecordPrepare } = requireHandler('epn-handler.js')
+  return runErecordPrepare(job, run, {
+    markRunComplete: markRunComplete,
+    prepareRecordingPackage: prepareRecordingPackage,
   })
-  await markRunComplete(run.id)
-  return prepResult
 }
 
 async function handleErecordSubmit(job, run) {
-  console.log('[noc-worker] erecord_submit placeholder for run ' + run.id)
-  await markRunComplete(run.id, { run_status: 'needs_review' })
-  return { skipped: true, reason: 'erecord_submit not implemented' }
+  var { handleErecordSubmit: runErecordSubmit } = requireHandler('epn-handler.js')
+  return runErecordSubmit(job, run, { markRunComplete: markRunComplete })
 }
 
 async function executeRun(job, run) {
@@ -286,6 +238,15 @@ async function claimAndRun() {
     var attemptCount = (run.attempts || 0) + 1
     await markRunError(run.id, job.id, err)
     if (attemptCount >= 3) {
+      var companyName = null
+      try {
+        var { data: companyRow } = await supabase
+          .from('companies')
+          .select('name')
+          .eq('id', job.company_id)
+          .maybeSingle()
+        companyName = companyRow && companyRow.name
+      } catch (e) {}
       await sendAlert({
         type: 'automation_failed',
         severity: 'critical',
@@ -295,7 +256,11 @@ async function claimAndRun() {
         details: {
           runId: run.id,
           runType: run.run_type,
+          stepName: run.run_type,
           errorMessage: err.message,
+          propertyAddress: [job.property_address, job.property_city, job.property_state].filter(Boolean).join(', '),
+          companyName: companyName,
+          screenshotPath: err.forensics && err.forensics.screenshotPath,
           worker: 'nocProof',
         },
       })

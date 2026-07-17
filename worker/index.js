@@ -127,8 +127,24 @@ async function claimAndRun() {
 
   const jobWithDocs = { ...job, documents: documents || [] }
 
-  const { executeRun } = require('./runner')
-  await executeRun(jobWithDocs, run)
+  try {
+    const { executeRun } = require('./runner')
+    const { handlePolkPermit } = require('./handlers/polk-handler.js')
+    await handlePolkPermit(jobWithDocs, run, {
+      runPermitWorkflow: function (j, runId) {
+        return executeRun(j, Object.assign({}, run, { id: runId }))
+      },
+      serviceKey: 'polk',
+    })
+  } catch (permitErr) {
+    console.error('[worker] Permit run failed:', permitErr.message)
+    await supabase.from('automation_runs').update({
+      run_status: 'error',
+      error_message: permitErr.message,
+      completed_at: new Date().toISOString(),
+    }).eq('id', run.id)
+    await supabase.from('jobs').update({ job_status: 'needs_correction' }).eq('id', job.id)
+  }
 
   var { data: finishedRun } = await supabase
     .from('automation_runs')
@@ -150,7 +166,9 @@ async function claimAndRun() {
       details: {
         runId: run.id,
         runType: finishedRun.run_type,
+        stepName: finishedRun.run_type,
         errorMessage: finishedRun.error_message,
+        propertyAddress: [job.property_address, job.property_city, job.property_state].filter(Boolean).join(', '),
         worker: 'permit',
       },
     })
