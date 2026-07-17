@@ -32,6 +32,9 @@ export default function CompanyDetailPage() {
   const [showChangesForm, setShowChangesForm] = useState(false)
   const [changeNotes, setChangeNotes] = useState('')
   const [edit, setEdit] = useState({})
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmName, setDeleteConfirmName] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   async function load() {
     const supabase = createClient()
@@ -108,16 +111,48 @@ export default function CompanyDetailPage() {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ' + session.access_token,
       },
-      body: isActive ? JSON.stringify({ is_active: true, subscription_status: 'active', onboarding_status: 'complete' }) : undefined,
+      body: isActive
+        ? JSON.stringify({ is_active: true, subscription_status: 'active', onboarding_status: 'complete' })
+        : undefined,
     })
     const payload = await res.json()
     if (!res.ok) {
       setMessage(payload.error || 'Update failed')
     } else {
-      setMessage(isActive ? 'Company activated' : 'Company suspended')
+      setMessage(isActive ? 'Company unsuspended' : 'Company suspended')
+      setToast(isActive ? 'Company unsuspended' : 'Company suspended')
       await load()
     }
     setSaving(false)
+  }
+
+  async function deleteCompanyPermanently() {
+    if (!company || deleteConfirmName.trim() !== company.name) return
+    setDeleting(true)
+    setMessage('')
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/admin/companies/' + id + '/delete', {
+        method: 'DELETE',
+        headers: {
+          Authorization: 'Bearer ' + session.access_token,
+        },
+      })
+      const payload = await res.json()
+      if (!res.ok) {
+        setMessage(payload.error || 'Failed to delete company')
+        setDeleting(false)
+        return
+      }
+      try {
+        sessionStorage.setItem('admin_toast', 'Company deleted successfully')
+      } catch (_) {}
+      router.push('/admin/companies')
+    } catch (err) {
+      setMessage(err.message || 'Failed to delete company')
+      setDeleting(false)
+    }
   }
 
   async function resendOnboardingEmail() {
@@ -371,11 +406,11 @@ export default function CompanyDetailPage() {
             Resend Onboarding Email
           </button>
           {company.is_active === false ? (
-            <button onClick={() => setActive(true)} disabled={saving} style={{ padding: '8px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
-              Activate
+            <button onClick={() => setActive(true)} disabled={saving} style={{ padding: '8px 12px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}>
+              Unsuspend
             </button>
           ) : (
-            <button onClick={() => setActive(false)} disabled={saving} style={{ padding: '8px 12px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
+            <button onClick={() => setActive(false)} disabled={saving} style={{ padding: '8px 12px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}>
               Suspend
             </button>
           )}
@@ -487,6 +522,142 @@ export default function CompanyDetailPage() {
           </table>
         )}
       </div>
+
+      <div style={{
+        ...adminPanelStyle(),
+        marginTop: '16px',
+        borderColor: 'rgba(248,113,113,0.35)',
+        backgroundColor: 'rgba(69,10,10,0.25)',
+      }}>
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(248,113,113,0.25)' }}>
+          <h2 style={{ fontSize: '12px', fontFamily: adminTheme.fontMono, color: '#fca5a5', textTransform: 'uppercase', margin: 0, letterSpacing: '0.08em' }}>
+            Danger Zone
+          </h2>
+        </div>
+        <div style={{ padding: '18px' }}>
+          <p style={{ margin: '0 0 12px', fontSize: '13px', color: adminTheme.textMuted }}>
+            Permanently delete this company and all related data. Prefer Suspend for temporary access blocks.
+          </p>
+          <button
+            type="button"
+            disabled={saving || deleting}
+            onClick={function () {
+              setDeleteConfirmName('')
+              setShowDeleteModal(true)
+            }}
+            style={{
+              padding: '8px 14px',
+              backgroundColor: '#dc2626',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 700,
+            }}
+          >
+            Delete Company
+          </button>
+        </div>
+      </div>
+
+      {showDeleteModal ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(2,6,23,0.72)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px',
+          }}
+          onClick={function () {
+            if (!deleting) setShowDeleteModal(false)
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '480px',
+              backgroundColor: adminTheme.surfaceRaised || adminTheme.surface || '#0f172a',
+              border: '1px solid ' + adminTheme.border,
+              borderRadius: '10px',
+              padding: '22px',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.45)',
+            }}
+            onClick={function (e) { e.stopPropagation() }}
+          >
+            <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: adminTheme.text }}>Delete Company</h3>
+            <p style={{ margin: '0 0 12px', fontSize: '14px', color: adminTheme.textMuted }}>
+              Are you sure you want to delete <strong style={{ color: adminTheme.text }}>{company.name}</strong>?
+            </p>
+            <p style={{ margin: '0 0 6px', fontSize: '13px', color: '#fca5a5', fontWeight: 600 }}>
+              This will permanently delete:
+            </p>
+            <ul style={{ margin: '0 0 14px', paddingLeft: '18px', color: adminTheme.textMuted, fontSize: '13px', lineHeight: 1.55 }}>
+              <li>All company data</li>
+              <li>All jobs and permit applications</li>
+              <li>All automation runs and logs</li>
+              <li>All credentials</li>
+              <li>The contractor user account</li>
+            </ul>
+            <p style={{ margin: '0 0 8px', fontSize: '12px', color: adminTheme.textDim }}>
+              This action cannot be undone.
+            </p>
+            <label style={{ display: 'block', fontSize: '12px', color: adminTheme.textDim, marginBottom: '6px' }}>
+              Type the company name to confirm:
+            </label>
+            <input
+              style={{ ...inputStyle, marginBottom: '16px' }}
+              value={deleteConfirmName}
+              onChange={function (e) { setDeleteConfirmName(e.target.value) }}
+              placeholder={company.name}
+              disabled={deleting}
+              autoFocus
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={function () { setShowDeleteModal(false) }}
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: 'transparent',
+                  color: adminTheme.textMuted,
+                  border: '1px solid ' + adminTheme.border,
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting || deleteConfirmName.trim() !== company.name}
+                onClick={deleteCompanyPermanently}
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: deleteConfirmName.trim() === company.name ? '#dc2626' : '#7f1d1d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: deleteConfirmName.trim() === company.name ? 'pointer' : 'not-allowed',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  opacity: deleteConfirmName.trim() === company.name ? 1 : 0.55,
+                }}
+              >
+                {deleting ? 'Deleting…' : 'Delete Permanently'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
