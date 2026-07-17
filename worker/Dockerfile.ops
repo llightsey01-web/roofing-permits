@@ -6,6 +6,7 @@ RUN npm install --omit=dev
 
 COPY worker/ops-worker.js ./index.js
 COPY lib/ ./lib/
+COPY scripts/ ./scripts/
 
 # Do not bake ENVIRONMENT/NODE_ENV here — Railway injects them at runtime.
 CMD ["node", "index.js"]

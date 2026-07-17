@@ -22,10 +22,33 @@ function requireLib(mod) {
 function requireMonitoring(mod) {
   return requireLib(mod)
 }
+function requireProductApprovalsSync() {
+  // Docker (Dockerfile.ops): /app/index.js + /app/scripts/...
+  // Local monorepo: worker/ops-worker.js + ../scripts/...
+  var candidates = [
+    path.join(__dirname, 'scripts', 'sync-product-approvals.js'),
+    path.join(__dirname, '..', 'scripts', 'sync-product-approvals.js'),
+  ]
+  var lastErr = null
+  for (var i = 0; i < candidates.length; i++) {
+    try {
+      return require(candidates[i])
+    } catch (e) {
+      lastErr = e
+      if (e && e.code !== 'MODULE_NOT_FOUND') throw e
+    }
+  }
+  throw new Error(
+    'Cannot resolve sync-product-approvals.js (tried: ' +
+      candidates.join(', ') +
+      ')' +
+      (lastErr ? ': ' + lastErr.message : '')
+  )
+}
 const { validateEnvironment, getEnvironment } = requireLib('lib/env/environment.js')
 const { recordWorkerPoll } = requireMonitoring('lib/monitoring/worker-heartbeat')
 const { createDailyMetricsScheduler } = requireMonitoring('lib/monitoring/platform-metrics')
-const { createProductApprovalsSyncScheduler } = require(path.join(__dirname, '..', 'scripts', 'sync-product-approvals.js'))
+const { createProductApprovalsSyncScheduler } = requireProductApprovalsSync()
 
 validateEnvironment()
 console.log('[ops-worker] Environment:', getEnvironment())
