@@ -136,7 +136,24 @@ export default function AdminCompaniesPage() {
                   onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}
                 >
                   <td style={{ padding: '12px 14px' }}>
-                    <p style={{ fontSize: '13px', fontWeight: '600', color: adminTheme.text, margin: 0 }}>{company.name}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <p style={{ fontSize: '13px', fontWeight: '600', color: adminTheme.text, margin: 0 }}>{company.name}</p>
+                      {company.is_demo ? (
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: '700',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontFamily: adminTheme.fontMono,
+                          letterSpacing: '0.04em',
+                          backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                          color: '#f97316',
+                          border: '1px solid rgba(249, 115, 22, 0.45)',
+                        }}>
+                          DEMO ACCOUNT
+                        </span>
+                      ) : null}
+                    </div>
                     <p style={{ fontSize: '11px', color: adminTheme.textDim, margin: '2px 0 0 0' }}>
                       {company.city ? company.city + ', ' + (company.state || 'FL') : company.primary_email || '—'}
                     </p>

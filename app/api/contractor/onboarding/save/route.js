@@ -41,9 +41,11 @@ export async function POST(request) {
       return Response.json({ error: 'Onboarding already complete' }, { status: 400 })
     }
 
+    const nextStep = Math.min(step + 1, 5)
     const updates = {
       updated_at: new Date().toISOString(),
       onboarding_status: company.onboarding_status === 'needs_changes' ? 'needs_changes' : 'in_progress',
+      onboarding_step: nextStep,
     }
 
     if (step === 1) {
@@ -99,7 +101,13 @@ export async function POST(request) {
       return Response.json({ error: updateError.message }, { status: 500 })
     }
 
-    return Response.json({ success: true, step, company: updated })
+    return Response.json({
+      success: true,
+      step,
+      next_step: nextStep,
+      company: updated,
+      message: 'Your progress has been saved',
+    })
   } catch (err) {
     console.error('[onboarding/save] Error:', err.message)
     return Response.json({ error: err.message }, { status: 500 })

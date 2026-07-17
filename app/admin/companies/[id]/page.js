@@ -312,7 +312,24 @@ export default function CompanyDetailPage() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: adminTheme.text, margin: 0 }}>{company.name}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <h1 style={{ fontSize: '22px', fontWeight: '700', color: adminTheme.text, margin: 0 }}>{company.name}</h1>
+            {company.is_demo ? (
+              <span style={{
+                fontSize: '11px',
+                fontWeight: '700',
+                padding: '3px 10px',
+                borderRadius: '4px',
+                fontFamily: adminTheme.fontMono,
+                letterSpacing: '0.04em',
+                backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                color: '#f97316',
+                border: '1px solid rgba(249, 115, 22, 0.45)',
+              }}>
+                DEMO ACCOUNT
+              </span>
+            ) : null}
+          </div>
           <p style={{ fontSize: '13px', color: adminTheme.textDim, margin: '6px 0 0 0', fontFamily: adminTheme.fontMono }}>{company.id}</p>
           <p style={{ fontSize: '12px', color: adminTheme.textMuted, margin: '6px 0 0 0', fontFamily: adminTheme.fontMono }}>
             onboarding: {company.onboarding_status || '—'} · subscription: {company.subscription_status || '—'}

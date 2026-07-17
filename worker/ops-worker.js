@@ -24,11 +24,13 @@ function requireMonitoring(mod) {
 }
 const { validateEnvironment, getEnvironment } = requireLib('lib/env/environment.js')
 const { recordWorkerPoll } = requireMonitoring('lib/monitoring/worker-heartbeat')
+const { createDailyMetricsScheduler } = requireMonitoring('lib/monitoring/platform-metrics')
 
 validateEnvironment()
 console.log('[ops-worker] Environment:', getEnvironment())
 
 const POLL_INTERVAL_MS = 30000
+const dailyMetrics = createDailyMetricsScheduler(supabase)
 
 const HANDLED_RUN_TYPES = [
   'notify_admin',
@@ -147,6 +149,11 @@ async function claimAndRun() {
 async function poll() {
   try {
     await recordWorkerPoll('ops')
+    try {
+      await dailyMetrics.maybeRunDailyMetrics()
+    } catch (metricsErr) {
+      console.error('[ops-worker] Daily metrics error:', metricsErr.message)
+    }
     await claimAndRun()
   } catch (err) {
     console.error('[ops-worker] Poll error:', err.message)

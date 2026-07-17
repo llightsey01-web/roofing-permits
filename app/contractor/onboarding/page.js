@@ -11,12 +11,78 @@ import {
   contractorInputStyle,
 } from '../../../lib/ui/contractor-theme'
 
-const AHJ_OPTIONS = [
-  { id: 'polk', label: 'Polk County', provider: 'polk_accela' },
-  { id: 'lee', label: 'Lee County', provider: 'lee_accela' },
-  { id: 'manatee', label: 'Manatee County', provider: 'manatee_accela' },
-  { id: 'sarasota', label: 'Sarasota County', provider: 'sarasota_accela' },
+const STEPS = [
+  { n: 1, label: 'Company Info' },
+  { n: 2, label: 'License' },
+  { n: 3, label: 'Preferences' },
+  { n: 4, label: 'Counties' },
+  { n: 5, label: 'Password' },
 ]
+
+const AHJ_OPTIONS = [
+  {
+    id: 'polk',
+    label: 'Polk County',
+    provider: 'polk_accela',
+    portalUrl: 'https://aca-prod.accela.com/POLKCO/',
+  },
+  {
+    id: 'lee',
+    label: 'Lee County',
+    provider: 'lee_accela',
+    portalUrl: 'https://aca-prod.accela.com/LEECO/',
+  },
+  {
+    id: 'manatee',
+    label: 'Manatee County',
+    provider: 'manatee_accela',
+    portalUrl: 'https://aca-prod.accela.com/ (Manatee County portal)',
+  },
+  {
+    id: 'sarasota',
+    label: 'Sarasota County',
+    provider: 'sarasota_accela',
+    portalUrl: 'https://aca-prod.accela.com/ (Sarasota County portal)',
+  },
+]
+
+function FieldLabel({ children, tip }) {
+  return (
+    <label style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      fontSize: '13px',
+      fontWeight: '600',
+      color: contractorTheme.textMuted,
+      marginBottom: '6px',
+    }}>
+      <span>{children}</span>
+      {tip ? (
+        <span
+          title={tip}
+          aria-label={tip}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '16px',
+            height: '16px',
+            borderRadius: '50%',
+            border: '1px solid ' + contractorTheme.border,
+            color: contractorTheme.textMuted,
+            fontSize: '11px',
+            fontWeight: 700,
+            cursor: 'help',
+            flexShrink: 0,
+          }}
+        >
+          ?
+        </span>
+      ) : null}
+    </label>
+  )
+}
 
 export default function ContractorOnboardingPage() {
   const router = useRouter()
@@ -24,10 +90,14 @@ export default function ContractorOnboardingPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [savedMessage, setSavedMessage] = useState('')
   const [done, setDone] = useState(false)
   const [adminNotes, setAdminNotes] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [credForms, setCredForms] = useState({})
+  const [credStatus, setCredStatus] = useState({})
+  const [credSaving, setCredSaving] = useState({})
   const [form, setForm] = useState({
     name: '',
     dba_name: '',
@@ -51,6 +121,12 @@ export default function ContractorOnboardingPage() {
   useEffect(function () {
     loadCompany()
   }, [])
+
+  useEffect(function () {
+    if (!savedMessage) return undefined
+    const t = setTimeout(function () { setSavedMessage('') }, 3500)
+    return function () { clearTimeout(t) }
+  }, [savedMessage])
 
   async function getToken() {
     const supabase = createClient()
@@ -106,6 +182,9 @@ export default function ContractorOnboardingPage() {
       if (company.onboarding_status === 'needs_changes' && company.notes) {
         setAdminNotes(company.notes)
       }
+
+      const resumeStep = Number(company.onboarding_step) || 1
+      setStep(Math.min(Math.max(resumeStep, 1), 5))
 
       setForm(function (prev) {
         return {
@@ -167,6 +246,13 @@ export default function ContractorOnboardingPage() {
         ...prev,
         selectedAhjs: { ...prev.selectedAhjs, [id]: !prev.selectedAhjs[id] },
       }
+    })
+  }
+
+  function setCredField(countyId, field, value) {
+    setCredForms(function (prev) {
+      const current = prev[countyId] || { username: '', password: '' }
+      return { ...prev, [countyId]: { ...current, [field]: value } }
     })
   }
 
@@ -234,7 +320,7 @@ export default function ContractorOnboardingPage() {
       })
     }
 
-    const res = await fetch('/api/contractor/onboarding/save', {
+    const res = await fetch('/api/contractor/onboarding/save-step', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -247,7 +333,83 @@ export default function ContractorOnboardingPage() {
       setError(data.error || 'Failed to save step')
       return false
     }
+    setSavedMessage(data.message || 'Your progress has been saved')
     return true
+  }
+
+  async function validateCountyCredentials(countyId) {
+    const cred = credForms[countyId] || { username: '', password: '' }
+    if (!cred.username || !cred.password) {
+      setCredStatus(function (prev) {
+        return {
+          ...prev,
+          [countyId]: { ok: false, message: 'Enter username and password to verify' },
+        }
+      })
+      return
+    }
+
+    setCredSaving(function (prev) { return { ...prev, [countyId]: true } })
+    setCredStatus(function (prev) {
+      const next = { ...prev }
+      delete next[countyId]
+      return next
+    })
+
+    try {
+      const token = await getToken()
+      if (!token) return
+
+      const res = await fetch('/api/contractor/onboarding/validate-credentials', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token,
+        },
+        body: JSON.stringify({
+          county_id: countyId,
+          username: cred.username,
+          password: cred.password,
+        }),
+      })
+      const data = await res.json()
+      const ahj = AHJ_OPTIONS.find(function (a) { return a.id === countyId })
+      const label = ahj ? ahj.label : countyId
+
+      if (!res.ok || !data.verified) {
+        setCredStatus(function (prev) {
+          return {
+            ...prev,
+            [countyId]: {
+              ok: false,
+              message: '✗ Invalid credentials — please check username and password',
+            },
+          }
+        })
+      } else {
+        setCredStatus(function (prev) {
+          return {
+            ...prev,
+            [countyId]: {
+              ok: true,
+              message: '✓ ' + label + ' credentials verified',
+            },
+          }
+        })
+      }
+    } catch (err) {
+      setCredStatus(function (prev) {
+        return {
+          ...prev,
+          [countyId]: {
+            ok: false,
+            message: '✗ Invalid credentials — please check username and password',
+          },
+        }
+      })
+    }
+
+    setCredSaving(function (prev) { return { ...prev, [countyId]: false } })
   }
 
   async function handleNext() {
@@ -306,14 +468,6 @@ export default function ContractorOnboardingPage() {
     )
   }
 
-  const labelStyle = {
-    display: 'block',
-    fontSize: '13px',
-    fontWeight: '600',
-    color: contractorTheme.textMuted,
-    marginBottom: '6px',
-  }
-
   if (loading) {
     return (
       <div style={{ padding: '48px', textAlign: 'center', color: contractorTheme.textMuted }}>
@@ -323,14 +477,70 @@ export default function ContractorOnboardingPage() {
   }
 
   if (done) {
+    const checklist = [
+      'Company information saved',
+      'License verified',
+      'Review preferences set',
+      'Counties selected',
+      'Password created',
+    ]
     return (
       <div style={{ maxWidth: '640px', margin: '40px auto', padding: '0 20px' }}>
-        <div style={{ ...contractorCardStyle(), padding: '36px', textAlign: 'center' }}>
-          <h1 style={{ margin: '0 0 12px', color: contractorTheme.text, fontSize: '24px' }}>
-            Account under review
-          </h1>
-          <p style={{ margin: 0, color: contractorTheme.textBody, lineHeight: 1.6, fontSize: '16px' }}>
-            Your account is under review. We will notify you within 1 business day.
+        <div style={{ ...contractorCardStyle(), padding: '36px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <p style={{ margin: '0 0 8px', fontSize: '32px' }}>🎉</p>
+            <h1 style={{ margin: '0 0 8px', color: contractorTheme.text, fontSize: '24px' }}>
+              Setup Complete!
+            </h1>
+            <p style={{ margin: 0, color: contractorTheme.textBody, lineHeight: 1.6, fontSize: '15px' }}>
+              Your account is now under review.
+              <br />
+              We will contact you within 1 business day.
+            </p>
+          </div>
+
+          <ul style={{ listStyle: 'none', margin: '0 0 28px', padding: 0 }}>
+            {checklist.map(function (item) {
+              return (
+                <li
+                  key={item}
+                  style={{
+                    display: 'flex',
+                    gap: '10px',
+                    alignItems: 'center',
+                    padding: '10px 0',
+                    borderBottom: '1px solid ' + contractorTheme.border,
+                    color: contractorTheme.textBody,
+                    fontSize: '14px',
+                  }}
+                >
+                  <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span>
+                  {item}
+                </li>
+              )
+            })}
+          </ul>
+
+          <div style={{
+            backgroundColor: contractorTheme.accentSoft,
+            border: '1px solid ' + contractorTheme.border,
+            borderRadius: '10px',
+            padding: '16px',
+            marginBottom: '20px',
+          }}>
+            <p style={{ margin: '0 0 10px', fontWeight: 700, color: contractorTheme.text, fontSize: '14px' }}>
+              What happens next:
+            </p>
+            <ol style={{ margin: 0, paddingLeft: '20px', color: contractorTheme.textBody, fontSize: '14px', lineHeight: 1.7 }}>
+              <li>Our team reviews your information</li>
+              <li>You receive an approval email</li>
+              <li>You can start submitting permits immediately</li>
+            </ol>
+          </div>
+
+          <p style={{ margin: 0, textAlign: 'center', fontSize: '14px', color: contractorTheme.textMuted }}>
+            Questions? Email{' '}
+            <a href="mailto:logan@dartiq.dev" style={{ color: '#3b82f6' }}>logan@dartiq.dev</a>
           </p>
         </div>
       </div>
@@ -339,7 +549,7 @@ export default function ContractorOnboardingPage() {
 
   return (
     <div style={{ maxWidth: '720px', margin: '24px auto', padding: '0 20px 48px' }}>
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: '16px' }}>
         <h1 style={{ margin: '0 0 6px', fontSize: '24px', color: contractorTheme.text }}>
           Account setup
         </h1>
@@ -353,15 +563,70 @@ export default function ContractorOnboardingPage() {
         backgroundColor: contractorTheme.border,
         borderRadius: '999px',
         overflow: 'hidden',
-        marginBottom: '20px',
+        marginBottom: '16px',
       }}>
         <div style={{
           width: (step / 5) * 100 + '%',
           height: '100%',
-          backgroundColor: contractorTheme.accent,
+          backgroundColor: '#f97316',
           transition: 'width 0.2s ease',
         }} />
       </div>
+
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        flexWrap: 'wrap',
+        marginBottom: '20px',
+      }}>
+        {STEPS.map(function (s) {
+          const completed = s.n < step
+          const current = s.n === step
+          return (
+            <div
+              key={s.n}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 10px',
+                borderRadius: '999px',
+                border: '1px solid ' + (current ? '#f97316' : contractorTheme.border),
+                backgroundColor: current
+                  ? 'rgba(249, 115, 22, 0.12)'
+                  : completed
+                    ? 'rgba(16, 185, 129, 0.1)'
+                    : 'transparent',
+                fontSize: '12px',
+                fontWeight: current ? 700 : 500,
+                color: current
+                  ? '#f97316'
+                  : completed
+                    ? '#10b981'
+                    : contractorTheme.textMuted,
+              }}
+            >
+              <span aria-hidden="true">{completed ? '✓' : s.n}</span>
+              <span>{s.label}</span>
+            </div>
+          )
+        })}
+      </div>
+
+      {savedMessage ? (
+        <div style={{
+          padding: '10px 14px',
+          marginBottom: '14px',
+          borderRadius: '10px',
+          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+          border: '1px solid rgba(16, 185, 129, 0.35)',
+          color: '#10b981',
+          fontSize: '13px',
+          fontWeight: 600,
+        }}>
+          {savedMessage}
+        </div>
+      ) : null}
 
       {adminNotes ? (
         <div style={{
@@ -386,38 +651,38 @@ export default function ContractorOnboardingPage() {
             <h2 style={{ margin: '0 0 16px', fontSize: '18px', color: contractorTheme.text }}>Company Info</h2>
             <div style={{ display: 'grid', gap: '14px' }}>
               <div>
-                <label style={labelStyle}>Company legal name *</label>
+                <FieldLabel>Company legal name *</FieldLabel>
                 <input style={contractorInputStyle()} value={form.name} onChange={function (e) { setField('name', e.target.value) }} />
               </div>
               <div>
-                <label style={labelStyle}>DBA name</label>
+                <FieldLabel>DBA name</FieldLabel>
                 <input style={contractorInputStyle()} value={form.dba_name} onChange={function (e) { setField('dba_name', e.target.value) }} />
               </div>
               <div>
-                <label style={labelStyle}>Address *</label>
+                <FieldLabel>Address *</FieldLabel>
                 <input style={contractorInputStyle()} value={form.address} onChange={function (e) { setField('address', e.target.value) }} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 120px', gap: '10px' }}>
                 <div>
-                  <label style={labelStyle}>City *</label>
+                  <FieldLabel>City *</FieldLabel>
                   <input style={contractorInputStyle()} value={form.city} onChange={function (e) { setField('city', e.target.value) }} />
                 </div>
                 <div>
-                  <label style={labelStyle}>State</label>
+                  <FieldLabel>State</FieldLabel>
                   <input style={contractorInputStyle()} value={form.state} onChange={function (e) { setField('state', e.target.value) }} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Zip *</label>
+                  <FieldLabel>Zip *</FieldLabel>
                   <input style={contractorInputStyle()} value={form.zip} onChange={function (e) { setField('zip', e.target.value) }} />
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={labelStyle}>Phone *</label>
+                  <FieldLabel>Phone *</FieldLabel>
                   <input style={contractorInputStyle()} value={form.phone} onChange={function (e) { setField('phone', e.target.value) }} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Primary email *</label>
+                  <FieldLabel>Primary email *</FieldLabel>
                   <input style={contractorInputStyle()} type="email" value={form.primary_email} onChange={function (e) { setField('primary_email', e.target.value) }} />
                 </div>
               </div>
@@ -430,16 +695,35 @@ export default function ContractorOnboardingPage() {
             <h2 style={{ margin: '0 0 16px', fontSize: '18px', color: contractorTheme.text }}>License Info</h2>
             <div style={{ display: 'grid', gap: '14px' }}>
               <div>
-                <label style={labelStyle}>Contractor license number *</label>
-                <input style={contractorInputStyle()} value={form.license_number} onChange={function (e) { setField('license_number', e.target.value) }} />
+                <FieldLabel tip="Your Florida contractor license number (e.g. CCC1234567)">
+                  Contractor license number *
+                </FieldLabel>
+                <input
+                  style={contractorInputStyle()}
+                  value={form.license_number}
+                  onChange={function (e) { setField('license_number', e.target.value) }}
+                  placeholder="CCC1234567"
+                />
               </div>
               <div>
-                <label style={labelStyle}>Qualifier full name *</label>
-                <input style={contractorInputStyle()} value={form.qualifier_name} onChange={function (e) { setField('qualifier_name', e.target.value) }} />
+                <FieldLabel tip="The licensed qualifier on your contractor license">
+                  Qualifier full name *
+                </FieldLabel>
+                <input
+                  style={contractorInputStyle()}
+                  value={form.qualifier_name}
+                  onChange={function (e) { setField('qualifier_name', e.target.value) }}
+                />
               </div>
               <div>
-                <label style={labelStyle}>Qualifier license number *</label>
-                <input style={contractorInputStyle()} value={form.qualifier_license} onChange={function (e) { setField('qualifier_license', e.target.value) }} />
+                <FieldLabel tip="License number for the qualifier listed on your contractor license">
+                  Qualifier license number *
+                </FieldLabel>
+                <input
+                  style={contractorInputStyle()}
+                  value={form.qualifier_license}
+                  onChange={function (e) { setField('qualifier_license', e.target.value) }}
+                />
               </div>
             </div>
           </div>
@@ -472,30 +756,108 @@ export default function ContractorOnboardingPage() {
               Which counties do you plan to submit permits in?
             </p>
             <p style={{ margin: '0 0 14px', color: contractorTheme.textMuted, fontSize: '13px' }}>
-              You can add login credentials later when you&apos;re ready
+              Optionally add portal credentials now to verify them, or add them later in Settings.
             </p>
-            <div style={{ display: 'grid', gap: '10px' }}>
+            <div style={{ display: 'grid', gap: '12px' }}>
               {AHJ_OPTIONS.map(function (ahj) {
                 const selected = form.selectedAhjs[ahj.id]
+                const cred = credForms[ahj.id] || { username: '', password: '' }
+                const status = credStatus[ahj.id]
                 return (
-                  <label
+                  <div
                     key={ahj.id}
                     style={{
-                      display: 'flex',
-                      gap: '10px',
-                      alignItems: 'center',
-                      color: contractorTheme.text,
-                      fontWeight: 600,
                       border: '1px solid ' + contractorTheme.border,
                       borderRadius: '10px',
                       padding: '14px',
-                      cursor: 'pointer',
                       backgroundColor: selected ? contractorTheme.accentSoft : 'transparent',
                     }}
                   >
-                    <input type="checkbox" checked={selected} onChange={function () { toggleAhj(ahj.id) }} />
-                    {ahj.label}
-                  </label>
+                    <label
+                      style={{
+                        display: 'flex',
+                        gap: '10px',
+                        alignItems: 'center',
+                        color: contractorTheme.text,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                      title={'Portal: ' + ahj.portalUrl}
+                    >
+                      <input type="checkbox" checked={selected} onChange={function () { toggleAhj(ahj.id) }} />
+                      <span>{ahj.label}</span>
+                      <span
+                        title={'Portal: ' + ahj.portalUrl}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '16px',
+                          height: '16px',
+                          borderRadius: '50%',
+                          border: '1px solid ' + contractorTheme.border,
+                          color: contractorTheme.textMuted,
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          cursor: 'help',
+                        }}
+                      >
+                        ?
+                      </span>
+                    </label>
+
+                    {selected ? (
+                      <div style={{ marginTop: '12px', display: 'grid', gap: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                          <div>
+                            <FieldLabel>Portal username</FieldLabel>
+                            <input
+                              style={contractorInputStyle()}
+                              value={cred.username}
+                              autoComplete="off"
+                              onChange={function (e) { setCredField(ahj.id, 'username', e.target.value) }}
+                              placeholder="Optional"
+                            />
+                          </div>
+                          <div>
+                            <FieldLabel>Portal password</FieldLabel>
+                            <input
+                              style={contractorInputStyle()}
+                              type="password"
+                              value={cred.password}
+                              autoComplete="new-password"
+                              onChange={function (e) { setCredField(ahj.id, 'password', e.target.value) }}
+                              placeholder="Optional"
+                            />
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            disabled={!!credSaving[ahj.id]}
+                            onClick={function () { validateCountyCredentials(ahj.id) }}
+                            style={{
+                              ...contractorPrimaryButtonStyle(!!credSaving[ahj.id]),
+                              fontSize: '13px',
+                              padding: '8px 14px',
+                              minHeight: '36px',
+                            }}
+                          >
+                            {credSaving[ahj.id] ? 'Verifying...' : 'Verify credentials'}
+                          </button>
+                          {status ? (
+                            <span style={{
+                              fontSize: '13px',
+                              fontWeight: 600,
+                              color: status.ok ? '#10b981' : '#ef4444',
+                            }}>
+                              {status.message}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
                 )
               })}
             </div>
@@ -512,7 +874,7 @@ export default function ContractorOnboardingPage() {
             </p>
             <div style={{ display: 'grid', gap: '14px' }}>
               <div>
-                <label style={labelStyle}>Current temporary password</label>
+                <FieldLabel>Current temporary password</FieldLabel>
                 <input
                   style={{
                     ...contractorInputStyle(),
@@ -523,11 +885,11 @@ export default function ContractorOnboardingPage() {
                   aria-describedby="temp-password-hint"
                 />
                 <p id="temp-password-hint" style={{ margin: '6px 0 0', fontSize: '12px', color: contractorTheme.textMuted }}>
-                  Your temporary password was emailed when your account was created (format DART-XXXXXXXX). Shown once as a reminder — use the value from that email to sign in.
+                  Your temporary password was emailed when your account was created (format DART-XXXXXXXX).
                 </p>
               </div>
               <div>
-                <label style={labelStyle}>New Password</label>
+                <FieldLabel>New Password</FieldLabel>
                 <input
                   style={contractorInputStyle()}
                   type="password"
@@ -537,7 +899,7 @@ export default function ContractorOnboardingPage() {
                 />
               </div>
               <div>
-                <label style={labelStyle}>Confirm Password</label>
+                <FieldLabel>Confirm Password</FieldLabel>
                 <input
                   style={contractorInputStyle()}
                   type="password"

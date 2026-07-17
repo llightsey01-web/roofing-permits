@@ -99,6 +99,7 @@ export default function ContractorJobDetailPage({ params }) {
   const [nocActionBusy, setNocActionBusy] = useState(false)
   const [uploadNocOption, setUploadNocOption] = useState('upload_signed')
   const [uploadNocFile, setUploadNocFile] = useState(null)
+  const [shareCopied, setShareCopied] = useState(false)
 
   useEffect(() => {
     async function init() {
@@ -241,6 +242,20 @@ export default function ContractorJobDetailPage({ params }) {
   const showCompletedUpload = job.noc_option === 'manual_download' && (
     job.noc_status === 'ready_for_download' || job.noc_status === 'generated'
   )
+  const portalBase = (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_PORTAL_URL
+    ? String(process.env.NEXT_PUBLIC_PORTAL_URL).replace(/\/$/, '')
+    : 'https://portal.dartiq.dev')
+  const shareUrl = portalBase + '/track/' + (jobId || job.id)
+
+  async function copyShareLink() {
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setShareCopied(true)
+      setTimeout(function () { setShareCopied(false) }, 2500)
+    } catch {
+      window.prompt('Copy this link to share with the homeowner:', shareUrl)
+    }
+  }
 
   const sectionStyle = { ...contractorCardStyle(), padding: '24px', marginBottom: '20px', boxSizing: 'border-box' }
   const sectionTitleStyle = {
@@ -350,7 +365,24 @@ export default function ContractorJobDetailPage({ params }) {
             {job.property_address}, {job.property_city}, {job.property_state} {job.property_zip}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={copyShareLink}
+            style={{
+              fontSize: '13px',
+              padding: '8px 14px',
+              minHeight: '40px',
+              borderRadius: '8px',
+              border: '1px solid ' + contractorTheme.border,
+              backgroundColor: contractorTheme.accentSoft || '#fff7ed',
+              color: contractorTheme.accent || '#ea580c',
+              fontWeight: '600',
+              cursor: 'pointer',
+            }}
+          >
+            {shareCopied ? 'Link copied' : 'Share Progress with Homeowner'}
+          </button>
           <span style={{
             fontSize: '12px',
             padding: '6px 12px',
