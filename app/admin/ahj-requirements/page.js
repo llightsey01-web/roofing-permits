@@ -52,6 +52,8 @@ export default function AdminAhjRequirementsPage() {
   const [inspForm, setInspForm] = useState(emptyInspForm)
   const [editingDocId, setEditingDocId] = useState(null)
   const [editingInspId, setEditingInspId] = useState(null)
+  const [scrapeBusy, setScrapeBusy] = useState(false)
+  const [lastScrapedLabel, setLastScrapedLabel] = useState('never')
 
   async function getToken() {
     const supabase = createClient()
@@ -62,6 +64,22 @@ export default function AdminAhjRequirementsPage() {
     }
     return session.access_token
   }
+
+  const loadScrapeStatus = useCallback(async function (accessToken) {
+    try {
+      const token = accessToken || (await getToken())
+      if (!token) return
+      const res = await fetch('/api/admin/scrape-ahj-forms', {
+        headers: { Authorization: 'Bearer ' + token },
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setLastScrapedLabel(data.lastScrapedLabel || 'never')
+      }
+    } catch {
+      // keep previous
+    }
+  }, [router])
 
   const loadAhjs = useCallback(async function () {
     try {
@@ -83,7 +101,33 @@ export default function AdminAhjRequirementsPage() {
 
   useEffect(function () {
     loadAhjs()
-  }, [loadAhjs])
+    loadScrapeStatus()
+  }, [loadAhjs, loadScrapeStatus])
+
+  async function triggerScrape() {
+    if (scrapeBusy) return
+    if (!window.confirm('Start AHJ forms scrape for all FL counties? This may take a while.')) {
+      return
+    }
+    setScrapeBusy(true)
+    setMessage('')
+    setError('')
+    try {
+      const token = await getToken()
+      if (!token) return
+      const res = await fetch('/api/admin/scrape-ahj-forms', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to start scrape')
+      setMessage(data.message || 'Scrape started')
+      setLastScrapedLabel('running…')
+    } catch (err) {
+      setError(err.message)
+    }
+    setScrapeBusy(false)
+  }
 
   useEffect(function () {
     const ahj = ahjs.find(function (a) { return a.id === selectedId })
@@ -363,9 +407,29 @@ export default function AdminAhjRequirementsPage() {
       }}>
         MANAGE AHJ REQUIREMENTS
       </h1>
-      <p style={{ margin: '0 0 20px', color: adminTheme.textMuted, fontSize: '13px' }}>
+      <p style={{ margin: '0 0 16px', color: adminTheme.textMuted, fontSize: '13px' }}>
         Edit portal info, required documents, and inspection schedules per county.
       </p>
+
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '20px',
+      }}>
+        <button
+          type="button"
+          style={btnPrimary}
+          onClick={triggerScrape}
+          disabled={scrapeBusy || saving}
+        >
+          {scrapeBusy ? 'Starting…' : '🔄 Scrape AHJ Forms'}
+        </button>
+        <span style={{ color: adminTheme.textDim, fontSize: '12px' }}>
+          Last scraped: {lastScrapedLabel}
+        </span>
+      </div>
 
       {message && (
         <div style={{

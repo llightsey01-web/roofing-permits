@@ -45,10 +45,33 @@ function requireProductApprovalsSync() {
       (lastErr ? ': ' + lastErr.message : '')
   )
 }
+
+function requireAhjFormsScrape() {
+  var candidates = [
+    path.join(__dirname, 'scripts', 'scrape-ahj-forms.js'),
+    path.join(__dirname, '..', 'scripts', 'scrape-ahj-forms.js'),
+  ]
+  var lastErr = null
+  for (var i = 0; i < candidates.length; i++) {
+    try {
+      return require(candidates[i])
+    } catch (e) {
+      lastErr = e
+      if (e && e.code !== 'MODULE_NOT_FOUND') throw e
+    }
+  }
+  throw new Error(
+    'Cannot resolve scrape-ahj-forms.js (tried: ' +
+      candidates.join(', ') +
+      ')' +
+      (lastErr ? ': ' + lastErr.message : '')
+  )
+}
 const { validateEnvironment, getEnvironment } = requireLib('lib/env/environment.js')
 const { recordWorkerPoll } = requireMonitoring('lib/monitoring/worker-heartbeat')
 const { createDailyMetricsScheduler } = requireMonitoring('lib/monitoring/platform-metrics')
 const { createProductApprovalsSyncScheduler } = requireProductApprovalsSync()
+const { createAhjFormsScrapeScheduler } = requireAhjFormsScrape()
 const { isAutomationEnabled } = requireLib('lib/automation/automation-gate.js')
 
 validateEnvironment()
@@ -57,6 +80,7 @@ console.log('[ops-worker] Environment:', getEnvironment())
 const POLL_INTERVAL_MS = 30000
 const dailyMetrics = createDailyMetricsScheduler(supabase)
 const productApprovalsSync = createProductApprovalsSyncScheduler(supabase)
+const ahjFormsScrape = createAhjFormsScrapeScheduler(supabase)
 
 const HANDLED_RUN_TYPES = [
   'notify_admin',
@@ -191,6 +215,19 @@ async function poll() {
       }
     } catch (productSyncErr) {
       console.error('[ops-worker] Product approvals sync error:', productSyncErr.message)
+    }
+    try {
+      var ahjScrapeResult = await ahjFormsScrape.maybeScrapeAhjForms()
+      if (ahjScrapeResult && !ahjScrapeResult.skipped) {
+        console.log('[ops-worker] AHJ forms scrape finished:', {
+          totalForms: ahjScrapeResult.totalForms,
+          totalUpdated: ahjScrapeResult.totalUpdated,
+          totalAdded: ahjScrapeResult.totalAdded,
+          failed: ahjScrapeResult.countiesFailed,
+        })
+      }
+    } catch (ahjScrapeErr) {
+      console.error('[ops-worker] AHJ forms scrape error:', ahjScrapeErr.message)
     }
     var enabled = await isAutomationEnabled(supabase)
     if (!enabled) {
