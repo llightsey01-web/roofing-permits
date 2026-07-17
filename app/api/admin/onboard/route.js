@@ -115,6 +115,8 @@ export async function POST(request) {
     }
 
     const tempPassword = generateTemporaryPassword()
+    let authUser = null
+
     const { data: createdAuth, error: createUserError } = await context.supabase.auth.admin.createUser({
       email: ownerEmail,
       password: tempPassword,
@@ -127,30 +129,93 @@ export async function POST(request) {
       },
     })
 
-    if (createUserError || !createdAuth?.user) {
-      await context.supabase.from('companies').delete().eq('id', createdCompany.id)
-      return Response.json({
-        error: 'Failed to create user: ' + (createUserError?.message || 'unknown'),
-      }, { status: 500 })
+    if (createUserError) {
+      if (/already registered|already been registered|already exists/i.test(createUserError.message)) {
+        console.log('[onboard] Auth user already exists for', ownerEmail, '— finding and reusing')
+
+        let existing = null
+        let page = 1
+        const perPage = 200
+        while (page <= 20 && !existing) {
+          const { data: listData, error: listError } = await context.supabase.auth.admin.listUsers({
+            page: page,
+            perPage: perPage,
+          })
+          if (listError) {
+            console.error('[onboard] listUsers failed:', listError.message)
+            await context.supabase.from('companies').delete().eq('id', createdCompany.id)
+            return Response.json({ error: 'Failed to look up existing auth user' }, { status: 500 })
+          }
+          const users = listData?.users || []
+          existing = users.find(function (u) {
+            return String(u.email || '').trim().toLowerCase() === ownerEmail
+          }) || null
+          if (users.length < perPage) break
+          page += 1
+        }
+
+        if (existing) {
+          const { error: updateError } = await context.supabase.auth.admin.updateUserById(existing.id, {
+            password: tempPassword,
+            email_confirm: true,
+            user_metadata: {
+              company_id: createdCompany.id,
+              full_name: fullName,
+              role: 'company_admin',
+              must_change_password: true,
+            },
+          })
+
+          if (updateError) {
+            console.error('[onboard] Failed to update existing auth user:', updateError.message)
+            await context.supabase.from('companies').delete().eq('id', createdCompany.id)
+            return Response.json({
+              error: 'Failed to reset user password: ' + updateError.message,
+            }, { status: 500 })
+          }
+
+          authUser = existing
+          console.log('[onboard] Reusing and reset auth user:', existing.id)
+        } else {
+          await context.supabase.from('companies').delete().eq('id', createdCompany.id)
+          return Response.json({
+            error: 'This email is already in use. Please delete the existing auth user from Supabase or use a different email.',
+          }, { status: 400 })
+        }
+      } else {
+        console.error('[onboard] Create user failed:', createUserError.message)
+        await context.supabase.from('companies').delete().eq('id', createdCompany.id)
+        return Response.json({ error: createUserError.message }, { status: 400 })
+      }
+    } else {
+      authUser = createdAuth?.user || null
     }
 
-    const { error: userError } = await context.supabase.from('users').upsert({
-      id: createdAuth.user.id,
-      company_id: createdCompany.id,
-      role: 'company_admin',
-      email: ownerEmail,
-      full_name: fullName,
-    }, { onConflict: 'id' })
+    if (!authUser?.id) {
+      await context.supabase.from('companies').delete().eq('id', createdCompany.id)
+      return Response.json({ error: 'Failed to create or resolve auth user' }, { status: 500 })
+    }
 
-    if (userError) {
-      return Response.json({
-        error: 'Company created but user profile failed: ' + userError.message,
-      }, { status: 500 })
+    // Upsert user record in users table (handles both new and existing)
+    const { error: userRecordError } = await context.supabase
+      .from('users')
+      .upsert({
+        id: authUser.id,
+        company_id: createdCompany.id,
+        email: ownerEmail,
+        full_name: fullName,
+        role: 'company_admin',
+        is_active: true,
+      }, { onConflict: 'id' })
+
+    if (userRecordError) {
+      console.error('[onboard] User record upsert failed:', userRecordError.message)
+      return Response.json({ error: 'Failed to create user record: ' + userRecordError.message }, { status: 500 })
     }
 
     await context.supabase
       .from('companies')
-      .update({ owner_user_id: createdAuth.user.id })
+      .update({ owner_user_id: authUser.id })
       .eq('id', createdCompany.id)
 
     const credentialRows = []
@@ -195,11 +260,12 @@ export async function POST(request) {
     return Response.json({
       success: true,
       company_id: createdCompany.id,
-      user_id: createdAuth.user.id,
+      user_id: authUser.id,
       login_url: PORTAL_LOGIN_URL,
       welcome_email_sent: !!emailResult.sent,
       notification_email_sent: !!notificationResult.sent,
       covered_counties: coveredCounties,
+      reused_existing_auth_user: !!(createUserError),
     })
   } catch (err) {
     console.error('[admin/onboard] Error:', err.message)

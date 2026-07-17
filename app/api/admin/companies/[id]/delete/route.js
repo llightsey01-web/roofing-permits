@@ -1,6 +1,65 @@
 import { authenticateRequest, requireSuperAdmin } from '../../../../../../lib/auth/session.js'
 
 /**
+ * Find a Supabase Auth user by email (paginated listUsers).
+ */
+async function findAuthUserByEmail(supabase, email) {
+  const want = String(email || '').trim().toLowerCase()
+  if (!want) return null
+
+  let page = 1
+  const perPage = 200
+  while (page <= 20) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page: page, perPage: perPage })
+    if (error) {
+      console.error('[delete-company] listUsers failed:', error.message)
+      return null
+    }
+    const users = data?.users || []
+    const match = users.find(function (u) {
+      return String(u.email || '').trim().toLowerCase() === want
+    })
+    if (match) return match
+    if (users.length < perPage) break
+    page += 1
+  }
+  return null
+}
+
+async function deleteAuthUserBulletproof(supabase, userRow) {
+  const email = userRow.email || null
+  const id = userRow.id
+
+  try {
+    const { error: authError } = await supabase.auth.admin.deleteUser(id)
+    if (!authError) {
+      console.log('[delete] Deleted auth user:', email || id)
+      return true
+    }
+
+    console.error('[delete] Auth delete failed for', email, ':', authError.message)
+
+    if (email) {
+      const authUser = await findAuthUserByEmail(supabase, email)
+      if (authUser) {
+        const { error: retryError } = await supabase.auth.admin.deleteUser(authUser.id)
+        if (!retryError) {
+          console.log('[delete] Deleted auth user by email:', email)
+          return true
+        }
+        console.error('[delete] Auth delete by email failed for', email, ':', retryError.message)
+      } else {
+        console.warn('[delete] No auth user found by email:', email)
+      }
+    }
+    return false
+  } catch (e) {
+    console.error('[delete] Auth delete exception for', email || id, ':', e.message)
+    return false
+  }
+}
+
+/**
  * Hard-delete a company and related data.
  * DELETE /api/admin/companies/[id]/delete
  */
@@ -21,7 +80,7 @@ export async function DELETE(request, { params }) {
 
     const { data: company, error: companyLookupError } = await supabase
       .from('companies')
-      .select('id, name')
+      .select('id, name, primary_email')
       .eq('id', companyId)
       .maybeSingle()
 
@@ -30,6 +89,31 @@ export async function DELETE(request, { params }) {
     }
     if (!company) {
       return Response.json({ error: 'Company not found' }, { status: 404 })
+    }
+
+    // Step 1 — Get all users for this company BEFORE deleting anything
+    const { data: companyUsers, error: usersError } = await supabase
+      .from('users')
+      .select('id, email')
+      .eq('company_id', companyId)
+
+    if (usersError) {
+      console.warn('[delete] users lookup failed:', usersError.message)
+    }
+    console.log('[delete] Found', companyUsers?.length || 0, 'users to delete')
+
+    // Step 2 — Delete from Supabase Auth FIRST (before deleting from users table)
+    for (const u of companyUsers || []) {
+      await deleteAuthUserBulletproof(supabase, u)
+    }
+
+    // If no users row but company has a primary email, still clear stuck auth
+    if ((!companyUsers || companyUsers.length === 0) && company.primary_email) {
+      const orphan = await findAuthUserByEmail(supabase, company.primary_email)
+      if (orphan) {
+        console.log('[delete] Found orphaned auth user by company email:', company.primary_email)
+        await deleteAuthUserBulletproof(supabase, { id: orphan.id, email: orphan.email })
+      }
     }
 
     const { data: jobs } = await supabase
@@ -57,12 +141,10 @@ export async function DELETE(request, { params }) {
     async function ignoreMissing(label, promise) {
       const { error } = await promise
       if (error) {
-        // Table may not exist in all environments — log and continue
         console.warn('[delete-company] ' + label + ':', error.message)
       }
     }
 
-    // 1. automation_logs
     if (runIds.length > 0) {
       await ignoreMissing(
         'automation_logs',
@@ -70,7 +152,6 @@ export async function DELETE(request, { params }) {
       )
     }
 
-    // 2. run_actions
     await ignoreMissing(
       'run_actions by company',
       supabase.from('run_actions').delete().eq('company_id', companyId)
@@ -82,7 +163,6 @@ export async function DELETE(request, { params }) {
       )
     }
 
-    // 3. automation_runs
     if (jobIds.length > 0) {
       await ignoreMissing(
         'automation_runs by job',
@@ -94,7 +174,6 @@ export async function DELETE(request, { params }) {
       supabase.from('automation_runs').delete().eq('company_id', companyId)
     )
 
-    // 4. job_documents
     if (jobIds.length > 0) {
       await ignoreMissing(
         'job_documents',
@@ -102,7 +181,6 @@ export async function DELETE(request, { params }) {
       )
     }
 
-    // 5. review_requests (job-scoped and company-scoped if present)
     if (jobIds.length > 0) {
       await ignoreMissing(
         'review_requests by job',
@@ -114,13 +192,11 @@ export async function DELETE(request, { params }) {
       supabase.from('review_requests').delete().eq('company_id', companyId)
     )
 
-    // 6. jobs
     await ignoreMissing(
       'jobs',
       supabase.from('jobs').delete().eq('company_id', companyId)
     )
 
-    // 7. credentials
     await ignoreMissing(
       'company_credentials',
       supabase.from('company_credentials').delete().eq('company_id', companyId)
@@ -130,47 +206,27 @@ export async function DELETE(request, { params }) {
       supabase.from('company_ahj_credentials').delete().eq('company_id', companyId)
     )
 
-    // 8. company materials
     await ignoreMissing(
       'company_materials',
       supabase.from('company_materials').delete().eq('company_id', companyId)
     )
 
-    // 9. system alerts
     await ignoreMissing(
       'system_alerts',
       supabase.from('system_alerts').delete().eq('company_id', companyId)
     )
 
-    // 10. audit log
     await ignoreMissing(
       'audit_log',
       supabase.from('audit_log').delete().eq('company_id', companyId)
     )
 
-    // 11. users (auth + profile)
-    const { data: users } = await supabase
-      .from('users')
-      .select('id')
-      .eq('company_id', companyId)
-
-    for (const u of users || []) {
-      try {
-        const { error: authDeleteError } = await supabase.auth.admin.deleteUser(u.id)
-        if (authDeleteError) {
-          console.warn('[delete-company] auth delete ' + u.id + ':', authDeleteError.message)
-        }
-      } catch (authErr) {
-        console.warn('[delete-company] auth delete exception:', authErr.message)
-      }
-    }
-
+    // Step 3 — Now delete from users table
     await ignoreMissing(
       'users',
       supabase.from('users').delete().eq('company_id', companyId)
     )
 
-    // 12. company
     const { error } = await supabase.from('companies').delete().eq('id', companyId)
     if (error) {
       console.error('[delete-company] Failed:', error.message)
