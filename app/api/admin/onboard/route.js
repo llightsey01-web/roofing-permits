@@ -205,7 +205,6 @@ export async function POST(request) {
         email: ownerEmail,
         full_name: fullName,
         role: 'company_admin',
-        is_active: true,
       }, { onConflict: 'id' })
 
     if (userRecordError) {
