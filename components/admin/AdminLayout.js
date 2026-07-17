@@ -13,6 +13,7 @@ const navItems = [
   { href: '/admin/companies', label: 'Companies', match: (p) => p.startsWith('/admin/companies') },
   { href: '/admin/jobs', label: 'Jobs', match: (p) => p.startsWith('/admin/jobs') },
   { href: '/admin/leads', label: 'Leads', match: (p) => p.startsWith('/admin/leads') },
+  { href: '/admin/ahj-requirements', label: 'AHJ Requirements', match: (p) => p.startsWith('/admin/ahj-requirements') },
   { href: '/admin/system', label: 'System', match: (p) => p.startsWith('/admin/system') },
   { href: '/dashboard', label: 'Ops Queue', match: (p) => p === '/dashboard' || (p.startsWith('/jobs/') && !p.startsWith('/admin/')) },
 ]

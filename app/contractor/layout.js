@@ -17,6 +17,7 @@ const navItems = [
   { href: '/contractor/dashboard', label: 'Dashboard', shortLabel: 'Home', icon: '⌂' },
   { href: '/contractor/jobs/new', label: 'New Application', shortLabel: 'New Job', icon: '+' },
   { href: '/contractor/materials', label: 'Materials', shortLabel: 'Materials', icon: '▣' },
+  { href: '/contractor/ahj-guide', label: 'Permit Guide', shortLabel: 'Guide', icon: '📋' },
   { href: '/contractor/settings', label: 'Settings', shortLabel: 'Settings', icon: '⚙' },
 ]
 

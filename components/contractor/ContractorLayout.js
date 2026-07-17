@@ -10,6 +10,7 @@ import { contractorTheme } from '../../lib/ui/contractor-theme'
 const navItems = [
   { href: '/contractor/dashboard', label: 'My Jobs' },
   { href: '/contractor/jobs/new', label: 'New Job' },
+  { href: '/contractor/ahj-guide', label: 'Permit Guide' },
   { href: '/contractor/settings', label: 'Settings' },
 ]
 
