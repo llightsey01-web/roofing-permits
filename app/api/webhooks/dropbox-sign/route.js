@@ -3,5 +3,7 @@
 // Keeping this file to avoid 404 errors if old webhooks fire
 
 export async function POST(request) {
+  // Legacy Dropbox Sign endpoint — no longer used. Durable Proof webhooks live at:
+  // /api/webhooks/proof/signature and /api/webhooks/proof/notarization
   return new Response('Hello API Event Received', { status: 200 })
 }

@@ -136,6 +136,37 @@ async function handleProofCheck(job, run, deps) {
         stepName: 'proof_check',
       })
 
+      // Notify durable workflows waiting on signature / notary (best-effort)
+      try {
+        var webhooks = requireLib('lib/workflow/webhooks.js')
+        var proofTx =
+          (job.job_specs && job.job_specs.proof && job.job_specs.proof.transaction_id) ||
+          (jobResult && jobResult.transactionId) ||
+          null
+        await webhooks.notifySignatureCompleted({
+          jobId: job.id,
+          companyId: job.company_id || null,
+          externalId: proofTx,
+          body: {
+            job_id: job.id,
+            transaction_id: proofTx,
+            source: 'proof_check',
+          },
+        })
+        await webhooks.notifyNotaryCompleted({
+          jobId: job.id,
+          companyId: job.company_id || null,
+          externalId: proofTx,
+          body: {
+            job_id: job.id,
+            transaction_id: proofTx,
+            source: 'proof_check',
+          },
+        })
+      } catch (webhookErr) {
+        console.warn('[proof_check] durable webhook notify failed:', webhookErr.message)
+      }
+
       // Phase 1: durable ePN workflow (opt-in via WORKFLOW_ENGINE_EPN=true)
       var epnMigration = null
       try {
