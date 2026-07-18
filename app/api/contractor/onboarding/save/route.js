@@ -19,9 +19,9 @@ export async function POST(request) {
 
     const body = await request.json()
     const step = Number(body.step)
-    // Steps 1–3 save company data; step 4 materials (progress only); step 5 password via set-password
-    if (![1, 2, 3, 4].includes(step)) {
-      return Response.json({ error: 'step must be 1-4' }, { status: 400 })
+    // Steps 1–3 save company data; step 4 password via set-password
+    if (![1, 2, 3].includes(step)) {
+      return Response.json({ error: 'step must be 1-3' }, { status: 400 })
     }
 
     const { data: company, error: companyError } = await context.supabase
@@ -38,7 +38,7 @@ export async function POST(request) {
       return Response.json({ error: 'Onboarding already complete' }, { status: 400 })
     }
 
-    const nextStep = Math.min(step + 1, 5)
+    const nextStep = Math.min(step + 1, 4)
     const updates = {
       updated_at: new Date().toISOString(),
       onboarding_status: company.onboarding_status === 'needs_changes' ? 'needs_changes' : 'in_progress',
@@ -74,9 +74,6 @@ export async function POST(request) {
     if (step === 3) {
       updates.review_gates = normalizeReviewGates(body.review_gates || body)
     }
-
-    // step 4 = preferred materials (saved via /api/contractor/materials); only advance onboarding_step
-
     const { data: updated, error: updateError } = await context.supabase
       .from('companies')
       .update(updates)

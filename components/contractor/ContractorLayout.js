@@ -49,12 +49,6 @@ const navSections = [
         icon: '📖',
         match: (p) => p.startsWith('/contractor/ahj-guide'),
       },
-      {
-        href: '/contractor/materials',
-        label: 'Materials',
-        icon: '🏗️',
-        match: (p) => p.startsWith('/contractor/materials'),
-      },
     ],
   },
   {

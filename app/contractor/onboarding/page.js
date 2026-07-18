@@ -10,18 +10,14 @@ import {
   contractorPrimaryButtonStyle,
   contractorInputStyle,
 } from '../../../lib/ui/contractor-theme'
-import MaterialsPreferenceEditor, {
-  selectedToPayload,
-} from '../components/MaterialsPreferenceEditor'
 
-const TOTAL_STEPS = 5
+const TOTAL_STEPS = 4
 
 const STEPS = [
   { n: 1, label: 'Company Info' },
   { n: 2, label: 'License' },
   { n: 3, label: 'Preferences' },
-  { n: 4, label: 'Materials' },
-  { n: 5, label: 'Password' },
+  { n: 4, label: 'Password' },
 ]
 
 function FieldLabel({ children, tip }) {
@@ -62,12 +58,11 @@ function FieldLabel({ children, tip }) {
   )
 }
 
-/** Map legacy 4-step resume values onto the new 5-step wizard. */
+/** Map legacy 5-step resume values onto the 4-step wizard (materials removed). */
 function mapResumeStep(raw) {
   const n = Number(raw) || 1
-  // Old wizard: step 4 was password → now step 5
-  if (n === 4) return 5
-  if (n >= 5) return 5
+  // Old wizard: 4 = materials, 5 = password → both land on password (4)
+  if (n >= 4) return 4
   return Math.min(Math.max(n, 1), TOTAL_STEPS)
 }
 
@@ -82,11 +77,6 @@ export default function ContractorOnboardingPage() {
   const [adminNotes, setAdminNotes] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [materialSelection, setMaterialSelection] = useState({
-    primary: [],
-    underlayment: [],
-    ventilation: [],
-  })
   const [form, setForm] = useState({
     name: '',
     dba_name: '',
@@ -236,7 +226,7 @@ export default function ContractorOnboardingPage() {
       if (!form.qualifier_name.trim()) return 'Qualifier full name is required'
       if (!form.qualifier_license.trim()) return 'Qualifier license number is required'
     }
-    if (current === 5) {
+    if (current === 4) {
       if (newPassword.length < 8) return 'Password must be at least 8 characters'
       if (!/[0-9]/.test(newPassword)) return 'Password must include at least one number'
       if (!/[A-Z]/.test(newPassword)) return 'Password must include at least one uppercase letter'
@@ -272,7 +262,6 @@ export default function ContractorOnboardingPage() {
     if (current === 3) {
       payload.review_gates = form.review_gates
     }
-    // step 4 materials saved separately via /api/contractor/materials
 
     const res = await fetch('/api/contractor/onboarding/save-step', {
       method: 'POST',
@@ -296,37 +285,6 @@ export default function ContractorOnboardingPage() {
     const validationError = validateStep(step)
     if (validationError) {
       setError(validationError)
-      return
-    }
-
-    if (step === 4) {
-      setSaving(true)
-      const token = await getToken()
-      if (!token) {
-        setSaving(false)
-        return
-      }
-      const materials = selectedToPayload(materialSelection)
-      if (materials.length) {
-        const matRes = await fetch('/api/contractor/materials', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + token,
-          },
-          body: JSON.stringify({ replace: true, materials }),
-        })
-        const matData = await matRes.json()
-        if (!matRes.ok) {
-          setSaving(false)
-          setError(matData.error || 'Failed to save materials')
-          return
-        }
-      }
-      const ok = await saveStep(4)
-      setSaving(false)
-      if (!ok) return
-      setStep(5)
       return
     }
 
@@ -366,15 +324,6 @@ export default function ContractorOnboardingPage() {
     setDone(true)
   }
 
-  async function handleSkipMaterials() {
-    setError('')
-    setSaving(true)
-    const ok = await saveStep(4)
-    setSaving(false)
-    if (!ok) return
-    setStep(5)
-  }
-
   function passwordRequirement(met, label) {
     return (
       <li style={{
@@ -400,7 +349,6 @@ export default function ContractorOnboardingPage() {
       'Company information saved',
       'License verified',
       'Review preferences set',
-      'Preferred materials saved',
       'Password created',
     ]
     return (
@@ -671,23 +619,6 @@ export default function ContractorOnboardingPage() {
         {step === 4 && (
           <div>
             <h2 style={{ margin: '0 0 8px', fontSize: '18px', color: contractorTheme.text }}>
-              Preferred Materials (Optional)
-            </h2>
-            <p style={{ margin: '0 0 16px', color: contractorTheme.textMuted, fontSize: '14px' }}>
-              Select the materials you typically install. You can update these anytime in your portal.
-            </p>
-            <MaterialsPreferenceEditor
-              getToken={getToken}
-              initialSelected={materialSelection}
-              onChange={setMaterialSelection}
-              compact
-            />
-          </div>
-        )}
-
-        {step === 5 && (
-          <div>
-            <h2 style={{ margin: '0 0 8px', fontSize: '18px', color: contractorTheme.text }}>
               Set Your Password
             </h2>
             <p style={{ margin: '0 0 16px', color: contractorTheme.textMuted, fontSize: '14px' }}>
@@ -758,38 +689,18 @@ export default function ContractorOnboardingPage() {
           >
             Back
           </button>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            {step === 4 ? (
-              <button
-                type="button"
-                disabled={saving}
-                onClick={handleSkipMaterials}
-                style={{
-                  ...contractorPrimaryButtonStyle(saving),
-                  backgroundColor: 'transparent',
-                  color: contractorTheme.textMuted,
-                  border: '1px solid ' + contractorTheme.border,
-                  boxShadow: 'none',
-                }}
-              >
-                Skip for now
-              </button>
-            ) : null}
-            <button
-              type="button"
-              disabled={saving}
-              onClick={handleNext}
-              style={contractorPrimaryButtonStyle(saving)}
-            >
-              {saving
-                ? 'Saving...'
-                : step === 4
-                  ? 'Save & Continue →'
-                  : step === TOTAL_STEPS
-                    ? 'Set Password & Complete Setup'
-                    : 'Next'}
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={handleNext}
+            style={contractorPrimaryButtonStyle(saving)}
+          >
+            {saving
+              ? 'Saving...'
+              : step === TOTAL_STEPS
+                ? 'Set Password & Complete Setup'
+                : 'Next'}
+          </button>
         </div>
       </div>
     </div>

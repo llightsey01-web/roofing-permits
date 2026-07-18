@@ -45,9 +45,17 @@ export default function ContractorSettingsPage() {
   const [error, setError] = useState('')
 
   const [form, setForm] = useState({
-    name: '', address: '', city: '', state: 'FL', zip: '',
-    phone: '', primary_email: '', license_number: '',
-    qualifer_name: '', qualifer_license: '',
+    name: '',
+    dba_name: '',
+    address: '',
+    city: '',
+    state: 'FL',
+    zip: '',
+    phone: '',
+    primary_email: '',
+    license_number: '',
+    qualifier_name: '',
+    qualifier_license: '',
   })
 
   const [vaultCredentials, setVaultCredentials] = useState([])
@@ -88,6 +96,22 @@ export default function ContractorSettingsPage() {
     return session?.access_token
   }
 
+  function applyCompanyToForm(c) {
+    setForm({
+      name: c.name || '',
+      dba_name: c.dba_name || '',
+      address: c.address || '',
+      city: c.city || '',
+      state: c.state || 'FL',
+      zip: c.zip || '',
+      phone: c.phone || '',
+      primary_email: c.primary_email || '',
+      license_number: c.license_number || '',
+      qualifier_name: c.qualifier_name || c.qualifer_name || '',
+      qualifier_license: c.qualifier_license || c.qualifer_license || '',
+    })
+  }
+
   async function loadAll() {
     try {
       const supabase = createClient()
@@ -111,14 +135,9 @@ export default function ContractorSettingsPage() {
 
       const companyData = await companyRes.json()
       if (companyRes.ok && companyData.company) {
-        const c = companyData.company
-        setForm({
-          name: c.name || '', address: c.address || '', city: c.city || '',
-          state: c.state || 'FL', zip: c.zip || '', phone: c.phone || '',
-          primary_email: c.primary_email || '', license_number: c.license_number || '',
-          qualifer_name: c.qualifer_name || c.qualifier_name || '',
-          qualifer_license: c.qualifer_license || c.qualifier_license || '',
-        })
+        applyCompanyToForm(companyData.company)
+      } else {
+        setError(companyData.error || 'Could not load company information')
       }
 
       const credData = await credRes.json()
@@ -141,7 +160,8 @@ export default function ContractorSettingsPage() {
       setLoading(false)
     } catch (err) {
       console.error('[auth] Contractor settings load failed:', err)
-      router.replace('/login')
+      setError(err.message || 'Failed to load settings')
+      setLoading(false)
     }
   }
 
@@ -176,16 +196,31 @@ export default function ContractorSettingsPage() {
     setError('')
     const token = await getToken()
     const response = await fetch('/api/contractor/company', {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        name: form.name,
+        dba_name: form.dba_name,
+        address: form.address,
+        city: form.city,
+        state: form.state,
+        zip: form.zip,
+        phone: form.phone,
+        primary_email: form.primary_email,
+        license_number: form.license_number,
+        qualifier_name: form.qualifier_name,
+        qualifier_license: form.qualifier_license,
+        qualifer_name: form.qualifier_name,
+        qualifer_license: form.qualifier_license,
+      }),
     })
+    const result = await response.json()
     if (!response.ok) {
-      const result = await response.json()
       setError(result.error || 'Failed to save')
     } else {
+      if (result.company) applyCompanyToForm(result.company)
       setSaved(true)
-      setTimeout(function () { setSaved(false) }, 3000)
+      setTimeout(function () { setSaved(false) }, 4000)
     }
     setSaving(false)
   }
@@ -340,7 +375,7 @@ export default function ContractorSettingsPage() {
             color: contractorTheme.success,
             fontWeight: '600',
           }}>
-            Saved
+            ✓ Company information updated successfully
           </span>
         ) : null}
       </div>
@@ -381,14 +416,19 @@ export default function ContractorSettingsPage() {
             <input style={inputStyle} name="name" value={form.name} onChange={function (e) { setForm(function (p) { return { ...p, name: e.target.value } }) }} required />
           </div>
           <div style={{ marginBottom: '16px' }}>
+            <label style={labelStyle}>DBA / trade name</label>
+            <input style={inputStyle} name="dba_name" value={form.dba_name} onChange={function (e) { setForm(function (p) { return { ...p, dba_name: e.target.value } }) }} />
+          </div>
+          <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Address</label>
             <input style={inputStyle} name="address" value={form.address} onChange={function (e) { setForm(function (p) { return { ...p, address: e.target.value } }) }} />
           </div>
           <div style={grid2}>
             <div><label style={labelStyle}>City</label><input style={inputStyle} value={form.city} onChange={function (e) { setForm(function (p) { return { ...p, city: e.target.value } }) }} /></div>
+            <div><label style={labelStyle}>State</label><input style={inputStyle} value={form.state} onChange={function (e) { setForm(function (p) { return { ...p, state: e.target.value } }) }} /></div>
             <div><label style={labelStyle}>Zip</label><input style={inputStyle} value={form.zip} onChange={function (e) { setForm(function (p) { return { ...p, zip: e.target.value } }) }} /></div>
             <div><label style={labelStyle}>Phone</label><input style={inputStyle} value={form.phone} onChange={function (e) { setForm(function (p) { return { ...p, phone: e.target.value } }) }} /></div>
-            <div><label style={labelStyle}>Email</label><input style={inputStyle} type="email" value={form.primary_email} onChange={function (e) { setForm(function (p) { return { ...p, primary_email: e.target.value } }) }} /></div>
+            <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Email</label><input style={inputStyle} type="email" value={form.primary_email} onChange={function (e) { setForm(function (p) { return { ...p, primary_email: e.target.value } }) }} /></div>
           </div>
         </div>
 
@@ -396,8 +436,8 @@ export default function ContractorSettingsPage() {
           <h2 style={sectionTitleStyle}>License</h2>
           <div style={grid2}>
             <div><label style={labelStyle}>Contractor license #</label><input style={inputStyle} value={form.license_number} onChange={function (e) { setForm(function (p) { return { ...p, license_number: e.target.value } }) }} /></div>
-            <div><label style={labelStyle}>Qualifier name</label><input style={inputStyle} value={form.qualifer_name} onChange={function (e) { setForm(function (p) { return { ...p, qualifer_name: e.target.value } }) }} /></div>
-            <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Qualifier license #</label><input style={inputStyle} value={form.qualifer_license} onChange={function (e) { setForm(function (p) { return { ...p, qualifer_license: e.target.value } }) }} /></div>
+            <div><label style={labelStyle}>Qualifier name</label><input style={inputStyle} value={form.qualifier_name} onChange={function (e) { setForm(function (p) { return { ...p, qualifier_name: e.target.value } }) }} /></div>
+            <div style={{ gridColumn: '1 / -1' }}><label style={labelStyle}>Qualifier license #</label><input style={inputStyle} value={form.qualifier_license} onChange={function (e) { setForm(function (p) { return { ...p, qualifier_license: e.target.value } }) }} /></div>
           </div>
           <p style={{ fontSize: '12px', color: contractorTheme.textMuted, margin: '16px 0 0 0' }}>Logo upload — coming soon</p>
         </div>
