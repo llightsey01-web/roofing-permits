@@ -15,7 +15,10 @@
     "test:ci": "jest --ci --forceExit",
     "seed:demo": "node scripts/seed-demo.js",
     "seed:reset-demo": "node scripts/reset-demo.js",
-    "sync:product-approvals": "node scripts/sync-product-approvals.js"
+    "sync:product-approvals": "node scripts/sync-product-approvals.js",
+    "trigger:dev": "npx trigger.dev@latest dev",
+    "trigger:deploy": "npx trigger.dev@latest deploy",
+    "trigger:login": "npx trigger.dev@latest login"
   },
   "dependencies": {
     "@antiadmin/anticaptchaofficial": "^1.0.55",
@@ -23,6 +26,7 @@
     "@playwright/test": "^1.60.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.2",
+    "@trigger.dev/sdk": "^4.5.4",
     "2captcha": "^3.0.5-2",
     "docusign-esign": "^9.0.0",
     "dotenv": "^17.4.2",

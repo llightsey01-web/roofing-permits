@@ -248,7 +248,19 @@ async function pollProofCompletions() {
 console.log('[worker] Starting AHJ-iQ permit portal worker (Worker 1)')
 console.log('[worker] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'MISSING')
 console.log('[worker] Service key:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'MISSING')
-recoverStuckRuns().then(function() {
+
+async function bootRecovery() {
+  await recoverStuckRuns()
+  try {
+    var recovery = requireLib('lib/workflow/railway-recovery.js')
+    await recovery.recoverAfterRestart({ workerName: 'permit', supabase: supabase })
+    await recovery.healOrphanedRunningWorkflows({ workerName: 'permit', supabase: supabase })
+  } catch (recErr) {
+    console.warn('[worker] workflow railway recovery skipped:', recErr.message)
+  }
+}
+
+bootRecovery().then(function () {
   poll()
   setTimeout(pollProofCompletions, PROOF_POLL_START_DELAY_MS)
 })

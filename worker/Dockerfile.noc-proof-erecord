@@ -11,6 +11,8 @@ COPY worker/project-root.js ./
 
 COPY automation/ ./automation/
 COPY lib/ ./lib/
+COPY workflows/ ./workflows/
 
 # Do not bake ENVIRONMENT/NODE_ENV here — Railway injects them at runtime.
+# Restart survival: workflow railway-recovery + activity drain on each poll.
 CMD ["node", "index.js"]

@@ -278,6 +278,16 @@ async function poll() {
       setTimeout(poll, POLL_INTERVAL_MS)
       return
     }
+    try {
+      var activityHandler = requireHandler('workflow-activity-handler')
+      await activityHandler.processQueuedWorkflowActivities({
+        supabase: supabase,
+        allowedRunTypes: HANDLED_RUN_TYPES,
+        limit: 10,
+      })
+    } catch (actErr) {
+      console.warn('[noc-worker] workflow activity drain skipped:', actErr.message)
+    }
     await claimAndRun()
   } catch (err) {
     console.error('[noc-worker] Poll error:', err.message)
@@ -287,4 +297,16 @@ async function poll() {
 
 console.log('[noc-worker] Starting NOC + Proof + ePN worker (Worker 2)')
 console.log('[noc-worker] Handled run types:', HANDLED_RUN_TYPES.join(', '))
-recoverStuckRuns().then(function() { poll() })
+
+async function bootNocRecovery() {
+  await recoverStuckRuns()
+  try {
+    var recovery = requireLib('lib/workflow/railway-recovery.js')
+    await recovery.recoverAfterRestart({ workerName: 'nocProof', supabase: supabase })
+    await recovery.healOrphanedRunningWorkflows({ workerName: 'nocProof', supabase: supabase })
+  } catch (recErr) {
+    console.warn('[noc-worker] workflow railway recovery skipped:', recErr.message)
+  }
+}
+
+bootNocRecovery().then(function () { poll() })
