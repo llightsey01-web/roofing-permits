@@ -135,6 +135,30 @@ async function handleProofCheck(job, run, deps) {
         stepNumber: 2,
         stepName: 'proof_check',
       })
+
+      // Phase 1: durable ePN workflow (opt-in via WORKFLOW_ENGINE_EPN=true)
+      var epnMigration = null
+      try {
+        epnMigration = requireLib('lib/workflow/epn-migration.js')
+      } catch (e) {
+        epnMigration = null
+      }
+
+      if (epnMigration && epnMigration.isWorkflowEngineEpnEnabled()) {
+        var wfResult = await epnMigration.startEpnFromProofCompletion({
+          jobId: job.id,
+          companyId: job.company_id || null,
+          dependencyRunId: run.id,
+          source: 'proof_check',
+        })
+        return {
+          complete: true,
+          jobResult: jobResult,
+          workflowEngine: true,
+          workflowRunId: wfResult.run && wfResult.run.id,
+        }
+      }
+
       await supabase.from('automation_runs').insert({
         job_id: job.id,
         run_type: 'erecord_prepare',

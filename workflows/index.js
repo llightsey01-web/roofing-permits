@@ -1,6 +1,7 @@
 'use strict'
 
 var permit = require('./permit-workflow')
+var epn = require('./epn-workflow')
 
 module.exports = {
   permitWorkflow: permit.permitWorkflow,
@@ -8,4 +9,10 @@ module.exports = {
   startPermitWorkflow: permit.startPermitWorkflow,
   resumePermitWorkflow: permit.resumePermitWorkflow,
   listPermitSteps: permit.listPermitSteps,
+  epnWorkflow: epn.epnWorkflow,
+  buildEpnWorkflow: epn.buildEpnWorkflow,
+  startEpnWorkflow: epn.startEpnWorkflow,
+  resumeEpnWorkflow: epn.resumeEpnWorkflow,
+  approveEpnReview: epn.approveEpnReview,
+  listEpnSteps: epn.listEpnSteps,
 }
