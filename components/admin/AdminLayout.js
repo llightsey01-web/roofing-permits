@@ -17,6 +17,7 @@ import {
 const navItems = [
   { href: '/admin', label: 'Dashboard', match: (p) => p === '/admin' },
   { href: '/admin/operations', label: 'Operations', match: (p) => p.startsWith('/admin/operations') },
+  { href: '/admin/workflows', label: 'Workflows', match: (p) => p.startsWith('/admin/workflows') },
   { href: '/admin/companies', label: 'Companies', match: (p) => p.startsWith('/admin/companies') },
   { href: '/admin/jobs', label: 'Jobs', match: (p) => p.startsWith('/admin/jobs') },
   { href: '/admin/leads', label: 'Leads', match: (p) => p.startsWith('/admin/leads') },

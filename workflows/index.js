@@ -9,10 +9,12 @@ module.exports = {
   startPermitWorkflow: permit.startPermitWorkflow,
   resumePermitWorkflow: permit.resumePermitWorkflow,
   listPermitSteps: permit.listPermitSteps,
+  createLegacyActivityDispatcher: permit.createLegacyActivityDispatcher,
   epnWorkflow: epn.epnWorkflow,
   buildEpnWorkflow: epn.buildEpnWorkflow,
   startEpnWorkflow: epn.startEpnWorkflow,
   resumeEpnWorkflow: epn.resumeEpnWorkflow,
   approveEpnReview: epn.approveEpnReview,
   listEpnSteps: epn.listEpnSteps,
+  createEpnActivityDispatcher: epn.createEpnActivityDispatcher,
 }
