@@ -432,7 +432,7 @@ export default function AdminWorkflowRunPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid ' + adminTheme.border }}>
-                {['#', 'Key', 'Type', 'Status', 'Attempts', 'Error'].map(function (h) {
+                {['#', 'Key', 'Type', 'Status', 'Attempts', 'Duration', 'Error'].map(function (h) {
                   return (
                     <th key={h} style={{
                       textAlign: 'left',
@@ -449,6 +449,10 @@ export default function AdminWorkflowRunPage() {
             </thead>
             <tbody>
               {(data.steps || []).map(function (s) {
+                var duration =
+                  s.output && s.output.durationMs != null
+                    ? s.output.durationMs + 'ms'
+                    : '—'
                 return (
                   <tr key={s.id} style={{ borderBottom: '1px solid ' + adminTheme.borderSubtle }}>
                     <td style={{ padding: '8px', color: adminTheme.textDim }}>{s.sequence_order}</td>
@@ -456,6 +460,7 @@ export default function AdminWorkflowRunPage() {
                     <td style={{ padding: '8px', color: adminTheme.textMuted }}>{s.step_type}</td>
                     <td style={{ padding: '8px' }}><Badge status={s.status} /></td>
                     <td style={{ padding: '8px', color: adminTheme.textMuted }}>{s.attempt_count || 0}/{s.max_attempts || '—'}</td>
+                    <td style={{ padding: '8px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono }}>{duration}</td>
                     <td style={{ padding: '8px', color: adminTheme.danger, maxWidth: '280px' }}>{s.error_message || '—'}</td>
                   </tr>
                 )
@@ -556,32 +561,77 @@ export default function AdminWorkflowRunPage() {
           {(data.artifacts || []).length === 0 ? (
             <div style={{ color: adminTheme.textMuted }}>No artifacts.</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {(data.artifacts || []).map(function (a) {
-                return (
-                  <div key={a.id} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                    flexWrap: 'wrap',
-                    borderBottom: '1px solid ' + adminTheme.borderSubtle,
-                    paddingBottom: '8px',
-                  }}>
-                    <div>
-                      <div style={{ color: adminTheme.text, fontSize: '13px' }}>{a.name}</div>
-                      <div style={{ color: adminTheme.textDim, fontSize: '11px', fontFamily: adminTheme.fontMono }}>
-                        {a.artifact_type} · {a.storage_path || 'no path'}
-                      </div>
-                    </div>
-                    {a.signed_url ? (
-                      <a href={a.signed_url} target="_blank" rel="noreferrer" style={{ color: '#60a5fa', fontSize: '12px' }}>
-                        Open
+            <>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                gap: '12px',
+                marginBottom: '16px',
+              }}>
+                {(data.artifacts || [])
+                  .filter(function (a) {
+                    return a.artifact_type === 'screenshot' && a.signed_url
+                  })
+                  .map(function (a) {
+                    return (
+                      <a
+                        key={a.id}
+                        href={a.signed_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: 'block',
+                          border: '1px solid ' + adminTheme.border,
+                          borderRadius: '6px',
+                          overflow: 'hidden',
+                          backgroundColor: adminTheme.surfaceRaised,
+                          textDecoration: 'none',
+                        }}
+                      >
+                        <img
+                          src={a.signed_url}
+                          alt={a.name}
+                          style={{ width: '100%', height: '120px', objectFit: 'cover', display: 'block' }}
+                        />
+                        <div style={{
+                          padding: '8px',
+                          fontSize: '11px',
+                          color: adminTheme.textMuted,
+                          fontFamily: adminTheme.fontMono,
+                        }}>
+                          {a.name}
+                        </div>
                       </a>
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
+                    )
+                  })}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {(data.artifacts || []).map(function (a) {
+                  return (
+                    <div key={a.id} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                      flexWrap: 'wrap',
+                      borderBottom: '1px solid ' + adminTheme.borderSubtle,
+                      paddingBottom: '8px',
+                    }}>
+                      <div>
+                        <div style={{ color: adminTheme.text, fontSize: '13px' }}>{a.name}</div>
+                        <div style={{ color: adminTheme.textDim, fontSize: '11px', fontFamily: adminTheme.fontMono }}>
+                          {a.artifact_type} · {a.storage_path || 'no path'}
+                        </div>
+                      </div>
+                      {a.signed_url ? (
+                        <a href={a.signed_url} target="_blank" rel="noreferrer" style={{ color: '#60a5fa', fontSize: '12px' }}>
+                          Open
+                        </a>
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
           )}
         </Section>
       )}

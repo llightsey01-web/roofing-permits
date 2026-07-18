@@ -1,5 +1,6 @@
 // automation/shared/screenshot.js
 // Wraps every automation step — takes screenshot, saves log row, handles errors
+// When automation_runs.payload has workflow_run_id, also mirrors into workflow_artifacts/logs
 const { createClient } = require('@supabase/supabase-js')
 const { saveCheckpoint, shouldSkipStep } = require('./checkpoint.js')
 
@@ -10,6 +11,16 @@ function getSupabase() {
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     { realtime: { transport: ws } }
   )
+}
+
+async function mirrorToWorkflow(opts) {
+  try {
+    var { getObservability } = require('../../lib/workflow/observability.js')
+    var obs = getObservability()
+    await obs.mirrorLegacyCapture(opts)
+  } catch (err) {
+    console.warn('[observability] mirror skipped:', err.message)
+  }
 }
 
 async function captureFailureForensics(page, runId, stepName, err) {
@@ -54,6 +65,18 @@ async function captureFailureForensics(page, runId, stepName, err) {
       logged_at: new Date().toISOString(),
     })
 
+    await mirrorToWorkflow({
+      legacyRunId: runId,
+      stepName: stepName,
+      label: 'failure_forensics',
+      screenshotPath: diagnostics.screenshotPath,
+      htmlPath: diagnostics.htmlPath,
+      storageBucket: 'screenshots',
+      success: false,
+      url: url,
+      source: 'playwright_logStep',
+    })
+
     console.log('[forensics] Captured failure evidence for step: ' + stepName)
     return diagnostics
   } catch (forensicsErr) {
@@ -85,6 +108,17 @@ async function logStep(page, runId, stepNumber, stepName, fn, checkpointData) {
       screenshot_path: screenshotPath,
       logged_at: new Date().toISOString(),
     })
+
+    await mirrorToWorkflow({
+      legacyRunId: runId,
+      stepNumber: stepNumber,
+      stepName: stepName,
+      screenshotPath: screenshotPath,
+      storageBucket: 'screenshots',
+      success: true,
+      source: 'playwright_logStep',
+    })
+
     console.log(`✓ Step ${stepNumber}: ${stepName}`)
     return { success: true }
   } catch (err) {
@@ -103,6 +137,19 @@ async function logStep(page, runId, stepNumber, stepName, fn, checkpointData) {
       raw_error: err.message,
       logged_at: new Date().toISOString(),
     })
+
+    if (screenshot) {
+      await mirrorToWorkflow({
+        legacyRunId: runId,
+        stepNumber: stepNumber,
+        stepName: stepName,
+        screenshotPath: screenshotPath,
+        storageBucket: 'screenshots',
+        success: false,
+        source: 'playwright_logStep',
+      })
+    }
+
     console.log(`✗ Step ${stepNumber}: ${stepName} — ${err.message}`)
     throw err
   }
