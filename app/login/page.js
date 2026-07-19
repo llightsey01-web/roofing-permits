@@ -5,39 +5,24 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '../../lib/supabase'
 import { safeGetSession } from '../../lib/auth/safe-auth'
 import { SESSION_EXPIRED_MESSAGE } from '../../lib/auth/clear-stale-session'
-import { contractorTheme } from '../../lib/ui/contractor-theme'
+import { contractorTheme, applyPortalTheme, getPortalTheme } from '../../lib/ui/contractor-theme'
 
 const theme = {
-  pageBg: '#0f172a',
-  surface: '#1e293b',
-  border: '#334155',
-  text: '#ffffff',
-  textMuted: '#94a3b8',
+  surface: 'var(--portal-surface)',
+  border: 'var(--portal-border)',
+  text: 'var(--portal-text)',
+  textMuted: 'var(--portal-text-muted)',
   accent: '#3b82f6',
   accentHover: '#2563eb',
-  inputBg: '#0f172a',
-  error: '#ef4444',
-  success: '#10b981',
+  inputBg: 'var(--portal-input-bg)',
+  error: 'var(--portal-error)',
+  success: 'var(--portal-success)',
   fontFamily: contractorTheme.fontFamily,
 }
 
-function useDarkPageBackground() {
+function usePortalCanvas() {
   useEffect(function () {
-    const html = document.documentElement
-    const body = document.body
-    const prevHtmlBg = html.style.backgroundColor
-    const prevBodyBg = body.style.backgroundColor
-    const prevBodyColor = body.style.color
-
-    html.style.backgroundColor = theme.pageBg
-    body.style.backgroundColor = theme.pageBg
-    body.style.color = theme.text
-
-    return function () {
-      html.style.backgroundColor = prevHtmlBg
-      body.style.backgroundColor = prevBodyBg
-      body.style.color = prevBodyColor
-    }
+    applyPortalTheme(getPortalTheme())
   }, [])
 }
 
@@ -76,7 +61,7 @@ function DartIQLogo() {
 }
 
 function LoginForm() {
-  useDarkPageBackground()
+  usePortalCanvas()
 
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
@@ -192,7 +177,6 @@ function LoginForm() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.pageBg,
       fontFamily: theme.fontFamily,
       padding: '24px',
     }}>
@@ -206,15 +190,14 @@ function LoginForm() {
         }
       `}</style>
 
-      <div style={{
-        backgroundColor: theme.surface,
-        padding: '40px 36px',
-        borderRadius: '14px',
-        border: '1px solid ' + theme.border,
-        width: '100%',
-        maxWidth: '420px',
-        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4)',
-      }}>
+      <div
+        className="login-card"
+        style={{
+          padding: '40px 36px',
+          width: '100%',
+          maxWidth: '420px',
+        }}
+      >
         <DartIQLogo />
 
         <h1 style={{
@@ -443,7 +426,7 @@ function LoginForm() {
 }
 
 function LoginLoading() {
-  useDarkPageBackground()
+  usePortalCanvas()
 
   return (
     <div style={{
@@ -452,7 +435,6 @@ function LoginLoading() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.pageBg,
       fontFamily: theme.fontFamily,
     }}>
       <p style={{ color: theme.textMuted, fontSize: '14px' }}>Loading...</p>
