@@ -13,20 +13,37 @@ import {
   portalAsideStyle,
   portalNavItemStyle,
   portalSectionLabelStyle,
+  portalSectionHeaderStyle,
+  portalSectionRuleStyle,
   portalSignOutButtonStyle,
 } from '../../lib/ui/admin-theme'
 import { applyPortalTheme, getPortalTheme } from '../../lib/ui/contractor-theme'
 
-const navItems = [
-  { href: '/admin', label: 'Dashboard', match: (p) => p === '/admin' },
-  { href: '/admin/operations', label: 'Operations', match: (p) => p.startsWith('/admin/operations') },
-  { href: '/admin/workflows', label: 'Workflows', match: (p) => p.startsWith('/admin/workflows') },
-  { href: '/admin/companies', label: 'Companies', match: (p) => p.startsWith('/admin/companies') },
-  { href: '/admin/jobs', label: 'Jobs', match: (p) => p.startsWith('/admin/jobs') },
-  { href: '/admin/leads', label: 'Leads', match: (p) => p.startsWith('/admin/leads') },
-  { href: '/admin/ahj-requirements', label: 'AHJ Requirements', match: (p) => p.startsWith('/admin/ahj-requirements') },
-  { href: '/admin/system', label: 'System', match: (p) => p.startsWith('/admin/system') },
-  { href: '/dashboard', label: 'Ops Queue', match: (p) => p === '/dashboard' || (p.startsWith('/jobs/') && !p.startsWith('/admin/')) },
+const navSections = [
+  {
+    label: 'MAIN',
+    items: [
+      { href: '/admin', label: 'Dashboard', match: (p) => p === '/admin' },
+      { href: '/admin/operations', label: 'Operations', match: (p) => p.startsWith('/admin/operations') },
+      { href: '/admin/workflows', label: 'Workflows', match: (p) => p.startsWith('/admin/workflows') },
+    ],
+  },
+  {
+    label: 'MANAGE',
+    items: [
+      { href: '/admin/companies', label: 'Companies', match: (p) => p.startsWith('/admin/companies') },
+      { href: '/admin/jobs', label: 'Jobs', match: (p) => p.startsWith('/admin/jobs') },
+      { href: '/admin/leads', label: 'Leads', match: (p) => p.startsWith('/admin/leads') },
+    ],
+  },
+  {
+    label: 'SYSTEM',
+    items: [
+      { href: '/admin/ahj-requirements', label: 'AHJ Requirements', match: (p) => p.startsWith('/admin/ahj-requirements') },
+      { href: '/admin/system', label: 'System', match: (p) => p.startsWith('/admin/system') },
+      { href: '/dashboard', label: 'Ops Queue', match: (p) => p === '/dashboard' || (p.startsWith('/jobs/') && !p.startsWith('/admin/')) },
+    ],
+  },
 ]
 
 export default function AdminLayout({ children }) {
@@ -126,18 +143,30 @@ export default function AdminLayout({ children }) {
           <EnvironmentBadge label="Internal" variant="admin" />
         </div>
 
-        <nav style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-          {navItems.map(item => {
-            const active = item.match(pathname || '')
+        <nav style={{ padding: '8px 10px 12px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+          {navSections.map(function (section) {
             return (
-              <button
-                key={item.href}
-                type="button"
-                onClick={() => router.push(item.href)}
-                style={portalNavItemStyle(active)}
-              >
-                {item.label}
-              </button>
+              <div key={section.label}>
+                <div style={portalSectionHeaderStyle()} aria-hidden="true">
+                  <span style={portalSectionLabelStyle()}>{section.label}</span>
+                  <div style={portalSectionRuleStyle()} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  {section.items.map(function (item) {
+                    const active = item.match(pathname || '')
+                    return (
+                      <button
+                        key={item.href}
+                        type="button"
+                        onClick={() => router.push(item.href)}
+                        style={portalNavItemStyle(active)}
+                      >
+                        {item.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             )
           })}
         </nav>

@@ -13,6 +13,8 @@ import {
   portalAsideStyle,
   portalNavItemStyle,
   portalSectionLabelStyle,
+  portalSectionHeaderStyle,
+  portalSectionRuleStyle,
   portalSignOutButtonStyle,
 } from '../../lib/ui/admin-theme'
 import { applyPortalTheme, getPortalTheme } from '../../lib/ui/contractor-theme'
@@ -212,7 +214,10 @@ export default function ContractorLayout({ children }) {
             {navSections.map(function (section) {
               return (
                 <div key={section.label}>
-                  <p style={portalSectionLabelStyle()}>{section.label}</p>
+                  <div style={portalSectionHeaderStyle()} aria-hidden="true">
+                    <span style={portalSectionLabelStyle()}>{section.label}</span>
+                    <div style={portalSectionRuleStyle()} />
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     {section.items.map(function (item) {
                       const active = item.match(pathname || '')
