@@ -6,6 +6,7 @@ import { createClient } from '../../lib/supabase'
 import { safeGetUser, redirectIfStaleSession } from '../../lib/auth/safe-auth'
 import EnvironmentBadge from '../ui/EnvironmentBadge'
 import PortalThemeToggle from '../ui/PortalThemeToggle'
+import ChatWidget from './ChatWidget'
 import {
   portalShellTheme,
   portalShellRootClassName,
@@ -284,6 +285,9 @@ export default function ContractorLayout({ children }) {
           children
         )}
       </main>
+
+      {/* AI assistant — jobId auto-detected from /contractor/jobs/[id] */}
+      <ChatWidget />
     </div>
   )
 }

@@ -283,6 +283,7 @@ export default function ContractorJobDetailPage({ params }) {
 
   return (
     <div className="contractor-page contractor-page-detail">
+      {/* DART iQ Assistant (layout ChatWidget) auto-loads this job via URL jobId */}
       <style>{'@keyframes dartiq-spin { to { transform: rotate(360deg); } }'}</style>
 
       <button
