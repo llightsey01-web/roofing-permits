@@ -83,7 +83,10 @@ export default function AdminAhjRequirementsPage() {
 
   const loadAhjs = useCallback(async function () {
     try {
-      const res = await fetch('/api/contractor/ahj-guide')
+      const res = await fetch('/api/contractor/ahj-guide', {
+        cache: 'no-store',
+        headers: { Pragma: 'no-cache', 'Cache-Control': 'no-cache' },
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to load AHJs')
       const list = data.ahjs || []
@@ -236,8 +239,9 @@ export default function AdminAhjRequirementsPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to update document')
       setEditingDocId(null)
-      setMessage('Document updated.')
+      setMessage('Requirement updated — changes are live on contractor portal')
       await loadAhjs()
+      setTimeout(function () { setMessage('') }, 3000)
     } catch (err) {
       setError(err.message)
     }

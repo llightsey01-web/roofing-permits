@@ -340,19 +340,43 @@ export default function AhjGuidePage() {
   const [expandedIds, setExpandedIds] = useState({})
 
   useEffect(function () {
+    let cancelled = false
+
     async function load() {
       try {
-        const res = await fetch('/api/contractor/ahj-guide')
+        const res = await fetch('/api/contractor/ahj-guide', {
+          cache: 'no-store',
+          headers: { Pragma: 'no-cache', 'Cache-Control': 'no-cache' },
+        })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Failed to load AHJ guide')
-        setAhjs(data.ahjs || [])
-        setError('')
+        if (!cancelled) {
+          setAhjs(data.ahjs || [])
+          setError('')
+        }
       } catch (err) {
-        setError(err.message)
+        if (!cancelled) setError(err.message)
       }
-      setLoading(false)
+      if (!cancelled) setLoading(false)
     }
+
     load()
+
+    function onVisible() {
+      if (document.visibilityState === 'visible') load()
+    }
+    function onFocus() {
+      load()
+    }
+
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onFocus)
+
+    return function () {
+      cancelled = true
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onFocus)
+    }
   }, [])
 
   const filtered = useMemo(function () {
