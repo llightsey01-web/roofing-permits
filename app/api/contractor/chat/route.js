@@ -94,8 +94,10 @@ export async function POST(request) {
     }
 
     if (!process.env.ANTHROPIC_API_KEY) {
-      console.error('[chat] ANTHROPIC_API_KEY is not configured')
-      return Response.json({ error: 'AI service not configured' }, { status: 503 })
+      console.error('[chat] ANTHROPIC_API_KEY not set')
+      return Response.json({
+        error: 'AI service not configured. Please contact support.',
+      }, { status: 503 })
     }
 
     const body = await request.json()
@@ -166,38 +168,47 @@ export async function POST(request) {
       products || []
     )
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
-        system: systemPrompt,
-        messages: trimmed,
-      }),
-    })
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: trimmed,
+        }),
+      })
 
-    const data = await response.json()
+      const data = await response.json()
 
-    if (!response.ok) {
-      console.error('[chat] Claude API error:', data)
-      return Response.json({ error: 'AI service unavailable' }, { status: 500 })
+      if (!response.ok) {
+        console.error('[chat] Claude API error:', response.status, data)
+        return Response.json({
+          error: 'AI service error: ' + (data.error?.message || response.status),
+        }, { status: 500 })
+      }
+
+      const reply = data.content?.[0]?.text || 'Sorry I could not process that request.'
+
+      console.log('[chat] contractor_chat', {
+        company_id: context.companyId,
+        job_id: jobId || null,
+        message_count: trimmed.length,
+        last_user_message: trimmed[trimmed.length - 1]?.content?.slice(0, 100),
+      })
+
+      return Response.json({ reply })
+    } catch (err) {
+      console.error('[chat] Chat error:', err.message)
+      return Response.json({
+        error: 'Failed to connect to AI service: ' + err.message,
+      }, { status: 500 })
     }
-
-    const reply = data.content?.[0]?.text || 'Sorry I could not process that request.'
-
-    console.log('[chat] contractor_chat', {
-      company_id: context.companyId,
-      job_id: jobId || null,
-      message_count: trimmed.length,
-      last_user_message: trimmed[trimmed.length - 1]?.content?.slice(0, 100),
-    })
-
-    return Response.json({ reply })
   } catch (err) {
     console.error('[chat] Unexpected error:', err.message)
     return Response.json({ error: err.message || 'Chat failed' }, { status: 500 })

@@ -15,6 +15,14 @@ const SUGGESTIONS = [
   'When to schedule dry-in?',
 ]
 
+const WELCOME_MESSAGE = {
+  role: 'assistant',
+  content: 'Hi! I\'m your DART iQ permit assistant. Ask me anything about your permits, county requirements, or roofing documents.',
+}
+
+const FRIENDLY_ERROR =
+  'I\'m having trouble connecting right now. Please try again in a moment. If the issue persists contact support at logan@dartiq.dev'
+
 function resolveJobIdFromPath(pathname) {
   if (!pathname) return null
   const match = pathname.match(JOB_ID_RE)
@@ -27,12 +35,7 @@ export default function ChatWidget({ jobId }) {
 
   const [isOpen, setIsOpen] = useState(false)
   const [isLight, setIsLight] = useState(false)
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: 'Hi! I\'m your DART iQ permit assistant. Ask me anything about your permits, county requirements, or roofing documents.',
-    },
-  ])
+  const [messages, setMessages] = useState([WELCOME_MESSAGE])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef(null)
@@ -57,6 +60,22 @@ export default function ChatWidget({ jobId }) {
   useEffect(function () {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isOpen])
+
+  useEffect(function () {
+    function handleEscape(e) {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleEscape)
+    return function () { window.removeEventListener('keydown', handleEscape) }
+  }, [isOpen])
+
+  function resetChat() {
+    setMessages([{ ...WELCOME_MESSAGE }])
+    setInput('')
+    setLoading(false)
+  }
 
   async function getAccessToken() {
     const supabase = createClient()
@@ -110,7 +129,7 @@ export default function ChatWidget({ jobId }) {
         setMessages(function (prev) {
           return prev.concat([{
             role: 'assistant',
-            content: data.error || 'Sorry, I could not process that request.',
+            content: FRIENDLY_ERROR,
           }])
         })
       }
@@ -118,7 +137,7 @@ export default function ChatWidget({ jobId }) {
       setMessages(function (prev) {
         return prev.concat([{
           role: 'assistant',
-          content: 'Sorry, I\'m having trouble connecting. Please try again.',
+          content: FRIENDLY_ERROR,
         }])
       })
     } finally {
@@ -232,23 +251,46 @@ export default function ChatWidget({ jobId }) {
             }}>
               D
             </div>
-            <div style={{ minWidth: 0 }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontSize: '13px', fontWeight: '600', color: headerText }}>
                 DART iQ Assistant
               </div>
               <div style={{ fontSize: '11px', color: mutedText }}>
-                {resolvedJobId ? 'Job context active' : 'Permit & compliance help'}
+                {resolvedJobId ? 'Job context active' : 'Permit and compliance help'}
               </div>
             </div>
-            <div style={{
-              marginLeft: 'auto',
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: '#22c55e',
-              boxShadow: '0 0 6px #22c55e',
-              flexShrink: 0,
-            }} />
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+              <button
+                type="button"
+                onClick={resetChat}
+                title="New conversation"
+                style={{
+                  background: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
+                  border: '1px solid ' + (isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'),
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  color: isLight ? 'rgba(15,23,42,0.65)' : 'rgba(255,255,255,0.6)',
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                New chat
+              </button>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#22c55e',
+                boxShadow: '0 0 6px #22c55e',
+              }} />
+            </div>
           </div>
 
           <div style={{
