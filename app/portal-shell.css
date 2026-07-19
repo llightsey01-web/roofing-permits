@@ -6,14 +6,9 @@ html.dark,
 html[data-theme='dark'] {
   color-scheme: dark;
   --bg-base: #0b0b10;
-  --bg-dot-color: rgba(255, 255, 255, 0.35);
+  --bg-dot-color: rgba(255, 255, 255, 0.5);
   --bg-dot-size: 1.2px;
   --bg-dot-spacing: 22px;
-  --bg-depth-fade: radial-gradient(
-    ellipse 80% 80% at 50% 50%,
-    transparent 40%,
-    rgba(0, 0, 0, 0.6) 100%
-  );
 
   --portal-canvas-bg: var(--bg-base);
   --portal-canvas-dot: var(--bg-dot-color);
@@ -54,19 +49,14 @@ html[data-theme='dark'] {
   --portal-shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
 }
 
-/* ── Tokens: light — stronger black dots + soft edge fade ─── */
+/* ── Tokens: light ────────────────────────────────────────── */
 html.light,
 html[data-theme='light'] {
   color-scheme: light;
   --bg-base: #f8f9fb;
-  --bg-dot-color: rgba(0, 0, 0, 0.25);
+  --bg-dot-color: rgba(0, 0, 0, 0.35);
   --bg-dot-size: 1.2px;
   --bg-dot-spacing: 22px;
-  --bg-depth-fade: radial-gradient(
-    ellipse 80% 80% at 50% 50%,
-    transparent 40%,
-    rgba(248, 249, 251, 0.7) 100%
-  );
 
   --portal-canvas-bg: var(--bg-base);
   --portal-canvas-dot: var(--bg-dot-color);
@@ -107,32 +97,67 @@ html[data-theme='light'] {
   --portal-shadow-card: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
-/* ── Canvas: dots + depth fade (same layout, inverted colors) */
+/*
+ * Canvas shell — solid base color only.
+ * Dot grid lives on ::before and is vignetted via mask-image
+ * so dots are fully visible in the center and fade out at edges.
+ */
+.portal-shell,
 .portal-shell-canvas {
   position: relative;
   isolation: isolate;
   min-height: 100vh;
   background-color: var(--bg-base);
-  background-image:
-    radial-gradient(
-      var(--bg-dot-color) var(--bg-dot-size),
-      transparent var(--bg-dot-size)
-    ),
-    var(--bg-depth-fade);
-  background-size: var(--bg-dot-spacing) var(--bg-dot-spacing), 100% 100%;
-  background-position: -11px -11px, 0 0;
-  background-attachment: fixed, fixed;
+  background-image: none;
   color: var(--portal-text);
 }
 
+.portal-shell::before,
+.portal-shell-canvas::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(
+    circle,
+    var(--bg-dot-color) var(--bg-dot-size),
+    transparent var(--bg-dot-size)
+  );
+  background-size: var(--bg-dot-spacing) var(--bg-dot-spacing);
+  background-position: -11px -11px;
+  background-attachment: fixed;
+  -webkit-mask-image: radial-gradient(
+    ellipse 85% 85% at 50% 50%,
+    black 0%,
+    black 30%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 85% 85% at 50% 50%,
+    black 0%,
+    black 30%,
+    transparent 100%
+  );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+.portal-shell > *,
 .portal-shell-canvas > * {
   position: relative;
   z-index: 1;
 }
 
 /* Light mode floating surfaces (aside / nav panels) */
+html.light .portal-shell aside,
+html[data-theme='light'] .portal-shell aside,
 html.light .portal-shell-canvas aside,
 html[data-theme='light'] .portal-shell-canvas aside,
+html.light .portal-shell nav,
+html[data-theme='light'] .portal-shell nav,
 html.light .portal-shell-canvas nav,
 html[data-theme='light'] .portal-shell-canvas nav {
   background: rgba(255, 255, 255, 0.85);
