@@ -1,123 +1,98 @@
 import { createClient } from '../../../../lib/supabase-server.js'
 
 export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
 export const revalidate = 0
+
+const NO_CACHE_HEADERS = {
+  'Content-Type': 'application/json',
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  Pragma: 'no-cache',
+  Expires: '0',
+  'Surrogate-Control': 'no-store',
+}
 
 /**
  * GET /api/contractor/ahj-guide
- * Fresh AHJ reference data — no caching so admin edits show immediately.
+ * Always returns fresh AHJ data (no cache) so admin edits appear immediately.
  */
 export async function GET() {
   try {
     const supabase = createClient()
 
-    const { data: portals, error: portalsError } = await supabase
+    const { data: portals, error: ahjError } = await supabase
       .from('ahj_portals')
-      .select(
-        `
-        id,
-        name,
-        county_or_city,
-        state,
-        portal_url,
-        submission_method,
-        avg_approval_days,
-        permit_fee_info,
-        portal_tips,
-        phone,
-        email,
-        office_address,
-        office_hours
-      `
-      )
+      .select('*')
       .eq('state', 'FL')
       .eq('is_active', true)
       .order('county_or_city', { ascending: true })
 
-    if (portalsError) {
-      console.error('[ahj-guide] Fetch failed:', portalsError.message)
-      return Response.json({ error: portalsError.message }, { status: 500 })
-    }
+    if (ahjError) throw ahjError
 
     const ahjs = portals || []
     if (ahjs.length === 0) {
-      return Response.json(
-        { ahjs: [] },
-        {
-          headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate',
-            Pragma: 'no-cache',
-          },
-        }
-      )
+      return new Response(JSON.stringify({ ahjs: [] }), {
+        status: 200,
+        headers: NO_CACHE_HEADERS,
+      })
     }
 
-    const ids = ahjs.map(function (a) {
-      return a.id
-    })
+    const ids = ahjs.map(function (a) { return a.id })
 
     const [reqsRes, inspRes] = await Promise.all([
       supabase
         .from('ahj_requirements')
-        .select(
-          'id, ahj_id, requirement_type, name, description, is_required, sequence_order, when_needed, download_url, notes, is_active'
-        )
+        .select('*')
         .in('ahj_id', ids)
         .eq('is_active', true)
         .order('sequence_order', { ascending: true }),
       supabase
         .from('ahj_inspections')
-        .select(
-          'id, ahj_id, inspection_name, description, sequence_order, when_to_schedule, typical_wait_days, notes, is_active'
-        )
+        .select('*')
         .in('ahj_id', ids)
         .eq('is_active', true)
         .order('sequence_order', { ascending: true }),
     ])
 
-    if (reqsRes.error) {
-      console.error('[ahj-guide] Requirements fetch failed:', reqsRes.error.message)
-      return Response.json({ error: reqsRes.error.message }, { status: 500 })
-    }
-    if (inspRes.error) {
-      console.error('[ahj-guide] Inspections fetch failed:', inspRes.error.message)
-      return Response.json({ error: inspRes.error.message }, { status: 500 })
-    }
+    if (reqsRes.error) throw reqsRes.error
+    if (inspRes.error) throw inspRes.error
 
-    const reqsByAhj = {}
-    const inspByAhj = {}
-    ;(reqsRes.data || []).forEach(function (r) {
-      if (!reqsByAhj[r.ahj_id]) reqsByAhj[r.ahj_id] = []
-      reqsByAhj[r.ahj_id].push(r)
-    })
-    ;(inspRes.data || []).forEach(function (i) {
-      if (!inspByAhj[i.ahj_id]) inspByAhj[i.ahj_id] = []
-      inspByAhj[i.ahj_id].push(i)
-    })
+    const requirements = reqsRes.data || []
+    const inspections = inspRes.data || []
 
     const result = ahjs.map(function (ahj) {
-      const requirements = reqsByAhj[ahj.id] || []
+      const ahjReqs = requirements.filter(function (r) { return r.ahj_id === ahj.id })
+      const ahjInsps = inspections.filter(function (i) { return i.ahj_id === ahj.id })
       return {
         ...ahj,
-        requirements: requirements,
-        documents: requirements.filter(function (r) {
-          return r.requirement_type === 'document'
-        }),
-        inspections: inspByAhj[ahj.id] || [],
+        // Prefer these for the UI (and keep nested aliases for compatibility)
+        requirements: ahjReqs,
+        documents: ahjReqs.filter(function (r) { return r.requirement_type === 'document' }),
+        inspections: ahjInsps,
+        ahj_requirements: ahjReqs,
+        ahj_inspections: ahjInsps,
       }
     })
 
-    return Response.json(
-      { ahjs: result },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-          Pragma: 'no-cache',
-        },
-      }
+    console.log(
+      '[ahj-guide] Fetched',
+      ahjs.length,
+      'AHJs,',
+      requirements.length,
+      'requirements,',
+      inspections.length,
+      'inspections'
     )
+
+    return new Response(JSON.stringify({ ahjs: result }), {
+      status: 200,
+      headers: NO_CACHE_HEADERS,
+    })
   } catch (err) {
-    console.error('[contractor/ahj-guide] GET error:', err.message)
-    return Response.json({ error: err.message }, { status: 500 })
+    console.error('[ahj-guide] Error:', err.message)
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 }

@@ -1,5 +1,7 @@
 import { authenticateRequest, requireSuperAdmin } from '../../../../../lib/auth/session.js'
 
+export const dynamic = 'force-dynamic'
+
 const ALLOWED_FIELDS = [
   'name',
   'description',

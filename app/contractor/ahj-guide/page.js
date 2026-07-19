@@ -234,6 +234,16 @@ function AhjAccordion({ ahj, expanded, onToggle }) {
                         {doc.description}
                       </div>
                     )}
+                    {doc.notes && (
+                      <div style={{
+                        marginTop: doc.description ? '6px' : '4px',
+                        fontSize: '13px',
+                        color: contractorTheme.textBody,
+                        lineHeight: 1.45,
+                      }}>
+                        {doc.notes}
+                      </div>
+                    )}
                   </div>
                   <div style={{ flexShrink: 0 }}>
                     {auto ? (

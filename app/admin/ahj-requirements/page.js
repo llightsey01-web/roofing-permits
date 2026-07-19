@@ -225,19 +225,33 @@ export default function AdminAhjRequirementsPage() {
   async function saveDocument(doc) {
     setSaving(true)
     setError('')
+    setMessage('')
     try {
       const token = await getToken()
       if (!token) return
+      const payload = {
+        name: doc.name,
+        description: doc.description,
+        is_required: doc.is_required,
+        sequence_order: doc.sequence_order,
+        when_needed: doc.when_needed,
+        download_url: doc.download_url,
+        notes: doc.notes,
+        is_active: doc.is_active !== false,
+        requirement_type: doc.requirement_type || 'document',
+      }
       const res = await fetch('/api/admin/ahj-requirements/' + doc.id, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: 'Bearer ' + token,
         },
-        body: JSON.stringify(doc),
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Failed to update document')
+      if (!res.ok || data.success === false) {
+        throw new Error(data.error || 'Failed to update document')
+      }
       setEditingDocId(null)
       setMessage('Requirement updated — changes are live on contractor portal')
       await loadAhjs()
