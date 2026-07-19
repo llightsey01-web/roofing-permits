@@ -29,8 +29,8 @@ function submissionLabel(method) {
 
 function AhjAccordion({ ahj, expanded, onToggle }) {
   const countyLabel = (ahj.county_or_city || ahj.name || '').toUpperCase()
-  const docs = ahj.documents || ahj.requirements || []
-  const inspections = ahj.inspections || []
+  const docs = ahj.documents || ahj.requirements || ahj.ahj_requirements || []
+  const inspections = ahj.inspections || ahj.ahj_inspections || []
   const host = portalHost(ahj.portal_url)
 
   function handlePrint(e) {
@@ -185,6 +185,10 @@ function AhjAccordion({ ahj, expanded, onToggle }) {
             )}
             {docs.map(function (doc) {
               const auto = isDartIqAuto(doc.notes)
+              // Admin edits `notes`; prefer that over stale `description`
+              const guidance = (doc.notes && String(doc.notes).trim())
+                || (doc.description && String(doc.description).trim())
+                || ''
               return (
                 <div
                   key={doc.id}
@@ -225,23 +229,14 @@ function AhjAccordion({ ahj, expanded, onToggle }) {
                         </span>
                       )}
                     </div>
-                    {doc.description && (
+                    {guidance && (
                       <div style={{
                         marginTop: '4px',
-                        fontSize: '13px',
-                        color: contractorTheme.textMuted,
-                      }}>
-                        {doc.description}
-                      </div>
-                    )}
-                    {doc.notes && (
-                      <div style={{
-                        marginTop: doc.description ? '6px' : '4px',
                         fontSize: '13px',
                         color: contractorTheme.textBody,
                         lineHeight: 1.45,
                       }}>
-                        {doc.notes}
+                        {guidance}
                       </div>
                     )}
                   </div>

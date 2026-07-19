@@ -145,8 +145,8 @@ export default function AdminAhjRequirementsPage() {
       portal_tips: ahj.portal_tips || '',
       portal_url: ahj.portal_url || '',
     })
-    setDocs(ahj.documents || ahj.requirements || [])
-    setInspections(ahj.inspections || [])
+    setDocs(ahj.documents || ahj.requirements || ahj.ahj_requirements || [])
+    setInspections(ahj.inspections || ahj.ahj_inspections || [])
     setShowAddDoc(false)
     setShowAddInsp(false)
     setEditingDocId(null)
@@ -229,14 +229,17 @@ export default function AdminAhjRequirementsPage() {
     try {
       const token = await getToken()
       if (!token) return
+      // Admin table edits `notes` (not description). Keep both columns in sync
+      // so contractor UIs that read either field show the same text.
+      const notes = doc.notes != null ? String(doc.notes) : ''
       const payload = {
         name: doc.name,
-        description: doc.description,
+        notes: notes,
+        description: notes || doc.description || null,
         is_required: doc.is_required,
         sequence_order: doc.sequence_order,
         when_needed: doc.when_needed,
         download_url: doc.download_url,
-        notes: doc.notes,
         is_active: doc.is_active !== false,
         requirement_type: doc.requirement_type || 'document',
       }

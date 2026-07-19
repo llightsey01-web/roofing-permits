@@ -49,9 +49,17 @@ async function updateRequirement(request, params) {
   const body = await request.json()
   const updates = pickUpdates(body)
 
+  // If notes changed and description was omitted, mirror notes → description
+  // so contractor portal never shows a stale description after an admin notes edit.
+  if (updates.notes !== undefined && body.description === undefined) {
+    updates.description = updates.notes
+  }
+
   if (Object.keys(updates).length === 0) {
     return Response.json({ error: 'No fields to update' }, { status: 400 })
   }
+
+  console.log('[ahj-req] Updating id:', id, 'fields:', Object.keys(updates))
 
   const { data, error } = await context.supabase
     .from('ahj_requirements')
@@ -61,14 +69,14 @@ async function updateRequirement(request, params) {
     .single()
 
   if (error) {
-    console.error('[ahj-requirements] Update failed:', error.message)
+    console.error('[ahj-req] Update error:', error.message)
     return Response.json({ error: error.message }, { status: 500 })
   }
   if (!data) {
     return Response.json({ error: 'Requirement not found' }, { status: 404 })
   }
 
-  console.log('[ahj-requirements] Updated:', id, updates)
+  console.log('[ahj-req] Updated successfully:', data.id, data.name)
   return Response.json({ success: true, requirement: data })
 }
 
