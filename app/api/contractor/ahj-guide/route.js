@@ -1,8 +1,11 @@
 import { createClient } from '../../../../lib/supabase-server.js'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
  * GET /api/contractor/ahj-guide
- * Public reference data — all active FL AHJs with requirements and inspections.
+ * Fresh AHJ reference data — no caching so admin edits show immediately.
  */
 export async function GET() {
   try {
@@ -32,12 +35,21 @@ export async function GET() {
       .order('county_or_city', { ascending: true })
 
     if (portalsError) {
+      console.error('[ahj-guide] Fetch failed:', portalsError.message)
       return Response.json({ error: portalsError.message }, { status: 500 })
     }
 
     const ahjs = portals || []
     if (ahjs.length === 0) {
-      return Response.json({ ahjs: [] })
+      return Response.json(
+        { ahjs: [] },
+        {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            Pragma: 'no-cache',
+          },
+        }
+      )
     }
 
     const ids = ahjs.map(function (a) {
@@ -64,9 +76,11 @@ export async function GET() {
     ])
 
     if (reqsRes.error) {
+      console.error('[ahj-guide] Requirements fetch failed:', reqsRes.error.message)
       return Response.json({ error: reqsRes.error.message }, { status: 500 })
     }
     if (inspRes.error) {
+      console.error('[ahj-guide] Inspections fetch failed:', inspRes.error.message)
       return Response.json({ error: inspRes.error.message }, { status: 500 })
     }
 
@@ -93,7 +107,15 @@ export async function GET() {
       }
     })
 
-    return Response.json({ ahjs: result })
+    return Response.json(
+      { ahjs: result },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          Pragma: 'no-cache',
+        },
+      }
+    )
   } catch (err) {
     console.error('[contractor/ahj-guide] GET error:', err.message)
     return Response.json({ error: err.message }, { status: 500 })
