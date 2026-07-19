@@ -1,71 +1,4 @@
-/* Dart iQ contractor portal — theme variables + layout */
-
-:root,
-html[data-theme='dark'] {
-  color-scheme: dark;
-  --portal-page-bg: #0b0b10;
-  --portal-page-bg-gradient: #0b0b10;
-  --portal-surface: rgba(20, 20, 28, 0.72);
-  --portal-border: rgba(255, 255, 255, 0.08);
-  --portal-border-strong: rgba(255, 255, 255, 0.14);
-  --portal-text: #ffffff;
-  --portal-text-body: #e2e8f0;
-  --portal-text-muted: #94a3b8;
-  --portal-accent: #3b82f6;
-  --portal-accent-hover: #2563eb;
-  --portal-accent-soft: rgba(59, 130, 246, 0.12);
-  --portal-accent-glow: 0 0 20px rgba(59, 130, 246, 0.35);
-  --portal-success: #16a34a;
-  --portal-success-soft: rgba(22, 163, 74, 0.15);
-  --portal-warning: #f59e0b;
-  --portal-warning-soft: rgba(245, 158, 11, 0.15);
-  --portal-error: #ef4444;
-  --portal-error-soft: rgba(239, 68, 68, 0.15);
-  --portal-header-bg: rgba(12, 12, 18, 0.92);
-  --portal-header-border: rgba(255, 255, 255, 0.08);
-  --portal-nav-bg: rgba(12, 12, 18, 0.92);
-  --portal-nav-active: #3b82f6;
-  --portal-nav-active-bg: rgba(59, 130, 246, 0.2);
-  --portal-input-bg: rgba(11, 11, 16, 0.85);
-  --portal-badge-bg: rgba(59, 130, 246, 0.15);
-  --portal-badge-text: #93c5fd;
-  --portal-badge-border: rgba(255, 255, 255, 0.08);
-  --portal-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --portal-shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
-}
-
-html[data-theme='light'] {
-  color-scheme: light;
-  --portal-page-bg: #f8fafc;
-  --portal-page-bg-gradient: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-  --portal-surface: #ffffff;
-  --portal-border: #e2e8f0;
-  --portal-border-strong: #cbd5e1;
-  --portal-text: #0f172a;
-  --portal-text-body: #0f172a;
-  --portal-text-muted: #64748b;
-  --portal-accent: #3b82f6;
-  --portal-accent-hover: #2563eb;
-  --portal-accent-soft: rgba(59, 130, 246, 0.1);
-  --portal-accent-glow: 0 0 16px rgba(59, 130, 246, 0.2);
-  --portal-success: #16a34a;
-  --portal-success-soft: rgba(22, 163, 74, 0.12);
-  --portal-warning: #d97706;
-  --portal-warning-soft: rgba(245, 158, 11, 0.12);
-  --portal-error: #ef4444;
-  --portal-error-soft: rgba(239, 68, 68, 0.1);
-  --portal-header-bg: #ffffff;
-  --portal-header-border: #e2e8f0;
-  --portal-nav-bg: #ffffff;
-  --portal-nav-active: #3b82f6;
-  --portal-nav-active-bg: #eff6ff;
-  --portal-input-bg: #ffffff;
-  --portal-badge-bg: rgba(59, 130, 246, 0.1);
-  --portal-badge-text: #2563eb;
-  --portal-badge-border: #e2e8f0;
-  --portal-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --portal-shadow-card: 0 4px 24px rgba(15, 23, 42, 0.08);
-}
+/* Dart iQ contractor portal — layout helpers (tokens live in portal-shell.css) */
 
 .contractor-shell {
   min-height: 100vh;
@@ -95,6 +28,7 @@ html[data-theme='light'] {
   display: flex;
 }
 
+/* Legacy alias — prefer .portal-theme-toggle */
 .contractor-theme-toggle {
   display: inline-flex;
   align-items: center;

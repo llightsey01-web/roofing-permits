@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '../../lib/supabase'
 import { safeGetUser, redirectIfStaleSession } from '../../lib/auth/safe-auth'
 import EnvironmentBadge from '../ui/EnvironmentBadge'
+import PortalThemeToggle from '../ui/PortalThemeToggle'
 import {
   portalShellTheme,
   portalShellRootClassName,
@@ -14,6 +15,7 @@ import {
   portalSectionLabelStyle,
   portalSignOutButtonStyle,
 } from '../../lib/ui/admin-theme'
+import { applyPortalTheme, getPortalTheme } from '../../lib/ui/contractor-theme'
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', match: (p) => p === '/admin' },
@@ -32,6 +34,10 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    applyPortalTheme(getPortalTheme())
+  }, [])
 
   useEffect(() => {
     async function checkAuth() {
@@ -156,7 +162,12 @@ export default function AdminLayout({ children }) {
         </div>
       </aside>
 
-      <main style={{ flex: 1, minWidth: 0 }}>{children}</main>
+      <main style={{ flex: 1, minWidth: 0 }}>
+        <div className="portal-main-header">
+          <PortalThemeToggle />
+        </div>
+        {children}
+      </main>
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '../../lib/supabase'
 import { safeGetUser, redirectIfStaleSession } from '../../lib/auth/safe-auth'
 import EnvironmentBadge from '../ui/EnvironmentBadge'
+import PortalThemeToggle from '../ui/PortalThemeToggle'
 import {
   portalShellTheme,
   portalShellRootClassName,
@@ -14,6 +15,7 @@ import {
   portalSectionLabelStyle,
   portalSignOutButtonStyle,
 } from '../../lib/ui/admin-theme'
+import { applyPortalTheme, getPortalTheme } from '../../lib/ui/contractor-theme'
 
 const navSections = [
   {
@@ -71,6 +73,10 @@ export default function ContractorLayout({ children }) {
   const [user, setUser] = useState(null)
   const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    applyPortalTheme(getPortalTheme())
+  }, [])
 
   useEffect(() => {
     async function checkAuth() {
@@ -257,6 +263,9 @@ export default function ContractorLayout({ children }) {
       ) : null}
 
       <main style={{ flex: 1, minWidth: 0 }}>
+        <div className="portal-main-header">
+          <PortalThemeToggle />
+        </div>
         {showHolding && !pathname?.startsWith('/contractor/onboarding') ? (
           <div style={{ maxWidth: '640px', margin: '48px auto', padding: '0 20px' }}>
             <div style={{
