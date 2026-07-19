@@ -24,19 +24,16 @@ const navSections = [
       {
         href: '/contractor/dashboard',
         label: 'Dashboard',
-        icon: '📋',
         match: (p) => p === '/contractor/dashboard',
       },
       {
         href: '/contractor/jobs/new',
         label: 'New Job',
-        icon: '📝',
         match: (p) => p === '/contractor/jobs/new',
       },
       {
         href: '/contractor/jobs',
         label: 'Jobs',
-        icon: '📁',
         match: (p) =>
           p === '/contractor/jobs' ||
           (p.startsWith('/contractor/jobs/') && p !== '/contractor/jobs/new'),
@@ -49,7 +46,6 @@ const navSections = [
       {
         href: '/contractor/ahj-guide',
         label: 'Permit Guide',
-        icon: '📖',
         match: (p) => p.startsWith('/contractor/ahj-guide'),
       },
     ],
@@ -60,7 +56,6 @@ const navSections = [
       {
         href: '/contractor/settings',
         label: 'Settings',
-        icon: '⚙️',
         match: (p) => p.startsWith('/contractor/settings'),
       },
     ],
@@ -228,9 +223,6 @@ export default function ContractorLayout({ children }) {
                           onClick={() => router.push(item.href)}
                           style={portalNavItemStyle(active)}
                         >
-                          <span aria-hidden="true" style={{ fontSize: '13px', lineHeight: 1, width: '18px', textAlign: 'center' }}>
-                            {item.icon}
-                          </span>
                           <span>{item.label}</span>
                         </button>
                       )
@@ -256,7 +248,7 @@ export default function ContractorLayout({ children }) {
               onClick={handleSignOut}
               style={portalSignOutButtonStyle()}
             >
-              🚪 Logout
+              Logout
             </button>
           </div>
         </aside>

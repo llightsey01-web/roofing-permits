@@ -119,7 +119,7 @@ export default function ContractorJobReviewPage({ params }) {
       <div style={{ padding: '48px', textAlign: 'center' }}>
         <p style={{ color: contractorTheme.textMuted }}>{error || 'Review not found'}</p>
         <button onClick={() => router.push('/contractor/dashboard')} style={{ marginTop: '16px', color: contractorTheme.accent, background: 'none', border: 'none', cursor: 'pointer' }}>
-          ← Back to dashboard
+          Back to dashboard
         </button>
       </div>
     )
@@ -135,7 +135,7 @@ export default function ContractorJobReviewPage({ params }) {
     <div style={{ maxWidth: '900px', margin: '32px auto', padding: '0 32px 48px' }}>
       <button onClick={() => router.push('/contractor/jobs/' + jobId)}
         style={{ fontSize: '14px', color: contractorTheme.textMuted, background: 'none', border: 'none', cursor: 'pointer', marginBottom: '16px', padding: 0 }}>
-        ← Back to job
+        Back to job
       </button>
 
       <h1 style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: '0 0 8px 0' }}>
@@ -164,7 +164,7 @@ export default function ContractorJobReviewPage({ params }) {
                 />
                 <a href={downloadUrls.generated_noc} target="_blank" rel="noreferrer"
                   style={{ display: 'inline-block', marginTop: '10px', color: contractorTheme.accent, fontSize: '14px', fontWeight: '600' }}>
-                  Download NOC PDF →
+                  Download NOC PDF
                 </a>
               </div>
             ) : (
@@ -209,7 +209,7 @@ export default function ContractorJobReviewPage({ params }) {
                     downloadUrls['doc_' + doc.id] ? (
                       <a key={doc.id} href={downloadUrls['doc_' + doc.id]} target="_blank" rel="noreferrer"
                         style={{ color: contractorTheme.accent, fontSize: '14px', fontWeight: '600' }}>
-                        {doc.file_name || 'Permit screenshot'} →
+                        {doc.file_name || 'Permit screenshot'}
                       </a>
                     ) : null
                   ))}

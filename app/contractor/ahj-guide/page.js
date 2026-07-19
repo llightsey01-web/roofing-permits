@@ -110,7 +110,7 @@ function AhjAccordion({ ahj, expanded, onToggle }) {
             cursor: 'pointer',
           }}
         >
-          🖨 Print
+          Print
         </span>
       </button>
 
@@ -127,11 +127,10 @@ function AhjAccordion({ ahj, expanded, onToggle }) {
             color: contractorTheme.textBody,
             lineHeight: 1.5,
           }}>
-            {ahj.office_address && <div>📍 {ahj.office_address}</div>}
-            {ahj.phone && <div>📞 {ahj.phone}</div>}
+            {ahj.office_address && <div>{ahj.office_address}</div>}
+            {ahj.phone && <div>{ahj.phone}</div>}
             {host && (
               <div>
-                🌐{' '}
                 <a
                   href={ahj.portal_url}
                   target="_blank"
@@ -143,12 +142,12 @@ function AhjAccordion({ ahj, expanded, onToggle }) {
               </div>
             )}
             <div>
-              ⏱ Avg approval:{' '}
+              Avg approval:{' '}
               {ahj.avg_approval_days != null
                 ? ahj.avg_approval_days + ' business days'
                 : '—'}
             </div>
-            <div>📋 Submit: {submissionLabel(ahj.submission_method)}</div>
+            <div>Submit: {submissionLabel(ahj.submission_method)}</div>
             {ahj.portal_tips && (
               <div style={{
                 marginTop: '8px',
@@ -203,7 +202,18 @@ function AhjAccordion({ ahj, expanded, onToggle }) {
                       fontWeight: 600,
                       color: contractorTheme.text,
                     }}>
-                      {doc.is_required ? '✅' : '⚠️'} {doc.name}
+                      <span style={{
+                        display: 'inline-block',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        marginRight: '8px',
+                        backgroundColor: doc.is_required
+                          ? contractorTheme.success
+                          : contractorTheme.warning,
+                        verticalAlign: 'middle',
+                      }} />
+                      {doc.name}
                       {!doc.is_required && (
                         <span style={{
                           marginLeft: '6px',
@@ -237,7 +247,7 @@ function AhjAccordion({ ahj, expanded, onToggle }) {
                         fontSize: '12px',
                         fontWeight: 600,
                       }}>
-                        🤖 DART iQ Auto
+                        Auto
                       </span>
                     ) : doc.download_url ? (
                       <a
@@ -256,7 +266,7 @@ function AhjAccordion({ ahj, expanded, onToggle }) {
                           textDecoration: 'none',
                         }}
                       >
-                        📄 Download Form
+                        Download
                       </a>
                     ) : null}
                   </div>
@@ -295,7 +305,7 @@ function AhjAccordion({ ahj, expanded, onToggle }) {
                     color: contractorTheme.text,
                     letterSpacing: '0.03em',
                   }}>
-                    {idx + 1}️⃣ {(insp.inspection_name || '').toUpperCase()}
+                    {idx + 1}. {(insp.inspection_name || '').toUpperCase()}
                   </div>
                   {insp.when_to_schedule && (
                     <div style={{ marginTop: '4px', fontSize: '13px', color: contractorTheme.textMuted }}>
@@ -435,8 +445,11 @@ export default function AhjGuidePage() {
             transform: 'translateY(-50%)',
             color: contractorTheme.textMuted,
             pointerEvents: 'none',
+            fontSize: '12px',
+            fontWeight: 600,
+            letterSpacing: '0.04em',
           }}>
-            🔍
+            Search
           </span>
         </div>
       </div>

@@ -472,17 +472,17 @@ export default function ContractorNewJobPage() {
               backgroundColor: ahjCredStatus === 'missing' ? 'rgba(245, 158, 11, 0.12)' : contractorTheme.accentSoft,
             }}>
               <p style={{ margin: 0, fontSize: '14px', color: contractorTheme.text, fontWeight: 600 }}>
-                📍 County detected: {detectedAHJ.name}
+                County detected: {detectedAHJ.name}
               </p>
               {ahjCredStatus === 'ready' ? (
                 <p style={{ margin: '8px 0 0', fontSize: '13px', color: contractorTheme.success }}>
-                  ✓ Portal credentials on file — ready to submit
+                  Portal credentials on file — ready to submit
                 </p>
               ) : null}
               {ahjCredStatus === 'missing' ? (
                 <div style={{ marginTop: '8px' }}>
                   <p style={{ margin: 0, fontSize: '13px', color: '#fbbf24' }}>
-                    ⚠️ No portal credentials saved for {detectedAHJ.name}
+                    Note: No portal credentials saved for {detectedAHJ.name}
                   </p>
                   <p style={{ margin: '6px 0 10px', fontSize: '13px', color: contractorTheme.textMuted }}>
                     Add your credentials in Settings before submitting

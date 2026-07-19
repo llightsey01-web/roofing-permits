@@ -17,7 +17,7 @@ const STAGE_LABELS = {
   recorded: 'Recorded with County',
   permit_resumed: 'Permit Resumed',
   permit_submitted: 'Permit Submitted',
-  permit_issued: 'Permit Issued ✓',
+  permit_issued: 'Permit Issued',
 }
 
 const PIPELINE_STAGES = [
@@ -47,9 +47,11 @@ function StageIcon({ state }) {
         width: size, height: size, borderRadius: '50%',
         backgroundColor: contractorTheme.success,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#fff', fontSize: '14px', fontWeight: '700', flexShrink: 0,
+        color: '#fff', flexShrink: 0,
       }}>
-        ✓
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M5 12.5l5 5L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
     )
   }
@@ -70,9 +72,11 @@ function StageIcon({ state }) {
         width: size, height: size, borderRadius: '50%',
         backgroundColor: contractorTheme.error,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#fff', fontSize: '14px', fontWeight: '700', flexShrink: 0,
+        color: '#fff', flexShrink: 0,
       }}>
-        ✕
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
       </div>
     )
   }
@@ -230,7 +234,7 @@ export default function ContractorJobDetailPage({ params }) {
           onClick={() => router.push('/contractor/dashboard')}
           style={{ marginTop: '16px', color: contractorTheme.accent, background: 'none', border: 'none', cursor: 'pointer', fontSize: '15px' }}
         >
-          ← Back to dashboard
+          Back to dashboard
         </button>
       </div>
     )
@@ -296,7 +300,7 @@ export default function ContractorJobDetailPage({ params }) {
           minHeight: '44px',
         }}
       >
-        ← Back to dashboard
+        Back to dashboard
       </button>
 
       {pendingReview && (
@@ -648,7 +652,7 @@ function DocumentLink({ label, url }) {
       }}
     >
       <span style={{ wordBreak: 'break-word', paddingRight: '8px' }}>{label}</span>
-      <span style={{ flexShrink: 0 }}>Download →</span>
+      <span style={{ flexShrink: 0 }}>Download</span>
     </a>
   )
 }

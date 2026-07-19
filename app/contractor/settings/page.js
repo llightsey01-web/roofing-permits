@@ -289,7 +289,7 @@ export default function ContractorSettingsPage() {
       return
     }
 
-    setCredFlash(result.message || ('✓ ' + (result.ahj_name || 'Credentials') + ' saved'))
+    setCredFlash(result.message || ((result.ahj_name || 'Credentials') + ' saved'))
     closeCredModal()
     await loadAll()
     setCredSaving(false)
@@ -375,7 +375,7 @@ export default function ContractorSettingsPage() {
             color: contractorTheme.success,
             fontWeight: '600',
           }}>
-            ✓ Company information updated successfully
+            Company information updated successfully
           </span>
         ) : null}
       </div>
@@ -567,7 +567,7 @@ export default function ContractorSettingsPage() {
                         {label}
                       </p>
                       <p style={{ margin: '6px 0 0', fontSize: '13px', color: contractorTheme.success }}>
-                        ✓ Saved
+                        Saved
                       </p>
                       <p style={{ margin: '4px 0 0', fontSize: '12px', color: contractorTheme.textMuted }}>
                         Last updated: {formatDate(cred.updated_at || cred.last_used_at)}
@@ -596,7 +596,7 @@ export default function ContractorSettingsPage() {
                       border: '1px solid rgba(251, 191, 36, 0.35)',
                     }}>
                       <p style={{ margin: 0, fontSize: '13px', color: '#fbbf24', fontWeight: 600 }}>
-                        ⚠️ {label} credentials may be expired
+                        Note: {label} credentials may be expired
                       </p>
                       <p style={{ margin: '4px 0 10px', fontSize: '12px', color: contractorTheme.textMuted }}>
                         Most county portals require password reset every 90 days.
@@ -616,7 +616,7 @@ export default function ContractorSettingsPage() {
                       border: '1px solid rgba(239, 68, 68, 0.35)',
                     }}>
                       <p style={{ margin: 0, fontSize: '13px', color: contractorTheme.error, fontWeight: 600 }}>
-                        🔴 {label} credentials likely expired
+                        Note: {label} credentials likely expired
                       </p>
                       <p style={{ margin: '4px 0 10px', fontSize: '12px', color: contractorTheme.textMuted }}>
                         Please update your portal password.
@@ -729,7 +729,7 @@ export default function ContractorSettingsPage() {
                     padding: '4px',
                   }}
                 >
-                  {showPassword ? '🙈' : '👁'}
+                  {showPassword ? 'Hide' : 'Show'}
                 </button>
               </div>
             </div>

@@ -133,7 +133,7 @@ export default function ContractorDashboardPage() {
     <div className="contractor-page">
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: 0 }}>
-          {greeting}, <span style={{ color: '#f97316' }}>{welcomeName}</span> 👋
+          {greeting}, <span style={{ color: '#f97316' }}>{welcomeName}</span>
         </h1>
         <p style={{ fontSize: '15px', color: contractorTheme.textMuted, margin: '6px 0 0 0' }}>
           DART iQ Contractor Portal — Your data is private and secured

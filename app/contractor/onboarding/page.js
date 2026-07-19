@@ -331,7 +331,28 @@ export default function ContractorOnboardingPage() {
         fontSize: '13px',
         marginBottom: '4px',
       }}>
-        {met ? '✓' : '○'} {label}
+        {met ? (
+          <span style={{
+            display: 'inline-block',
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: '#10b981',
+            marginRight: '8px',
+            verticalAlign: 'middle',
+          }} />
+        ) : (
+          <span style={{
+            display: 'inline-block',
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            border: '1px solid ' + contractorTheme.textMuted,
+            marginRight: '8px',
+            verticalAlign: 'middle',
+          }} />
+        )}
+        {label}
       </li>
     )
   }
@@ -355,7 +376,6 @@ export default function ContractorOnboardingPage() {
       <div style={{ maxWidth: '640px', margin: '40px auto', padding: '0 20px' }}>
         <div style={{ ...contractorCardStyle(), padding: '36px' }}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <p style={{ margin: '0 0 8px', fontSize: '32px' }}>🎉</p>
             <h1 style={{ margin: '0 0 8px', color: contractorTheme.text, fontSize: '24px' }}>
               Setup Complete!
             </h1>
@@ -381,7 +401,14 @@ export default function ContractorOnboardingPage() {
                     fontSize: '14px',
                   }}
                 >
-                  <span style={{ color: '#10b981', fontWeight: 700 }}>✓</span>
+                  <span style={{
+                    display: 'inline-block',
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: '#10b981',
+                    flexShrink: 0,
+                  }} />
                   {item}
                 </li>
               )
@@ -473,7 +500,7 @@ export default function ContractorOnboardingPage() {
                     : contractorTheme.textMuted,
               }}
             >
-              <span aria-hidden="true">{completed ? '✓' : s.n}</span>
+              <span aria-hidden="true">{completed ? 'Done' : s.n}</span>
               <span>{s.label}</span>
             </div>
           )
