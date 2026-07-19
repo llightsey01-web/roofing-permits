@@ -22,7 +22,9 @@ export async function GET() {
 
     const { data: portals, error: ahjError } = await supabase
       .from('ahj_portals')
-      .select('*')
+      .select(
+        'id, name, county_or_city, state, portal_url, workflow_type, is_active, office_address, phone, email, office_hours, avg_approval_days, submission_method, portal_tips, permit_fee_info, updated_at'
+      )
       .eq('state', 'FL')
       .eq('is_active', true)
       .order('county_or_city', { ascending: true })

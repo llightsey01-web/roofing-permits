@@ -127,36 +127,62 @@ function AhjAccordion({ ahj, expanded, onToggle }) {
             color: contractorTheme.textBody,
             lineHeight: 1.5,
           }}>
-            {ahj.office_address && <div>{ahj.office_address}</div>}
-            {ahj.phone && <div>{ahj.phone}</div>}
-            {host && (
+            {ahj.office_address && (
+              <div><span style={{ color: contractorTheme.textMuted }}>Address: </span>{ahj.office_address}</div>
+            )}
+            {ahj.phone && (
+              <div><span style={{ color: contractorTheme.textMuted }}>Phone: </span>{ahj.phone}</div>
+            )}
+            {ahj.email && (
               <div>
+                <span style={{ color: contractorTheme.textMuted }}>Email: </span>
+                <a href={'mailto:' + ahj.email} style={{ color: contractorTheme.accent }}>{ahj.email}</a>
+              </div>
+            )}
+            {ahj.office_hours && (
+              <div><span style={{ color: contractorTheme.textMuted }}>Hours: </span>{ahj.office_hours}</div>
+            )}
+            {ahj.portal_url && (
+              <div>
+                <span style={{ color: contractorTheme.textMuted }}>Portal: </span>
                 <a
                   href={ahj.portal_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: contractorTheme.accent }}
                 >
-                  {host}
+                  {host || ahj.portal_url}
                 </a>
               </div>
             )}
             <div>
-              Avg approval:{' '}
+              <span style={{ color: contractorTheme.textMuted }}>Avg approval: </span>
               {ahj.avg_approval_days != null
                 ? ahj.avg_approval_days + ' business days'
                 : '—'}
             </div>
-            <div>Submit: {submissionLabel(ahj.submission_method)}</div>
+            <div>
+              <span style={{ color: contractorTheme.textMuted }}>Submit via: </span>
+              {submissionLabel(ahj.submission_method)}
+            </div>
             {ahj.portal_tips && (
               <div style={{
                 marginTop: '8px',
                 padding: '10px 12px',
                 borderRadius: '8px',
                 backgroundColor: contractorTheme.accentSoft,
-                color: contractorTheme.textMuted,
+                color: contractorTheme.textBody,
                 fontSize: '12px',
               }}>
+                <div style={{
+                  color: contractorTheme.textMuted,
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                  marginBottom: '4px',
+                }}>
+                  TIPS
+                </div>
                 {ahj.portal_tips}
               </div>
             )}

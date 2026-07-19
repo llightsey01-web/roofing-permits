@@ -40,6 +40,8 @@ export async function PATCH(request, { params }) {
       }
     })
 
+    console.log('[ahj-portals] Updating table: ahj_portals, id:', id, 'updates:', updates)
+
     const { data, error } = await context.supabase
       .from('ahj_portals')
       .update(updates)
@@ -63,6 +65,8 @@ export async function PATCH(request, { params }) {
       )
       .single()
 
+    console.log('[ahj-portals] Result:', data?.id, error?.message)
+
     if (error) {
       return Response.json({ error: error.message }, { status: 500 })
     }
@@ -70,7 +74,7 @@ export async function PATCH(request, { params }) {
       return Response.json({ error: 'AHJ not found' }, { status: 404 })
     }
 
-    return Response.json({ portal: data })
+    return Response.json({ success: true, portal: data })
   } catch (err) {
     console.error('[admin/ahj-portals/[id]] PATCH error:', err.message)
     return Response.json({ error: err.message }, { status: 500 })

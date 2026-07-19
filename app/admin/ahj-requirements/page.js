@@ -182,8 +182,9 @@ export default function AdminAhjRequirementsPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to save portal info')
-      setMessage('Portal info saved.')
+      setMessage('Portal info saved — changes are live on contractor portal')
       await loadAhjs()
+      setTimeout(function () { setMessage('') }, 3000)
     } catch (err) {
       setError(err.message)
     }
