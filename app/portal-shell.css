@@ -1,0 +1,47 @@
+/* Shared Railway-style canvas for contractor + admin portal shells */
+
+.portal-shell-canvas {
+  --portal-canvas-bg: #0b0b10;
+  --portal-canvas-dot: rgba(255, 255, 255, 0.09);
+  --portal-canvas-dot-spacing: 22px;
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  background-color: var(--portal-canvas-bg);
+  background-image: radial-gradient(var(--portal-canvas-dot) 1.2px, transparent 1.2px);
+  background-size: var(--portal-canvas-dot-spacing) var(--portal-canvas-dot-spacing);
+  background-position: calc(var(--portal-canvas-dot-spacing) / -2)
+    calc(var(--portal-canvas-dot-spacing) / -2);
+  background-attachment: fixed;
+}
+
+/* Soft vignette — behind content, never intercepts clicks */
+.portal-shell-canvas::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 90% at 50% 0%,
+    transparent 55%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+.portal-shell-canvas > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Light theme: keep readable flat surfaces (no dark canvas override) */
+html[data-theme='light'] .portal-shell-canvas {
+  background-image: none;
+  background-attachment: scroll;
+  background-color: var(--portal-page-bg, #f8fafc);
+}
+
+html[data-theme='light'] .portal-shell-canvas::before {
+  display: none;
+}

@@ -7,6 +7,7 @@ import { safeGetUser, redirectIfStaleSession } from '../../lib/auth/safe-auth'
 import EnvironmentBadge from '../ui/EnvironmentBadge'
 import {
   portalShellTheme,
+  portalShellRootClassName,
   portalShellRootStyle,
   portalAsideStyle,
   portalNavItemStyle,
@@ -72,13 +73,16 @@ export default function AdminLayout({ children }) {
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        backgroundColor: portalShellTheme.pageBg,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
+      <div
+        className={portalShellRootClassName}
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: portalShellTheme.text,
+        }}
+      >
         <p style={{
           color: portalShellTheme.textMuted,
           fontSize: '13px',
@@ -91,7 +95,7 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <div style={portalShellRootStyle()}>
+    <div className={portalShellRootClassName} style={portalShellRootStyle()}>
       <aside style={portalAsideStyle()}>
         <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid ' + portalShellTheme.border }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
