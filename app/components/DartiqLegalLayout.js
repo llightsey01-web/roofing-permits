@@ -168,6 +168,31 @@ export default function DartiqLegalLayout({ title, children }) {
         .dartiq-legal-placeholder a {
           color: #3b82f6;
         }
+        @media (max-width: 768px) {
+          .dartiq-legal-header {
+            padding: 14px 16px;
+          }
+          .dartiq-legal-main {
+            padding: 28px 16px 40px;
+          }
+          .dartiq-legal-main > h1,
+          .dartiq-legal-content h1 {
+            font-size: 1.5rem;
+          }
+          .dartiq-legal-content h2 {
+            font-size: 1.1rem;
+          }
+          .dartiq-legal-content p,
+          .dartiq-legal-content li,
+          .dartiq-legal-content span,
+          .dartiq-legal-content td,
+          .dartiq-legal-content th {
+            font-size: 14px;
+          }
+          .dartiq-legal-footer {
+            padding: 20px 16px;
+          }
+        }
       `}</style>
       <div className="dartiq-legal-page">
         <header className="dartiq-legal-header">

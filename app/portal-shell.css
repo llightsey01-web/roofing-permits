@@ -244,3 +244,223 @@ html.light .portal-theme-toggle .icon-moon,
 html[data-theme='light'] .portal-theme-toggle .icon-moon {
   display: block;
 }
+
+/* ── Mobile shell (≤768px) — desktop styles untouched ─────── */
+.mobile-header {
+  display: none;
+}
+
+.mobile-overlay {
+  display: none;
+}
+
+.mobile-sidebar-close {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .portal-shell {
+    flex-direction: column !important;
+  }
+
+  .mobile-header {
+    display: flex !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--portal-header-bg);
+    border-bottom: 1px solid var(--portal-border);
+    align-items: center;
+    padding: 0 12px 0 8px;
+    z-index: 999;
+    gap: 10px;
+    backdrop-filter: blur(10px);
+  }
+
+  .mobile-header-brand {
+    color: var(--portal-text);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.02em;
+  }
+
+  .mobile-menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    min-width: 44px;
+    min-height: 44px;
+    color: var(--portal-text);
+  }
+
+  .mobile-menu-btn span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: currentColor;
+    border-radius: 2px;
+  }
+
+  .mobile-overlay {
+    display: block !important;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 998;
+  }
+
+  .portal-sidebar {
+    position: fixed !important;
+    left: -240px !important;
+    top: 0 !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    width: 220px !important;
+    z-index: 1000 !important;
+    transition: left 0.25s ease !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.35) !important;
+    align-self: stretch !important;
+  }
+
+  .portal-sidebar.mobile-open {
+    left: 0 !important;
+  }
+
+  .mobile-sidebar-close {
+    display: flex !important;
+    position: absolute;
+    top: 12px;
+    right: 10px;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    min-height: 44px;
+    background: none;
+    border: none;
+    color: var(--portal-text-muted);
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+    z-index: 2;
+  }
+
+  .portal-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .portal-shell.has-mobile-nav .portal-main {
+    padding-top: 56px !important;
+  }
+
+  .portal-main-header {
+    padding: 8px 12px 0 !important;
+  }
+
+  /* Tables: allow horizontal scroll without page overflow */
+  .portal-main :is(div, section, article, main):has(> table) {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+
+  .portal-main table {
+    max-width: none;
+  }
+
+  /* Forms */
+  .portal-main input,
+  .portal-main select,
+  .portal-main textarea {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .portal-main button,
+  .portal-main a[role='button'],
+  .portal-main .btn {
+    min-height: 44px;
+  }
+
+  /* Collapse common multi-column grids (override inline styles) */
+  .portal-main [style*='grid-template-columns: repeat(4'] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .portal-main [style*='grid-template-columns: repeat(3'] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .portal-main [style*='grid-template-columns: 1fr 1fr'],
+  .portal-main [style*='grid-template-columns: 160px'],
+  .portal-main [style*='grid-template-columns: 140px'],
+  .portal-main [style*='grid-template-columns: 1fr 100px'],
+  .portal-main [style*='grid-template-columns: 1fr 1fr 1fr'] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Page padding tighter on phones */
+  .portal-main > div {
+    box-sizing: border-box;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+
+  /* Login */
+  .login-card {
+    padding: 28px 20px !important;
+    margin: 0 auto;
+    max-width: 100% !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-header,
+  .mobile-overlay,
+  .mobile-sidebar-close {
+    display: none !important;
+  }
+}
+
+/* Marketing / legal public pages */
+@media (max-width: 768px) {
+  .dartiq-legal-header {
+    padding: 14px 16px !important;
+  }
+
+  .dartiq-legal-main {
+    padding: 28px 16px 40px !important;
+  }
+
+  .dartiq-legal-main > h1,
+  .dartiq-legal-content h1 {
+    font-size: 1.5rem !important;
+  }
+
+  .dartiq-legal-content h2 {
+    font-size: 1.1rem !important;
+  }
+
+  .dartiq-legal-content p,
+  .dartiq-legal-content li {
+    font-size: 14px !important;
+  }
+
+  .dartiq-legal-footer {
+    padding: 20px 16px !important;
+  }
+}
+

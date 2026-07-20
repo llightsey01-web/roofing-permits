@@ -171,7 +171,9 @@ function LoginForm() {
   }
 
   return (
-    <div style={{
+    <div
+      className="dartiq-login-wrap"
+      style={{
       minHeight: '100dvh',
       width: '100%',
       display: 'flex',
@@ -188,6 +190,20 @@ function LoginForm() {
         .dartiq-login-input::placeholder {
           color: #64748b;
         }
+        @media (max-width: 768px) {
+          .dartiq-login-wrap {
+            padding: 16px !important;
+            align-items: flex-start !important;
+            padding-top: 48px !important;
+          }
+          .login-card {
+            padding: 28px 20px !important;
+          }
+          .dartiq-login-title {
+            font-size: 20px !important;
+            margin-bottom: 22px !important;
+          }
+        }
       `}</style>
 
       <div
@@ -200,7 +216,9 @@ function LoginForm() {
       >
         <DartIQLogo />
 
-        <h1 style={{
+        <h1
+          className="dartiq-login-title"
+          style={{
           color: theme.text,
           fontSize: '22px',
           fontWeight: '700',

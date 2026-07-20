@@ -71,10 +71,15 @@ export default function ContractorLayout({ children }) {
   const [user, setUser] = useState(null)
   const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     applyPortalTheme(getPortalTheme())
   }, [])
+
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [pathname])
 
   useEffect(() => {
     async function checkAuth() {
@@ -172,95 +177,138 @@ export default function ContractorLayout({ children }) {
     status === 'pending_review'
 
   return (
-    <div className={portalShellRootClassName} style={portalShellRootStyle()}>
+    <div
+      className={portalShellRootClassName + (!hideNav ? ' has-mobile-nav' : '')}
+      style={portalShellRootStyle()}
+    >
       {!hideNav ? (
-        <aside style={portalAsideStyle()}>
-          <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid ' + portalShellTheme.border }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <div style={{
-                width: '30px',
-                height: '30px',
-                background: 'linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <span style={{ color: 'white', fontSize: '12px', fontWeight: '800' }}>D</span>
-              </div>
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: '700', color: portalShellTheme.text }}>DART iQ</div>
-                <div style={{ fontSize: '10px', color: portalShellTheme.textDim, fontFamily: portalShellTheme.fontMono }}>
-                  Contractor Portal
-                </div>
-              </div>
-            </div>
-            <EnvironmentBadge label="Contractor" variant="contractor" />
-            {company?.name ? (
-              <div style={{
-                marginTop: '10px',
-                fontSize: '11px',
-                color: portalShellTheme.textMuted,
-                fontFamily: portalShellTheme.fontMono,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}>
-                {company.name}
-              </div>
-            ) : null}
-          </div>
-
-          <nav style={{ padding: '8px 10px 12px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-            {navSections.map(function (section) {
-              return (
-                <div key={section.label}>
-                  <div style={portalSectionHeaderStyle()} aria-hidden="true">
-                    <span style={portalSectionLabelStyle()}>{section.label}</span>
-                    <div style={portalSectionRuleStyle()} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    {section.items.map(function (item) {
-                      const active = item.match(pathname || '')
-                      return (
-                        <button
-                          key={item.href}
-                          type="button"
-                          onClick={() => router.push(item.href)}
-                          style={portalNavItemStyle(active)}
-                        >
-                          <span>{item.label}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })}
-          </nav>
-
-          <div style={{ padding: '14px 16px', borderTop: '1px solid ' + portalShellTheme.border }}>
-            <div style={{
-              fontSize: '11px',
-              color: portalShellTheme.textDim,
-              fontFamily: portalShellTheme.fontMono,
-              marginBottom: '10px',
-              wordBreak: 'break-all',
-            }}>
-              {user?.email}
-            </div>
+        <>
+          <div className="mobile-header">
             <button
               type="button"
-              onClick={handleSignOut}
-              style={portalSignOutButtonStyle()}
+              className="mobile-menu-btn"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              onClick={function () { setMobileMenuOpen(!mobileMenuOpen) }}
             >
-              Logout
+              <span />
+              <span />
+              <span />
             </button>
+            <span className="mobile-header-brand">DART iQ</span>
           </div>
-        </aside>
+
+          {mobileMenuOpen ? (
+            <div
+              className="mobile-overlay"
+              onClick={function () { setMobileMenuOpen(false) }}
+              aria-hidden="true"
+            />
+          ) : null}
+
+          <aside
+            className={'portal-sidebar' + (mobileMenuOpen ? ' mobile-open' : '')}
+            style={portalAsideStyle()}
+          >
+            <button
+              type="button"
+              className="mobile-sidebar-close"
+              aria-label="Close menu"
+              onClick={function () { setMobileMenuOpen(false) }}
+            >
+              ×
+            </button>
+
+            <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid ' + portalShellTheme.border }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <div style={{
+                  width: '30px',
+                  height: '30px',
+                  background: 'linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <span style={{ color: 'white', fontSize: '12px', fontWeight: '800' }}>D</span>
+                </div>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: portalShellTheme.text }}>DART iQ</div>
+                  <div style={{ fontSize: '10px', color: portalShellTheme.textDim, fontFamily: portalShellTheme.fontMono }}>
+                    Contractor Portal
+                  </div>
+                </div>
+              </div>
+              <EnvironmentBadge label="Contractor" variant="contractor" />
+              {company?.name ? (
+                <div style={{
+                  marginTop: '10px',
+                  fontSize: '11px',
+                  color: portalShellTheme.textMuted,
+                  fontFamily: portalShellTheme.fontMono,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {company.name}
+                </div>
+              ) : null}
+            </div>
+
+            <nav style={{ padding: '8px 10px 12px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+              {navSections.map(function (section) {
+                return (
+                  <div key={section.label}>
+                    <div style={portalSectionHeaderStyle()} aria-hidden="true">
+                      <span style={portalSectionLabelStyle()}>{section.label}</span>
+                      <div style={portalSectionRuleStyle()} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      {section.items.map(function (item) {
+                        const active = item.match(pathname || '')
+                        return (
+                          <button
+                            key={item.href}
+                            type="button"
+                            onClick={function () {
+                              setMobileMenuOpen(false)
+                              router.push(item.href)
+                            }}
+                            style={portalNavItemStyle(active)}
+                          >
+                            <span>{item.label}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+            </nav>
+
+            <div style={{ padding: '14px 16px', borderTop: '1px solid ' + portalShellTheme.border }}>
+              <div style={{
+                fontSize: '11px',
+                color: portalShellTheme.textDim,
+                fontFamily: portalShellTheme.fontMono,
+                marginBottom: '10px',
+                wordBreak: 'break-all',
+              }}>
+                {user?.email}
+              </div>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                style={portalSignOutButtonStyle()}
+              >
+                Logout
+              </button>
+            </div>
+          </aside>
+        </>
       ) : null}
 
-      <main style={{ flex: 1, minWidth: 0 }}>
+      <main className="portal-main" style={{ flex: 1, minWidth: 0 }}>
         <div className="portal-main-header">
           <PortalThemeToggle />
         </div>
@@ -286,7 +334,6 @@ export default function ContractorLayout({ children }) {
         )}
       </main>
 
-      {/* AI assistant — jobId auto-detected from /contractor/jobs/[id] */}
       <ChatWidget />
     </div>
   )

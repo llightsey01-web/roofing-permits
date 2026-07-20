@@ -51,10 +51,15 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname()
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     applyPortalTheme(getPortalTheme())
   }, [])
+
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [pathname])
 
   useEffect(() => {
     async function checkAuth() {
@@ -118,8 +123,43 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <div className={portalShellRootClassName} style={portalShellRootStyle()}>
-      <aside style={portalAsideStyle()}>
+    <div className={portalShellRootClassName + ' has-mobile-nav'} style={portalShellRootStyle()}>
+      <div className="mobile-header">
+        <button
+          type="button"
+          className="mobile-menu-btn"
+          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileMenuOpen}
+          onClick={function () { setMobileMenuOpen(!mobileMenuOpen) }}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+        <span className="mobile-header-brand">DART iQ</span>
+      </div>
+
+      {mobileMenuOpen ? (
+        <div
+          className="mobile-overlay"
+          onClick={function () { setMobileMenuOpen(false) }}
+          aria-hidden="true"
+        />
+      ) : null}
+
+      <aside
+        className={'portal-sidebar' + (mobileMenuOpen ? ' mobile-open' : '')}
+        style={portalAsideStyle()}
+      >
+        <button
+          type="button"
+          className="mobile-sidebar-close"
+          aria-label="Close menu"
+          onClick={function () { setMobileMenuOpen(false) }}
+        >
+          ×
+        </button>
+
         <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid ' + portalShellTheme.border }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
             <div style={{
@@ -158,7 +198,10 @@ export default function AdminLayout({ children }) {
                       <button
                         key={item.href}
                         type="button"
-                        onClick={() => router.push(item.href)}
+                        onClick={function () {
+                          setMobileMenuOpen(false)
+                          router.push(item.href)
+                        }}
                         style={portalNavItemStyle(active)}
                       >
                         {item.label}
@@ -191,7 +234,7 @@ export default function AdminLayout({ children }) {
         </div>
       </aside>
 
-      <main style={{ flex: 1, minWidth: 0 }}>
+      <main className="portal-main" style={{ flex: 1, minWidth: 0 }}>
         <div className="portal-main-header">
           <PortalThemeToggle />
         </div>
