@@ -117,6 +117,19 @@ async function handleNocGenerate(job, run, deps) {
           })
         },
       })
+
+      if (result && result.needsManualReview) {
+        await markRunComplete(run.id, { run_status: 'needs_review' })
+        await logRunAction({
+          runId: run.id, jobId: jobId, companyId: job.company_id,
+          action: 'noc_capacity_review', status: 'success', stepNumber: 1, stepName: 'noc_generate',
+          durationMs: Date.now() - started,
+          metadata: { mode: 'manual_download', message: result.message, overflows: result.overflows },
+        })
+        console.warn('[noc] Template capacity exceeded — routed to manual NOC review')
+        return result
+      }
+
       await supabase.from('jobs').update({
         noc_status: 'ready_for_download',
         updated_at: new Date().toISOString(),
@@ -145,6 +158,19 @@ async function handleNocGenerate(job, run, deps) {
         })
       },
     })
+
+    if (autoResult && autoResult.needsManualReview) {
+      await markRunComplete(run.id, { run_status: 'needs_review' })
+      await logRunAction({
+        runId: run.id, jobId: jobId, companyId: job.company_id,
+        action: 'noc_capacity_review', status: 'success', stepNumber: 1, stepName: 'noc_generate',
+        durationMs: Date.now() - started,
+        metadata: { message: autoResult.message, overflows: autoResult.overflows },
+      })
+      console.warn('[noc] Template capacity exceeded — not queuing proof_send')
+      return autoResult
+    }
+
     await markRunComplete(run.id)
     await queueRun(supabase, jobId, 'proof_send', run.id)
     await logRunAction({

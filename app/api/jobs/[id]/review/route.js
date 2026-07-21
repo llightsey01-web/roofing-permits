@@ -150,6 +150,16 @@ export async function POST(request, { params }) {
         run_type: 'permit_submit',
         started_at: new Date().toISOString(),
       })
+    } else if (review.review_type === 'noc_manual_completion') {
+      // Capacity overflow — approve acknowledges review only; does not resume auto NOC/Proof.
+      // Contractor must upload a manually completed NOC (or ops must intervene).
+      await context.supabase
+        .from('jobs')
+        .update({
+          job_status: 'needs_review',
+          noc_status: 'error',
+        })
+        .eq('id', jobId)
     }
 
     return Response.json({ success: true })

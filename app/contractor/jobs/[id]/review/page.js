@@ -127,6 +127,9 @@ export default function ContractorJobReviewPage({ params }) {
 
   const sectionStyle = { ...contractorCardStyle(), padding: '24px', marginBottom: '20px' }
   const isNocReview = review.review_type === 'noc_before_send'
+  const isManualNocCompletion = review.review_type === 'noc_manual_completion'
+  const capacityMessage = job.job_specs?.noc?.message
+    || 'A NOC field exceeds the one-page template capacity — manual NOC completion is required.'
   const screenshotDocs = documents.filter(d =>
     d.document_type?.includes('screenshot') || d.document_type === 'permit_screenshot'
   )
@@ -139,14 +142,33 @@ export default function ContractorJobReviewPage({ params }) {
       </button>
 
       <h1 style={{ fontSize: '26px', fontWeight: '700', color: contractorTheme.text, margin: '0 0 8px 0' }}>
-        {isNocReview ? 'Review Notice of Commencement' : 'Review Permit Application'}
+        {isManualNocCompletion
+          ? 'Manual NOC completion required'
+          : (isNocReview ? 'Review Notice of Commencement' : 'Review Permit Application')}
       </h1>
       <p style={{ fontSize: '15px', color: contractorTheme.textMuted, margin: '0 0 24px 0' }}>
         {job.property_address}, {job.property_city}, {job.property_state} {job.property_zip}
       </p>
 
       <div style={sectionStyle}>
-        {isNocReview ? (
+        {isManualNocCompletion ? (
+          <>
+            <p style={{ margin: '0 0 16px 0', fontSize: '15px', color: contractorTheme.error, fontWeight: '600' }}>
+              {capacityMessage}
+            </p>
+            <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: contractorTheme.textBody, lineHeight: 1.5 }}>
+              Auto-generated NOC was not created because one or more fields would truncate on the one-page form.
+              Complete the Notice of Commencement outside DART iQ, then upload the signed/notarized document
+              using the job&apos;s upload NOC option, or contact support for help.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <Field label="Owner name" value={job.owner_name} />
+              <Field label="Parcel number" value={job.parcel_number} />
+              <Field label="Legal description" value={job.legal_description} />
+              <Field label="Scope of work" value={job.scope_of_work} />
+            </div>
+          </>
+        ) : isNocReview ? (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
               <Field label="Owner name" value={job.owner_name} />
@@ -222,13 +244,13 @@ export default function ContractorJobReviewPage({ params }) {
 
       <div style={sectionStyle}>
         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: contractorTheme.text, marginBottom: '8px' }}>
-          Notes {review.review_type === 'permit_before_submit' ? '(required for rejection)' : '(optional for rejection)'}
+          Notes {review.review_type === 'permit_before_submit' ? '(required for rejection)' : '(optional)'}
         </label>
         <textarea
           value={notes}
           onChange={e => setNotes(e.target.value)}
           rows={4}
-          placeholder="Describe what needs to be corrected..."
+          placeholder={isManualNocCompletion ? 'Optional notes for your team...' : 'Describe what needs to be corrected...'}
           style={{
             width: '100%', padding: '12px', borderRadius: '10px',
             border: '1px solid ' + contractorTheme.border, fontSize: '14px',
@@ -241,30 +263,47 @@ export default function ContractorJobReviewPage({ params }) {
         )}
 
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={() => submitDecision('approved')}
-            style={{
-              padding: '12px 24px', borderRadius: '999px', border: 'none',
-              background: 'linear-gradient(135deg, #0284c7 0%, #059669 100%)',
-              color: 'white', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {submitting ? 'Submitting...' : (isNocReview ? 'Everything looks correct' : 'Approve and Submit to County')}
-          </button>
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={() => submitDecision('rejected')}
-            style={{
-              padding: '12px 24px', borderRadius: '999px',
-              border: '1px solid #fecaca', backgroundColor: '#fef2f2',
-              color: '#b91c1c', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {isNocReview ? 'Something needs fixing' : 'Send Back for Correction'}
-          </button>
+          {isManualNocCompletion ? (
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => submitDecision('approved')}
+              style={{
+                padding: '12px 24px', borderRadius: '999px', border: 'none',
+                background: 'linear-gradient(135deg, #0284c7 0%, #059669 100%)',
+                color: 'white', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {submitting ? 'Submitting...' : 'Acknowledge — will complete NOC manually'}
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => submitDecision('approved')}
+                style={{
+                  padding: '12px 24px', borderRadius: '999px', border: 'none',
+                  background: 'linear-gradient(135deg, #0284c7 0%, #059669 100%)',
+                  color: 'white', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {submitting ? 'Submitting...' : (isNocReview ? 'Everything looks correct' : 'Approve and Submit to County')}
+              </button>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => submitDecision('rejected')}
+                style={{
+                  padding: '12px 24px', borderRadius: '999px',
+                  border: '1px solid #fecaca', backgroundColor: '#fef2f2',
+                  color: '#b91c1c', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isNocReview ? 'Something needs fixing' : 'Send Back for Correction'}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

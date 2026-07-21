@@ -325,7 +325,10 @@ export default function ContractorJobDetailPage({ params }) {
             <p style={{ margin: '6px 0 0 0', fontSize: '14px', color: contractorTheme.textBody, wordBreak: 'break-word' }}>
               {pendingReview.review_type === 'noc_before_send'
                 ? 'Review the NOC before it is sent to the homeowner.'
-                : 'Review the permit application before county submission.'}
+                : pendingReview.review_type === 'noc_manual_completion'
+                  ? (job.job_specs?.noc?.message
+                    || 'Legal description exceeds template capacity — manual NOC completion required')
+                  : 'Review the permit application before county submission.'}
             </p>
           </div>
           <button
@@ -344,7 +347,7 @@ export default function ContractorJobDetailPage({ params }) {
               flexShrink: 0,
             }}
           >
-            Open review
+            {pendingReview.review_type === 'noc_manual_completion' ? 'View details' : 'Open review'}
           </button>
         </div>
       )}
