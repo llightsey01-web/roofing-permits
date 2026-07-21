@@ -2,15 +2,24 @@
 // Proof.com RON notarization portal automation config
 //
 // FROZEN PRODUCTION PLACEMENT — do not edit without re-calibration + approval.
-// Single ownerSignature field on page 2 only. No anchor tags. No fallback placement.
+// Single ownerSignature field. No anchor tags. No fallback placement.
+//
+// 2026-07-21: Recalibrated from page-2 two-page NOC to page-1 one-page template
+// (templates/noc-template.pdf / notice-of-commencement-2023). Coordinates measured
+// from the AcroForm owner-signature widget on the one-page layout (best-effort).
+// UNVERIFIED against a live Proof.com session — Proof is currently inactive.
+// MUST be re-tested with an actual Proof session before notarization_provider is
+// ever switched back to 'proof' in production.
 
 const REQUIRED_PROOF_FIELD_COUNT = 1
 
+// Owner signature line on one-page NOC (PDF coords, origin bottom-left).
+// Widget approx: x=68, y(bottom)=234, w=395, h=11 → place a taller hit target.
 const FROZEN_OWNER_SIGNATURE = Object.freeze({
-  page: 2,
-  x: -160,
-  y: 590,
-  width: 320,
+  page: 1,
+  x: 68,
+  y: 245,
+  width: 395,
   height: 28,
 })
 
@@ -29,8 +38,8 @@ module.exports = {
   loginUrl: 'https://business.proof.com/login',
   newTransactionUrl: 'https://business.proof.com/transaction/new?configId=notarization',
   credentialKey: 'PROOF',
-  version: '2.1',
-  lastVerified: '2026-05-31',
+  version: '2.2',
+  lastVerified: '2026-07-21',
 
   REQUIRED_PROOF_FIELD_COUNT: REQUIRED_PROOF_FIELD_COUNT,
   FROZEN_OWNER_SIGNATURE: FROZEN_OWNER_SIGNATURE,
