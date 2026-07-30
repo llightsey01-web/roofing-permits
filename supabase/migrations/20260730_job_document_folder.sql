@@ -4,6 +4,15 @@
 alter table jobs add column if not exists permit_number text;
 alter table jobs add column if not exists permit_issued_at timestamptz;
 
+-- Live job_documents.document_type is enum public.document_type.
+-- Extend it for approved permit + combined packet (and common upload tags used in code).
+alter type public.document_type add value if not exists 'approved_permit';
+alter type public.document_type add value if not exists 'combined_packet';
+alter type public.document_type add value if not exists 'permit_screenshot';
+alter type public.document_type add value if not exists 'noc_uploaded_signed';
+alter type public.document_type add value if not exists 'noc_uploaded_notarized';
+alter type public.document_type add value if not exists 'noc_uploaded_recorded';
+
 create table if not exists ahj_document_requirements (
   id uuid primary key default gen_random_uuid(),
   ahj_id uuid references ahj_portals(id),

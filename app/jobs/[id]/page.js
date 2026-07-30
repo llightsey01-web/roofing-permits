@@ -97,6 +97,18 @@ export default function JobDetailPage({ params }) {
         file_size_bytes: file.size, mime_type: file.type,
         uploaded_by: user.id,
       })
+      // Re-evaluate combined packet if this job is already issued
+      try {
+        const { session } = await safeGetSession(supabase)
+        if (session?.access_token) {
+          await fetch('/api/jobs/' + jobId + '/try-packet-merge', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + session.access_token },
+          })
+        }
+      } catch (mergeErr) {
+        console.warn('[job docs] try-packet-merge failed:', mergeErr.message)
+      }
       await loadJob(jobId)
     }
     setUploading(false)

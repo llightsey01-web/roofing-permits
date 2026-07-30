@@ -119,6 +119,15 @@ export async function POST(request, { params }) {
       console.warn('[upload-noc] job_documents insert skipped:', docErr.message)
     }
 
+    // If permit already issued, re-evaluate combined packet now that a required doc may have landed
+    let packetMerge = null
+    try {
+      const { tryPacketMergeForJob } = require('../../../../../../lib/documents/try-packet-merge')
+      packetMerge = await tryPacketMergeForJob(context.supabase, id)
+    } catch (mergeErr) {
+      console.warn('[upload-noc] packet merge skipped:', mergeErr.message)
+    }
+
     let queued = null
     if (queueNext) {
       const runType = nextRunTypeForNocOption(nocOption)
@@ -133,6 +142,7 @@ export async function POST(request, { params }) {
       job: updated,
       path: storagePath,
       queued: queued,
+      packetMerge: packetMerge,
     })
   } catch (err) {
     console.error('[upload-noc] Error:', err.message)

@@ -84,9 +84,11 @@ export async function POST(request, { params }) {
     }
 
     const { maybeMergeCombinedPacket } = require('../../../../../../lib/documents/packet-merge')
+    const { tryPacketMergeForJob } = require('../../../../../../lib/documents/try-packet-merge')
     let mergeResult = { merged: false, reason: 'not attempted' }
     try {
-      mergeResult = await maybeMergeCombinedPacket(context.supabase, job, { force: true })
+      // Prefer jobId reload so newly inserted approved_permit is visible
+      mergeResult = await tryPacketMergeForJob(context.supabase, id, { force: true })
     } catch (mergeErr) {
       console.warn('[mark-issued] packet merge failed:', mergeErr.message)
       mergeResult = { merged: false, reason: mergeErr.message }

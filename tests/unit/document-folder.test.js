@@ -112,6 +112,35 @@ describe('shared pdf-fill', function () {
   })
 })
 
+describe('tryPacketMergeForJob re-evaluation', function () {
+  test('no-ops when job is not issued (late upload before issued)', async function () {
+    const { tryPacketMergeForJob } = require('../../lib/documents/try-packet-merge')
+    const supabase = {
+      from: function () {
+        return {
+          select: function () {
+            return {
+              eq: function () {
+                return {
+                  single: async function () {
+                    return {
+                      data: { id: 'j1', job_status: 'submitted', ahj_id: 'ahj1' },
+                      error: null,
+                    }
+                  },
+                }
+              },
+            }
+          },
+        }
+      },
+    }
+    const result = await tryPacketMergeForJob(supabase, 'j1')
+    expect(result.merged).toBe(false)
+    expect(result.reason).toMatch(/not issued/i)
+  })
+})
+
 describe('combined packet merge gating', function () {
   function mockSupabase(opts) {
     var documents = opts.documents || []
