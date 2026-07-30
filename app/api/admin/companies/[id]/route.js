@@ -1,5 +1,27 @@
 import { authenticateRequest, requireSuperAdmin } from '../../../../../lib/auth/session.js'
 
+const CREDENTIAL_META_SELECT =
+  'id, provider, credential_type, is_active, ahj_id, created_at, updated_at, encrypted_username, encrypted_password'
+
+/** Map vault rows to admin-safe metadata — never return ciphertext. */
+function toCredentialMeta(row) {
+  if (!row) return null
+  const hasUsername = Boolean(row.encrypted_username)
+  const hasPassword = Boolean(row.encrypted_password)
+  return {
+    id: row.id,
+    provider: row.provider,
+    credential_type: row.credential_type,
+    is_active: row.is_active !== false,
+    ahj_id: row.ahj_id,
+    created_at: row.created_at,
+    updated_at: row.updated_at || null,
+    has_username: hasUsername,
+    has_password: hasPassword,
+    connected: row.is_active !== false && hasUsername && hasPassword,
+  }
+}
+
 export async function GET(request, { params }) {
   try {
     let context = await authenticateRequest(request)
@@ -19,7 +41,7 @@ export async function GET(request, { params }) {
       return Response.json({ error: 'Company not found' }, { status: 404 })
     }
 
-    const [{ data: jobs }, { data: credentials }] = await Promise.all([
+    const [{ data: jobs }, { data: credentialRows }] = await Promise.all([
       context.supabase
         .from('jobs')
         .select('id, property_address, job_status, noc_status, created_at, updated_at, owner_name')
@@ -28,14 +50,17 @@ export async function GET(request, { params }) {
         .limit(100),
       context.supabase
         .from('company_credentials')
-        .select('id, provider, credential_type, is_active, ahj_id, created_at')
-        .eq('company_id', id),
+        .select(CREDENTIAL_META_SELECT)
+        .eq('company_id', id)
+        .order('provider', { ascending: true }),
     ])
+
+    const credentials = (credentialRows || []).map(toCredentialMeta)
 
     return Response.json({
       company,
       jobs: jobs || [],
-      credentials: credentials || [],
+      credentials,
     })
   } catch (err) {
     return Response.json({ error: err.message }, { status: 500 })

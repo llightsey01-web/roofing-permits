@@ -37,12 +37,27 @@ export default function CompanyDetailPage() {
   const [deleting, setDeleting] = useState(false)
 
   async function load() {
+    setLoading(true)
     const supabase = createClient()
-    const [{ data: companyRow }, { data: jobRows }, { data: runRows }, { data: credRows }] = await Promise.all([
+    const { data: { session } } = await supabase.auth.getSession()
+    const authHeader = session?.access_token
+      ? { Authorization: 'Bearer ' + session.access_token }
+      : {}
+
+    // Credentials MUST come from the service-role admin API — vault RLS blocks
+    // browser/anon reads, and ciphertext must never reach the client.
+    const [{ data: companyRow }, { data: jobRows }, { data: runRows }, credPayload] = await Promise.all([
       supabase.from('companies').select('*').eq('id', id).single(),
       supabase.from('jobs').select('id, property_address, property_city, job_status, noc_status, created_at, updated_at, owner_name').eq('company_id', id).order('created_at', { ascending: false }).limit(50),
       supabase.from('automation_runs').select('id, job_id, run_type, run_status, error_message, created_at, completed_at').eq('company_id', id).order('created_at', { ascending: false }).limit(20),
-      supabase.from('company_credentials').select('id, provider, credential_type, is_active, ahj_id, created_at').eq('company_id', id),
+      fetch('/api/admin/companies/' + id, {
+        headers: authHeader,
+        cache: 'no-store',
+      }).then(async function (res) {
+        const body = await res.json().catch(function () { return {} })
+        if (!res.ok) throw new Error(body.error || 'Failed to load credentials')
+        return body
+      }),
     ])
 
     // automation_runs may not have company_id — fallback via job ids
@@ -58,18 +73,18 @@ export default function CompanyDetailPage() {
       resolvedRuns = fallbackRuns || []
     }
 
-    setCompany(companyRow)
+    setCompany(companyRow || credPayload.company || null)
     setEdit({
-      name: companyRow?.name || '',
-      primary_email: companyRow?.primary_email || '',
-      phone: companyRow?.phone || '',
-      notes: companyRow?.notes || '',
-      subscription_plan: companyRow?.subscription_plan || 'starter',
-      subscription_status: companyRow?.subscription_status || 'trial',
+      name: (companyRow || credPayload.company)?.name || '',
+      primary_email: (companyRow || credPayload.company)?.primary_email || '',
+      phone: (companyRow || credPayload.company)?.phone || '',
+      notes: (companyRow || credPayload.company)?.notes || '',
+      subscription_plan: (companyRow || credPayload.company)?.subscription_plan || 'starter',
+      subscription_status: (companyRow || credPayload.company)?.subscription_status || 'trial',
     })
     setJobs(jobRows || [])
     setRuns(resolvedRuns)
-    setCredentials(credRows || [])
+    setCredentials(credPayload.credentials || [])
     setLoading(false)
   }
 
@@ -423,7 +438,7 @@ export default function CompanyDetailPage() {
         <div style={adminStatCardStyle('#3b82f6')}><p style={{ margin: 0, fontSize: '10px', color: adminTheme.textDim }}>JOBS</p><p style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: 700 }}>{jobs.length}</p></div>
         <div style={adminStatCardStyle('#f59e0b')}><p style={{ margin: 0, fontSize: '10px', color: adminTheme.textDim }}>PLAN</p><p style={{ margin: '4px 0 0', fontSize: '16px', fontWeight: 700, textTransform: 'capitalize' }}>{company.subscription_plan || 'starter'}</p></div>
         <div style={adminStatCardStyle('#10b981')}><p style={{ margin: 0, fontSize: '10px', color: adminTheme.textDim }}>STATUS</p><p style={{ margin: '4px 0 0', fontSize: '16px', fontWeight: 700 }}>{company.is_active === false ? 'INACTIVE' : (company.subscription_status || 'active').toUpperCase()}</p></div>
-        <div style={adminStatCardStyle('#64748b')}><p style={{ margin: 0, fontSize: '10px', color: adminTheme.textDim }}>CREDENTIALS</p><p style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: 700 }}>{credentials.length}</p></div>
+        <div style={adminStatCardStyle('#64748b')}><p style={{ margin: 0, fontSize: '10px', color: adminTheme.textDim }}>CREDENTIALS</p><p style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: 700 }}>{credentials.filter(function (c) { return c.connected }).length}/{credentials.length}</p></div>
       </div>
 
       <div style={{ ...adminPanelStyle(), padding: '18px', marginBottom: '16px' }}>
@@ -462,7 +477,14 @@ export default function CompanyDetailPage() {
                 <tr key={c.id} style={{ borderBottom: '1px solid ' + adminTheme.borderSubtle }}>
                   <td style={{ padding: '10px 18px', fontSize: '13px', color: adminTheme.text, fontFamily: adminTheme.fontMono }}>{c.provider}</td>
                   <td style={{ padding: '10px 18px', fontSize: '12px', color: adminTheme.textMuted }}>{c.credential_type}</td>
-                  <td style={{ padding: '10px 18px', fontSize: '11px', color: c.is_active ? '#10b981' : '#ef4444' }}>{c.is_active ? 'ACTIVE' : 'INACTIVE'}</td>
+                  <td style={{
+                    padding: '10px 18px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: c.connected ? '#10b981' : (c.is_active ? '#fbbf24' : '#ef4444'),
+                  }}>
+                    {c.connected ? 'CONNECTED' : (c.is_active ? 'NEEDS SETUP' : 'INACTIVE')}
+                  </td>
                 </tr>
               ))}
             </tbody>
