@@ -94,6 +94,8 @@ export default function ContractorJobDetailPage({ params }) {
   const [jobId, setJobId] = useState(null)
   const [job, setJob] = useState(null)
   const [documents, setDocuments] = useState([])
+  const [documentFolder, setDocumentFolder] = useState([])
+  const [combinedPacketAvailable, setCombinedPacketAvailable] = useState(false)
   const [logs, setLogs] = useState([])
   const [downloadUrls, setDownloadUrls] = useState({})
   const [pendingReview, setPendingReview] = useState(null)
@@ -140,6 +142,8 @@ export default function ContractorJobDetailPage({ params }) {
 
       setJob(result.job)
       setDocuments(result.documents || [])
+      setDocumentFolder(result.documentFolder || [])
+      setCombinedPacketAvailable(Boolean(result.combinedPacketAvailable))
       setLogs(result.logs || [])
       setDownloadUrls(result.downloadUrls || {})
       if (reviewResponse.ok) {
@@ -578,27 +582,50 @@ export default function ContractorJobDetailPage({ params }) {
       <div style={sectionStyle}>
         <h2 style={sectionTitleStyle}>Documents</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {downloadUrls.generated_noc && (
-            <DocumentLink label="Generated NOC" url={downloadUrls.generated_noc} />
+          {combinedPacketAvailable && downloadUrls.combined_packet && (
+            <DocumentLink label="Download Complete Packet" url={downloadUrls.combined_packet} highlight />
           )}
-          {downloadUrls.notarized_noc && (
-            <DocumentLink label="Notarized NOC" url={downloadUrls.notarized_noc} />
+
+          {documentFolder.length > 0 && documentFolder.map(row => (
+            <DocumentFolderRow
+              key={row.id || row.role}
+              row={row}
+              url={row.downloadKey ? downloadUrls[row.downloadKey] : null}
+            />
+          ))}
+
+          {documentFolder.length === 0 && (
+            <>
+              {downloadUrls.generated_noc && (
+                <DocumentLink label="Generated NOC" url={downloadUrls.generated_noc} />
+              )}
+              {downloadUrls.notarized_noc && (
+                <DocumentLink label="Notarized NOC" url={downloadUrls.notarized_noc} />
+              )}
+              {downloadUrls.recorded_noc && (
+                <DocumentLink label="Recorded NOC" url={downloadUrls.recorded_noc} />
+              )}
+            </>
           )}
-          {downloadUrls.recorded_noc && (
-            <DocumentLink label="Recorded NOC" url={downloadUrls.recorded_noc} />
-          )}
+
           {documents.filter(d => d.document_type?.includes('screenshot') || d.document_type === 'permit_screenshot').map(doc => (
             downloadUrls['doc_' + doc.id] && (
               <DocumentLink key={doc.id} label={doc.file_name || 'Permit screenshot'} url={downloadUrls['doc_' + doc.id]} />
             )
           ))}
-          {!downloadUrls.generated_noc && !downloadUrls.notarized_noc && !downloadUrls.recorded_noc &&
+
+          {documentFolder.length === 0 && !downloadUrls.generated_noc && !downloadUrls.notarized_noc && !downloadUrls.recorded_noc &&
             documents.filter(d => d.document_type?.includes('screenshot')).length === 0 && (
             <p style={{ fontSize: '15px', color: contractorTheme.textMuted, margin: 0 }}>
               Documents will appear here as your application moves forward.
             </p>
           )}
         </div>
+        {job.permit_number && (
+          <p style={{ fontSize: '13px', color: contractorTheme.textBody, marginTop: '16px', wordBreak: 'break-word' }}>
+            Permit number: <strong>{job.permit_number}</strong>
+          </p>
+        )}
         {job.noc_recording_number && (
           <p style={{ fontSize: '13px', color: contractorTheme.textBody, marginTop: '16px', wordBreak: 'break-word' }}>
             Recording number: <strong>{job.noc_recording_number}</strong>
@@ -640,7 +667,56 @@ export default function ContractorJobDetailPage({ params }) {
   )
 }
 
-function DocumentLink({ label, url }) {
+function DocumentFolderRow({ row, url }) {
+  const statusLabel =
+    row.status === 'available' ? 'Available' :
+    row.status === 'pending' ? 'Pending' :
+    row.status === 'not_required' ? 'Not required' :
+    'Missing'
+
+  const statusColor =
+    row.status === 'available' ? contractorTheme.success :
+    row.status === 'pending' ? contractorTheme.textMuted :
+    row.status === 'not_required' ? contractorTheme.textMuted :
+    contractorTheme.error
+
+  if (row.status === 'available' && url) {
+    return <DocumentLink label={row.displayName} url={url} />
+  }
+
+  return (
+    <div
+      style={{
+        border: '1px solid ' + contractorTheme.border,
+        backgroundColor: contractorTheme.inputBg,
+        borderRadius: '8px',
+        padding: '12px 14px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: '12px',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: '14px', fontWeight: 600, color: contractorTheme.text, wordBreak: 'break-word' }}>
+          {row.displayName}
+          {row.required ? '' : ' (optional)'}
+        </div>
+        {row.pendingReason && (
+          <div style={{ fontSize: '12px', color: contractorTheme.textMuted, marginTop: '4px' }}>
+            {row.pendingReason}
+          </div>
+        )}
+      </div>
+      <span style={{ fontSize: '12px', fontWeight: 600, color: statusColor, flexShrink: 0 }}>
+        {statusLabel}
+      </span>
+    </div>
+  )
+}
+
+function DocumentLink({ label, url, highlight }) {
   return (
     <a
       href={url}
@@ -648,9 +724,9 @@ function DocumentLink({ label, url }) {
       rel="noreferrer"
       className="contractor-doc-link"
       style={{
-        border: '1px solid ' + contractorTheme.border,
-        backgroundColor: contractorTheme.accentSoft,
-        color: contractorTheme.accent,
+        border: '1px solid ' + (highlight ? contractorTheme.success : contractorTheme.border),
+        backgroundColor: highlight ? 'rgba(22, 163, 74, 0.08)' : contractorTheme.accentSoft,
+        color: highlight ? contractorTheme.success : contractorTheme.accent,
         fontSize: '14px',
         fontWeight: '600',
       }}

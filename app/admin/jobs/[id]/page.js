@@ -15,6 +15,8 @@ export default function AdminJobDetailPage() {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const [permitNumberInput, setPermitNumberInput] = useState('')
+  const [permitPdfFile, setPermitPdfFile] = useState(null)
 
   async function load() {
     const supabase = createClient()
@@ -76,6 +78,67 @@ export default function AdminJobDetailPage() {
     setBusy(false)
   }
 
+  async function markPermitIssued() {
+    const permitNumber = (permitNumberInput || '').trim()
+    if (!permitNumber) {
+      setMessage('Enter a permit number before marking issued')
+      return
+    }
+    setBusy(true)
+    setMessage('')
+    try {
+      const supabase = createClient()
+      const { data: sessionData } = await supabase.auth.getSession()
+      const token = sessionData?.session?.access_token
+      if (!token) {
+        setMessage('Not authenticated')
+        setBusy(false)
+        return
+      }
+
+      let permit_pdf_base64 = null
+      let file_name = null
+      if (permitPdfFile) {
+        const buf = await permitPdfFile.arrayBuffer()
+        const bytes = new Uint8Array(buf)
+        let binary = ''
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+        permit_pdf_base64 = btoa(binary)
+        file_name = permitPdfFile.name || 'approved-permit.pdf'
+      }
+
+      const res = await fetch('/api/admin/jobs/' + id + '/mark-issued', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ permit_number: permitNumber, permit_pdf_base64, file_name }),
+      })
+      const payload = await res.json()
+      if (!res.ok) {
+        setMessage(payload.error || 'Failed to mark issued')
+      } else {
+        const mergeNote = payload.packetMerge?.merged
+          ? ' Combined packet merged.'
+          : (payload.packetMerge?.reason ? ' Packet not merged: ' + payload.packetMerge.reason + '.' : '')
+        setMessage('Permit marked issued.' + mergeNote)
+        setPermitNumberInput('')
+        setPermitPdfFile(null)
+        await load()
+      }
+    } catch (err) {
+      setMessage(err.message || 'Failed to mark issued')
+    }
+    setBusy(false)
+  }
+
+  useEffect(() => {
+    if (job?.permit_number && !permitNumberInput) {
+      setPermitNumberInput(job.permit_number)
+    }
+  }, [job?.permit_number])
+
   if (loading) return <div style={{ padding: '48px', color: adminTheme.textMuted }}>Loading job...</div>
   if (!job) return <div style={{ padding: '48px', color: '#ef4444' }}>Job not found</div>
 
@@ -106,6 +169,53 @@ export default function AdminJobDetailPage() {
           <button disabled={busy} onClick={() => queueRun('proof_send')} style={btnStyle('#64748b')}>Queue proof_send</button>
           <button disabled={busy} onClick={() => queueRun('noc')} style={btnStyle('#64748b')}>Queue NOC run</button>
         </div>
+      </div>
+
+      <div style={{ ...adminPanelStyle(), padding: '16px', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '12px', fontFamily: adminTheme.fontMono, color: adminTheme.textMuted, textTransform: 'uppercase', margin: '0 0 12px' }}>Mark permit issued</h2>
+        <p style={{ fontSize: '12px', color: adminTheme.textDim, margin: '0 0 12px' }}>
+          Sets permit number, marks job <code>permit_issued</code>, optionally uploads the approved permit PDF, then attempts combined packet merge if all required docs are present.
+        </p>
+        <div style={{ display: 'grid', gap: '10px', maxWidth: '480px' }}>
+          <label style={{ fontSize: '12px', color: adminTheme.textMuted }}>
+            Permit number
+            <input
+              value={permitNumberInput}
+              onChange={(e) => setPermitNumberInput(e.target.value)}
+              placeholder={job.permit_number || 'e.g. BT-2026-1234'}
+              style={{
+                display: 'block',
+                width: '100%',
+                marginTop: '4px',
+                padding: '8px 10px',
+                borderRadius: '6px',
+                border: '1px solid ' + adminTheme.border,
+                background: adminTheme.inputBg || '#0f172a',
+                color: adminTheme.text,
+                fontFamily: adminTheme.fontMono,
+                fontSize: '13px',
+              }}
+            />
+          </label>
+          <label style={{ fontSize: '12px', color: adminTheme.textMuted }}>
+            Approved permit PDF (optional)
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => setPermitPdfFile(e.target.files?.[0] || null)}
+              style={{ display: 'block', marginTop: '4px', fontSize: '12px', color: adminTheme.textDim }}
+            />
+          </label>
+          <button disabled={busy} onClick={markPermitIssued} style={btnStyle('#16a34a')}>
+            Mark permit issued
+          </button>
+        </div>
+        {job.permit_number && (
+          <p style={{ fontSize: '12px', color: adminTheme.textMuted, marginTop: '12px' }}>
+            Current permit number: <span style={{ fontFamily: adminTheme.fontMono, color: adminTheme.text }}>{job.permit_number}</span>
+            {job.permit_issued_at ? ' · issued ' + new Date(job.permit_issued_at).toLocaleString() : ''}
+          </p>
+        )}
       </div>
 
       <div style={{ ...adminPanelStyle(), padding: '16px', marginBottom: '16px' }}>
