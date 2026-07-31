@@ -50,3 +50,8 @@ next-env.d.ts
 
 # automation runtime artifacts (keep local, do not commit)
 /automation/logs/
+/automation/sessions/
+**/storageState*.json
+**/*storage-state*.json
+**/*-storageState.json
+*.playwright-auth.json

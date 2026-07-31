@@ -12,7 +12,7 @@ module.exports = {
   sessionProvider: 'polk_accela',
   permitType: 'Re-Roof Permit',
   version: 1,
-  lastVerified: '2026-06-03',
+  lastVerified: '2026-07-30',
 
   selectors: {
     // Login
@@ -24,9 +24,24 @@ module.exports = {
 
     // Navigation
     disclaimerUrl:      'https://aca-prod.accela.com/POLKCO/Cap/CapApplyDisclaimer.aspx?module=Building',
-    disclaimerCheckbox: 'input[type="checkbox"]',
-    continueBtn:        '#ctl00_PlaceHolderMain_actionBarBottom_btnContinue',
+    disclaimerCheckbox: '#ctl00_PlaceHolderMain_termAccept',
+    continueBtn:        '#ctl00_PlaceHolderMain_btnNextStep, #ctl00_PlaceHolderMain_actionBarBottom_btnContinue',
     permitTypeReRoof:   'text=Re-Roof Permit',
+
+    // CapHome / MyRecords search (Batch B)
+    searchMyRecordsOnly: '#ctl00_PlaceHolderMain_chkSearch',
+    searchType:         '#ctl00_PlaceHolderMain_ddlSearchType',
+    searchPermitType:   '#ctl00_PlaceHolderMain_generalSearchForm_ddlGSPermitType',
+    searchLicenseType:  '#ctl00_PlaceHolderMain_generalSearchForm_ddlGSLicenseType',
+    searchPermitNumber: '#ctl00_PlaceHolderMain_generalSearchForm_txtGSPermitNumber',
+    myRecordsUrl:       'https://aca-prod.accela.com/POLKCO/Cap/MyRecordsCap.aspx',
+    capHomeUrl:         'https://aca-prod.accela.com/POLKCO/Cap/CapHome.aspx?module=Building&TabName=Building',
+    resultGrid:         'table[id$="gdvPermitList"]',
+    attachmentsListUrl: '/POLKCO/FileUpload/AttachmentsList.aspx',
+    accountManagerUrl:  'https://aca-prod.accela.com/POLKCO/Account/AccountManager.aspx',
+    shoppingCartUrl:    'https://aca-prod.accela.com/POLKCO/ShoppingCart/ShoppingCart.aspx?TabName=Home&stepNumber=2',
+    cartCheckoutBtn:    '#ctl00_PlaceHolderMain_btnCheckOut',
+    cartEditBtn:        '#ctl00_PlaceHolderMain_btnEditCart',
 
     // Step 1 — Location & People
     streetNo:           '#ctl00_PlaceHolderMain_WorkLocationEdit_txtStreetNo',
@@ -104,6 +119,52 @@ module.exports = {
     { docType: 'product_approval',       required: false },
     { docType: 'owners_affidavit',       required: false },
   ],
+
+  // Account-level attachments observed on AccountManager (Batch B) — not per-permit
+  accountLevelAttachments: [
+    'Certificate of Insurance',
+    'Business Tax Receipt',
+    'State License',
+  ],
+
+  // CapHome search-type modes (Batch B Phase 3) — each swaps visible field set
+  searchTypes: [
+    'General Search',
+    'Search by Address',
+    'Search by Licensed Professional Information',
+    'Search by Record Information',
+    'Search for Trade Name',
+    'Search by Contact',
+  ],
+
+  // Draft cleanup (Batch B) — located, not used
+  draftCleanup: {
+    discardControlFound: false,
+    notes:
+      'No Discard/Delete Draft/Abandon Application control on CapHome, MyRecords toolbar, sample CapDetail, Cart, or Account. CapEdit Save-and-Resume Later remains the known draft creator; cleanup path for automation is unresolved pending Batch C / incomplete-draft sample.',
+  },
+
+  /**
+   * PROVISIONAL — observed on BL license CapDetail (Additional Info Required) only.
+   * NOT validated for BT Re-Roof Permit workflow. Do not wire runner steps to this
+   * until a real roofing permit hits this status and NOTES are updated.
+   */
+  provisionalCorrectionFlowLicenseOnly: {
+    validatedForRoofingPermit: false,
+    observedOn: 'business_license_renewal_BL',
+    recordStatusSelector: '#ctl00_PlaceHolderMain_lblRecordStatus',
+    recordStatusWrapper: '#ctl00_PlaceHolderMain_divRecordStatus',
+    expectedStatusText: 'Additional Info Required',
+    processingStatusSection: '#ctl00_PlaceHolderMain_divProcessStatus',
+    processingStatusInfo: '#divProcessInfo',
+    processingStatusTable: '#divProcessingTable',
+    attachmentsTab: 'a[data-control="tab-attachments"]',
+    digitalProjectsTab: 'a[data-control="tab-custom_component"]',
+    attachmentSelectFromAccount: '#ctl00_PlaceHolderMain_attachmentEdit_btnSelectFromAccount',
+    attachmentBrowseAdd: '#ctl00_PlaceHolderMain_attachmentEdit_btnBrowse',
+    dedicatedRespondButtonFound: false,
+    revisionsHelpTextPattern: /If Revisions Required.*Digital Projects.*Comments/i,
+  },
 
   // Automation steps in order
   steps: [
