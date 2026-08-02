@@ -11,6 +11,7 @@ const { resolvePolkLegalDescription } = require('../../lib/parcels/polk-legal-de
 const { triggerNocAfterPhase1 } = require('../../lib/automation/noc-trigger')
 const { saveCheckpoint, shouldSkipStep } = require('../shared/checkpoint.js')
 const { logRecoveryStart } = require('../shared/recovery.js')
+const { preflightCheckSelectors } = require('./shared/selector-preflight.js')
 const {
   loadSession,
   saveSession,
@@ -252,6 +253,11 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
   console.log('\nStarting ' + config.name + ' automation')
   console.log('Job: ' + jobData.owner_name + ' — ' + jobData.property_address)
   console.log('Run ID: ' + runId + '\n')
+
+  await preflightCheckSelectors(config, config.fieldMap, {
+    runId: runId,
+    jobData: jobData,
+  })
 
   const failures = []
   for (const check of config.preflightChecks) {

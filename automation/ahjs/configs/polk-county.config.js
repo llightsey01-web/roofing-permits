@@ -144,6 +144,18 @@ module.exports = {
     disposalFrequency: null,
   },
 
+  // Non-null selectors whose label mapping is not live-confirmed yet.
+  unconfirmedSelectors: [
+    {
+      selector: 'roofDeckYes',
+      reason: 'May map to Private Provider Yes, but label mapping still needs live DOM confirmation.',
+    },
+    {
+      selector: 'roofDeckNo',
+      reason: 'May map to Private Provider No, but label mapping still needs live DOM confirmation.',
+    },
+  ],
+
   // Confirmed portal enums (Batch C, 2026-08-02)
   enums: {
     nocDropdown: ['--Select--', 'N/A', 'Needed', 'Recorded'],
