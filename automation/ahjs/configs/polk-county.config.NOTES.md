@@ -743,6 +743,20 @@ No further manual screenshots needed from Logan for these:
 
 ---
 
+### Batch C — live Polk test drafts (Gator account artifacts)
+
+**Not real customer permits.** Incomplete portal drafts created during Batch C discovery on Gator Roof Systems' live Polk Accela account. Do not treat as production work, do not submit/pay, do not reuse for customer jobs without explicit cleanup review.
+
+| Record # | Created | How | Status at last check | Test property |
+|----------|---------|-----|----------------------|---------------|
+| **26TMP-043760** | 2026-07-31 (Batch C Step 1 automation + manual walkthrough 2026-08-02) | CapEdit Save and Resume Later — **only draft intentionally created** (Batch C rule: one draft max) | Incomplete — wizard walked through Step 5 Pay Fees boundary; **not submitted, not paid** | 4405 GLENNS LNDG, Winter Haven FL 33884 (authorized test) |
+
+**No other `26TMP-*` drafts were created** in Batch C runs. Batch A/B/correction inspect did not create incomplete re-roof drafts (Batch A: disclaimer not accepted; Batch B: no CapEdit entry; correction inspect: BL license record only, view-only).
+
+**Headless automation note:** Resume Application on **26TMP-043760** was confirmed manually; automated resume remained blocked on page-flow modal handling (deferred Phase 2).
+
+---
+
 ### Batch C automation status (unchanged)
 
 - **Draft create + Save and Resume Later:** succeeded (26TMP-043760).
