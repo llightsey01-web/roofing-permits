@@ -7,6 +7,8 @@ import { safeGetSession, redirectIfStaleSession } from '../../../../lib/auth/saf
 import { permitStatusConfig, nocStatusConfig, jobTimelineStages } from '../../../../lib/contractor/status-config'
 import { contractorTheme, contractorCardStyle } from '../../../../lib/ui/contractor-theme'
 
+const { roofTypeLabel, workTypeLabel } = require('../../../../lib/intake/portal-field-options.js')
+
 const STAGE_LABELS = {
   intake: 'Job Submitted',
   parcel: 'Parcel Retrieved',
@@ -566,7 +568,8 @@ export default function ContractorJobDetailPage({ params }) {
           <Field label="Owner name" value={job.owner_name} />
           <Field label="Owner phone" value={job.owner_phone} />
           <Field label="Owner email" value={job.owner_email} />
-          <Field label="Roof type" value={job.roof_type} />
+          <Field label="Roof type" value={job.roof_type ? roofTypeLabel(job.roof_type) : null} />
+          <Field label="Work type" value={job.work_type ? workTypeLabel(job.work_type) : null} />
           <Field label="Valuation" value={job.valuation ? '$' + Number(job.valuation).toLocaleString() : null} />
           <Field label="Squares" value={job.job_specs?.squares} />
           <Field label="Parcel number" value={job.parcel_number} />

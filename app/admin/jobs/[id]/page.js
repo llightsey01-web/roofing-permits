@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '../../../../lib/supabase'
 import { adminTheme, adminPanelStyle, adminStatCardStyle } from '../../../../lib/ui/admin-theme'
 
+const { roofTypeLabel, workTypeLabel } = require('../../../../lib/intake/portal-field-options.js')
+
 export default function AdminJobDetailPage() {
   const { id } = useParams()
   const router = useRouter()
@@ -224,7 +226,8 @@ export default function AdminJobDetailPage() {
           <div style={{ color: adminTheme.textDim }}>Job ID</div><div style={{ fontFamily: adminTheme.fontMono }}>{job.id}</div>
           <div style={{ color: adminTheme.textDim }}>Owner email</div><div>{job.owner_email || '—'}</div>
           <div style={{ color: adminTheme.textDim }}>Owner phone</div><div>{job.owner_phone || '—'}</div>
-          <div style={{ color: adminTheme.textDim }}>Roof type</div><div>{job.roof_type || '—'}</div>
+          <div style={{ color: adminTheme.textDim }}>Roof type</div><div>{job.roof_type ? roofTypeLabel(job.roof_type) : '—'}</div>
+          <div style={{ color: adminTheme.textDim }}>Work type</div><div>{job.work_type ? workTypeLabel(job.work_type) : '—'}</div>
           <div style={{ color: adminTheme.textDim }}>Valuation</div><div>{job.valuation ? '$' + Number(job.valuation).toLocaleString() : '—'}</div>
           <div style={{ color: adminTheme.textDim }}>Created</div><div>{job.created_at ? new Date(job.created_at).toLocaleString() : '—'}</div>
           <div style={{ color: adminTheme.textDim }}>Updated</div><div>{job.updated_at ? new Date(job.updated_at).toLocaleString() : '—'}</div>

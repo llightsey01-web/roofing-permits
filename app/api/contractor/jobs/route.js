@@ -14,6 +14,10 @@ const {
   buildJobUpdateForUploadedNoc,
 } = require('../../../../lib/noc/noc-options.js')
 const { providerForPortal } = require('../../../../lib/ahj/county-options.js')
+const {
+  isValidRoofType,
+  isValidWorkType,
+} = require('../../../../lib/intake/portal-field-options.js')
 
 export async function GET(request) {
   try {
@@ -25,7 +29,7 @@ export async function GET(request) {
 
     const { data: jobs, error } = await context.userSupabase
       .from('jobs')
-      .select('id, company_id, owner_name, property_address, property_city, property_state, property_zip, job_status, noc_status, roof_type, valuation, created_at')
+      .select('id, company_id, owner_name, property_address, property_city, property_state, property_zip, job_status, noc_status, roof_type, work_type, valuation, created_at')
       .eq('company_id', context.companyId)
       .order('created_at', { ascending: false })
 
@@ -95,6 +99,13 @@ export async function POST(request) {
       }
     }
 
+    if (body.roof_type && !isValidRoofType(body.roof_type)) {
+      return Response.json({ error: 'Invalid roof type' }, { status: 400 })
+    }
+    if (body.work_type && !isValidWorkType(body.work_type)) {
+      return Response.json({ error: 'Invalid work type' }, { status: 400 })
+    }
+
     const { data: job, error: jobError } = await context.userSupabase
       .from('jobs')
       .insert({
@@ -107,6 +118,7 @@ export async function POST(request) {
         property_zip: body.property_zip,
         scope_of_work: body.scope_of_work || null,
         roof_type: body.roof_type || null,
+        work_type: body.work_type || null,
         valuation: body.valuation ? parseFloat(body.valuation) : null,
         internal_notes: body.notes || body.internal_notes || null,
         ahj_id: ahjId,

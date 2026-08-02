@@ -11,6 +11,11 @@ import {
   contractorInputStyle,
 } from '../../../../lib/ui/contractor-theme'
 
+const {
+  ROOF_TYPE_OPTIONS,
+  WORK_TYPE_OPTIONS,
+} = require('../../../../lib/intake/portal-field-options.js')
+
 const emptyMaterial = { manufacturer: '', product_name: '', approval_number: '' }
 
 const NOC_OPTION_CHOICES = [
@@ -74,6 +79,7 @@ export default function ContractorNewJobPage() {
     property_zip: '',
     scope_of_work: '',
     roof_type: '',
+    work_type: '',
     valuation: '',
     notes: '',
     squares: '',
@@ -230,6 +236,14 @@ export default function ContractorNewJobPage() {
     }
     if (!underlayment.manufacturer || !underlayment.product_name) {
       setError('Underlayment is required.')
+      return
+    }
+    if (!form.roof_type) {
+      setError('Roof type is required.')
+      return
+    }
+    if (!form.work_type) {
+      setError('Work type is required.')
       return
     }
     if (selectedNocChoice.needsFile && !nocFile) {
@@ -597,7 +611,7 @@ export default function ContractorNewJobPage() {
 
         <div style={sectionStyle}>
           <h2 style={sectionTitleStyle}>4. Job details</h2>
-          <p style={sectionDescStyle}>Scope, roof type, and contract value for the permit.</p>
+          <p style={sectionDescStyle}>Work type, roof type, scope, and contract value for the permit.</p>
           <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Scope of work</label>
             <textarea
@@ -609,12 +623,25 @@ export default function ContractorNewJobPage() {
           </div>
           <div className="contractor-form-grid">
             <div>
-              <label style={labelStyle}>Roof type</label>
-              <select style={inputStyle} name="roof_type" value={form.roof_type} onChange={handleChange}>
+              <label style={labelStyle}>Work type *</label>
+              <select style={inputStyle} name="work_type" value={form.work_type} onChange={handleChange} required>
+                <option value="">Select work type</option>
+                {WORK_TYPE_OPTIONS.map(function (opt) {
+                  return <option key={opt.value} value={opt.value}>{opt.label}</option>
+                })}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Roof type *</label>
+              <select style={inputStyle} name="roof_type" value={form.roof_type} onChange={handleChange} required>
                 <option value="">Select roof type</option>
-                {['Shingle', 'Tile', 'Metal', 'Flat', 'Modified Bitumen'].map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
+                {ROOF_TYPE_OPTIONS.map(function (opt) {
+                  return (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}{opt.hint ? ' — ' + opt.hint : ''}
+                    </option>
+                  )
+                })}
               </select>
             </div>
             <div>

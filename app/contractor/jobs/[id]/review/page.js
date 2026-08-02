@@ -6,6 +6,8 @@ import { createClient } from '../../../../../lib/supabase'
 import { safeGetSession, redirectIfStaleSession } from '../../../../../lib/auth/safe-auth'
 import { contractorTheme, contractorCardStyle } from '../../../../../lib/ui/contractor-theme'
 
+const { roofTypeLabel, workTypeLabel } = require('../../../../../lib/intake/portal-field-options.js')
+
 export default function ContractorJobReviewPage({ params }) {
   const router = useRouter()
   const [jobId, setJobId] = useState(null)
@@ -201,7 +203,8 @@ export default function ContractorJobReviewPage({ params }) {
               <Field label="Owner phone" value={job.owner_phone} />
               <Field label="Parcel number" value={job.parcel_number} />
               <Field label="Legal description" value={job.legal_description} />
-              <Field label="Roof type" value={job.roof_type} />
+              <Field label="Roof type" value={job.roof_type ? roofTypeLabel(job.roof_type) : null} />
+              <Field label="Work type" value={job.work_type ? workTypeLabel(job.work_type) : null} />
               <Field label="Valuation" value={job.valuation ? '$' + Number(job.valuation).toLocaleString() : null} />
               <Field label="Squares" value={job.job_specs?.squares} />
               <Field label="Scope of work" value={job.scope_of_work} />
