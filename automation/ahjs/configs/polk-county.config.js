@@ -122,39 +122,27 @@ module.exports = {
     resumeModalOkText: 'OK',
     resumeModalCancelText: 'Cancel',
 
-    // Step 2 — Permit Detail / Work Description (selectors still need DOM confirmation)
-    jobDescription: null,
-    jobValue: null,
+    // Step 2 — Permit Detail / Work Description
+    jobDescription: '#ctl00_PlaceHolderMain_DetailInfoEdit_txtDescriptionDetail',
+    jobValue:       '#ctl00_PlaceHolderMain_DescriptionEdit_txtJobValue',
 
-    // Step 3 — Documents (acknowledgement-only; selector still needs DOM confirmation)
-    planUploadAcknowledgement: null,
+    // Step 3 — Documents (acknowledgement-only; uploads happen post-submit)
+    planUploadAcknowledgement: '#ctl00_PlaceHolderMain_AppSpec8B96C3A4Edit_POLKCO_chk_0_0',
 
-    // Confirmed visible fields without verified stable IDs yet. Do not guess IDs.
-    applicantOwnerYes: null,
-    applicantOwnerNo: null,
-    virtualInspectionYes: null,
-    virtualInspectionNo: null,
-    privateProviderYes: null,
-    privateProviderNo: null,
-    codeViolationCaseNumber: null,
-    constructionWasteAcknowledgement: null,
-    commercialFranchiseHolderName: null,
-    commercialFranchiseHolderPhone: null,
-    disposalEquipment: null,
-    disposalFrequency: null,
+    // Confirmed Batch C selector pass on draft 26TMP-043760
+    applicantOwnerYes: '#ctl00_PlaceHolderMain_AppSpecC11AD441Edit_POLKCO_rdo_0_4_0',
+    applicantOwnerNo:  '#ctl00_PlaceHolderMain_AppSpecC11AD441Edit_POLKCO_rdo_0_4_1',
+    virtualInspectionYes: '#ctl00_PlaceHolderMain_AppSpecC11AD441Edit_POLKCO_rdo_0_14_0',
+    virtualInspectionNo:  '#ctl00_PlaceHolderMain_AppSpecC11AD441Edit_POLKCO_rdo_0_14_1',
+    privateProviderYes: '#ctl00_PlaceHolderMain_AppSpecC11AD441Edit_POLKCO_rdo_1_0_0',
+    privateProviderNo:  '#ctl00_PlaceHolderMain_AppSpecC11AD441Edit_POLKCO_rdo_1_0_1',
+    codeViolationCaseNumber: '#ctl00_PlaceHolderMain_AppSpecC11AD441Edit_POLKCO_txt_0_3',
+    constructionWasteAcknowledgement: '#ctl00_PlaceHolderMain_AppSpecC11AD441Edit_POLKCO_ddl_0_5',
+    commercialFranchiseHolderName: '#ctl00_PlaceHolderMain_AppSpecC11AD441Edit_POLKCO_txt_0_6',
+    commercialFranchiseHolderPhone: '#ctl00_PlaceHolderMain_AppSpecC11AD441Edit_POLKCO_txt_0_7',
+    disposalEquipment: '#ctl00_PlaceHolderMain_AppSpecC11AD441Edit_POLKCO_txt_0_8',
+    disposalFrequency: '#ctl00_PlaceHolderMain_AppSpecC11AD441Edit_POLKCO_txt_0_9',
   },
-
-  // Non-null selectors whose label mapping is not live-confirmed yet.
-  unconfirmedSelectors: [
-    {
-      selector: 'roofDeckYes',
-      reason: 'May map to Private Provider Yes, but label mapping still needs live DOM confirmation.',
-    },
-    {
-      selector: 'roofDeckNo',
-      reason: 'May map to Private Provider No, but label mapping still needs live DOM confirmation.',
-    },
-  ],
 
   // Confirmed portal enums (Batch C, 2026-08-02)
   enums: {
@@ -235,8 +223,8 @@ module.exports = {
     { jobField: 'roof_specs.squares',      selector: 'numberOfSquares' },
     { jobField: 'roof_type',               selector: 'roofType', type: 'select' },
     { jobField: 'work_type',               selector: 'workType', type: 'select' },
-    { jobField: 'scope_of_work',           selector: 'jobDescription', type: 'textarea', selectorConfirmed: false },
-    { jobField: 'valuation',               selector: 'jobValue', type: 'currency', selectorConfirmed: false },
+    { jobField: 'scope_of_work',           selector: 'jobDescription', type: 'textarea', selectorConfirmed: true },
+    { jobField: 'valuation',               selector: 'jobValue', type: 'currency', selectorConfirmed: true },
   ],
 
   fieldFillPolicy: {
