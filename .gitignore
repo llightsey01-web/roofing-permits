@@ -41,6 +41,9 @@ yarn-error.log*
 !.env.staging.example
 !.env.production.example
 
+# Supabase CLI local metadata
+/supabase/.temp/
+
 # vercel
 .vercel
 
@@ -51,7 +54,14 @@ next-env.d.ts
 # automation runtime artifacts (keep local, do not commit)
 /automation/logs/
 /automation/sessions/
+/automation/proof-cookies.json
 **/storageState*.json
 **/*storage-state*.json
 **/*-storageState.json
 *.playwright-auth.json
+*cookie*
+*.auth.json
+*.har
+trace.zip
+/test-results/
+/playwright-report/
