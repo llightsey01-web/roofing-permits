@@ -84,11 +84,12 @@ async function captureFailureForensics(page, runId, stepName, err) {
   }
 }
 
-async function logStep(page, runId, stepNumber, stepName, fn, checkpointData) {
+async function logStep(page, runId, stepNumber, stepName, fn, checkpointData, options) {
   const supabase = getSupabase()
   const screenshotPath = `runs/${runId}/step-${String(stepNumber).padStart(2, '0')}-${stepName}.png`
+  const stepOptions = options || {}
 
-  if (await shouldSkipStep(runId, stepNumber)) {
+  if (!stepOptions.alwaysRun && await shouldSkipStep(runId, stepNumber)) {
     console.log(`↷ Step ${stepNumber}: ${stepName} (skipped — checkpoint)`)
     return { success: true, skipped: true }
   }
@@ -96,7 +97,9 @@ async function logStep(page, runId, stepNumber, stepName, fn, checkpointData) {
   try {
     await fn()
 
-    await saveCheckpoint(runId, stepName, stepNumber, checkpointData || {})
+    if (!stepOptions.preserveCheckpoint) {
+      await saveCheckpoint(runId, stepName, stepNumber, checkpointData || {})
+    }
 
     const screenshot = await page.screenshot({ fullPage: false })
     await supabase.storage.from('screenshots').upload(screenshotPath, screenshot, { upsert: true })

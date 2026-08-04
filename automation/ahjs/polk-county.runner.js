@@ -12,6 +12,8 @@ const { triggerNocAfterPhase1 } = require('../../lib/automation/noc-trigger')
 const { saveCheckpoint, shouldSkipStep } = require('../shared/checkpoint.js')
 const { logRecoveryStart } = require('../shared/recovery.js')
 const { preflightCheckSelectors } = require('./shared/selector-preflight.js')
+const { isAutomationEnabled } = require('../../lib/automation/automation-gate.js')
+const { logRunAction } = require('../../lib/audit/run-logger.js')
 const {
   loadSession,
   saveSession,
@@ -40,6 +42,118 @@ function assertSupabaseOk(result, label) {
 // Valid automation_runs.run_status values: queued, running, error, needs_review, cancelled
 var RUN_STATUS_PHASE1_SUCCESS = 'needs_review'
 var RUN_STATUS_PHASE1_FAILURE = 'error'
+var RUN_STATUS_PHASE2_REVIEW = 'needs_review'
+
+function validatePolkRunContract(runType, runPayload) {
+  var type = runType || 'permit_phase_1'
+  if (type === 'permit_submit') {
+    throw Object.assign(
+      new Error('Polk permit_submit is disabled; automation stops at Review'),
+      { errorCode: 'unsupported_run_type' }
+    )
+  }
+  if (type !== 'permit_phase_1' && type !== 'permit_resume') {
+    throw Object.assign(
+      new Error('Unsupported Polk permit run type: ' + type),
+      { errorCode: 'unsupported_run_type' }
+    )
+  }
+  if (type === 'permit_resume') {
+    var recordNumber = runPayload && typeof runPayload.portal_record_number === 'string'
+      ? runPayload.portal_record_number.trim()
+      : ''
+    if (!recordNumber) {
+      throw Object.assign(
+        new Error('permit_resume requires current automation_runs.payload.portal_record_number'),
+        { errorCode: 'missing_portal_record_number' }
+      )
+    }
+    return { runType: type, portalRecordNumber: recordNumber }
+  }
+  return { runType: type, portalRecordNumber: null }
+}
+
+function resolvePolkPhase2Values(jobData, config) {
+  var defaults = config.resolvePortalDefaults(jobData)
+  var jobSpecs = jobData.job_specs || {}
+  var roofSpecs = jobData.roof_specs || {}
+  var values = {
+    gateCodeRequired: defaults.gateCodeRequired,
+    gateCode: defaults.gateCode || '',
+    codeViolation: defaults.codeViolation,
+    codeViolationCaseNumber: defaults.codeViolationCaseNumber || '',
+    applicantIsOwner: false,
+    virtualInspections: false,
+    privateProvider: false,
+    packetSubmission: config.defaultValues.packetSubmission,
+    fs119Status: defaults.fs119Status,
+    workType: String(jobData.work_type || '').trim(),
+    propertyType: config.defaultValues.propertyType,
+    reroofPermitType: defaults.reroofPermitType,
+    numberOfSquares: String(jobSpecs.squares || roofSpecs.squares || '').trim(),
+    roofType: String(jobData.roof_type || '').trim(),
+    reroofAffidavit: true,
+    asbestosStatement: true,
+    jobDescription: String(jobData.scope_of_work || '').trim(),
+    jobValue: String(jobData.valuation || '').trim(),
+    planUploadAcknowledgement: true,
+    commercialFranchiseHolderName: '',
+    commercialFranchiseHolderPhone: '',
+    disposalEquipment: '',
+    disposalFrequency: '',
+  }
+
+  var missing = []
+  ;[
+    ['work_type', values.workType],
+    ['roof_type', values.roofType],
+    ['job_specs.squares', values.numberOfSquares],
+    ['scope_of_work', values.jobDescription],
+    ['valuation', values.jobValue],
+  ].forEach(function(entry) {
+    if (!entry[1]) missing.push(entry[0])
+  })
+  if (missing.length) {
+    throw Object.assign(
+      new Error('Polk Phase 2 requires: ' + missing.join(', ')),
+      { errorCode: 'missing_phase2_data', fields: missing }
+    )
+  }
+  if (values.gateCodeRequired && !values.gateCode) {
+    throw Object.assign(new Error('Gate Code override is Yes but no gate_code was supplied'), { errorCode: 'missing_phase2_data' })
+  }
+  if (values.codeViolation && !values.codeViolationCaseNumber) {
+    throw Object.assign(
+      new Error('Code Violation override is Yes but no code_violation_case_number was supplied'),
+      { errorCode: 'missing_phase2_data' }
+    )
+  }
+  if (config.enums.workType.indexOf(values.workType) < 0) {
+    throw Object.assign(new Error('Unsupported Polk work_type: ' + values.workType), { errorCode: 'invalid_portal_enum' })
+  }
+  if (config.enums.roofType.indexOf(values.roofType) < 0) {
+    throw Object.assign(new Error('Unsupported Polk roof_type: ' + values.roofType), { errorCode: 'invalid_portal_enum' })
+  }
+  if (config.enums.reroofPermitType.indexOf(values.reroofPermitType) < 0) {
+    throw Object.assign(
+      new Error('Unsupported Polk reroof permit type: ' + values.reroofPermitType),
+      { errorCode: 'invalid_portal_enum' }
+    )
+  }
+  return values
+}
+
+function isPaymentBoundaryState(url, pageText) {
+  var location = String(url || '')
+  var text = String(pageText || '')
+  return /ShoppingCart|\/payment\/|pay\.aspx|checkout/i.test(location) ||
+    /Step\s*5\s*:\s*Pay Fees|Payment information|PAY NOW|CSG Forte/i.test(text)
+}
+
+function redactReviewValue(label, value) {
+  if (/owner|applicant|contact|address|email|phone|parcel/i.test(String(label || ''))) return '[REDACTED]'
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 300)
+}
 
 async function waitForPortalPostbackQuiet(page, maxMs) {
   var deadline = Date.now() + maxMs
@@ -250,6 +364,20 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
   var config = portalConfig || defaultConfig
   var resolveLegalDescription = (hooks && hooks.resolveLegalDescription) || resolvePolkLegalDescription
   var browserOpts = runnerOptions || {}
+  var runContract = { runType: 'permit_phase_1', portalRecordNumber: null }
+  var phase2Values = null
+
+  if (config.id === 'polk-county') {
+    var gateSupabase = getSupabase()
+    if (!(await isAutomationEnabled(gateSupabase))) {
+      throw Object.assign(
+        new Error('Automation is paused by platform_settings.automation_enabled'),
+        { errorCode: 'automation_paused' }
+      )
+    }
+    runContract = validatePolkRunContract(browserOpts.runType, browserOpts.runPayload)
+  }
+
   console.log('\nStarting ' + config.name + ' automation')
   console.log('Job: ' + jobData.owner_name + ' — ' + jobData.property_address)
   console.log('Run ID: ' + runId + '\n')
@@ -258,6 +386,10 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
     runId: runId,
     jobData: jobData,
   })
+
+  if (runContract.runType === 'permit_resume') {
+    phase2Values = resolvePolkPhase2Values(jobData, config)
+  }
 
   const failures = []
   for (const check of config.preflightChecks) {
@@ -277,7 +409,7 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
 
   console.log('Loading AHJ credentials...')
   const credentials = await getCredentials(jobData.company_id, jobData.ahj_id)
-  console.log('✓ Credentials loaded for: ' + credentials.username + '\n')
+  console.log('✓ Credentials loaded\n')
 
   console.log('Checking portal availability...')
   try {
@@ -709,11 +841,468 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
     return searchWaitReason
   }
 
+  async function performPortalLogin() {
+    await page.goto(config.portalUrl, { waitUntil: 'domcontentloaded' })
+    await page.waitForTimeout(1500)
+    var sessionOk = await isAccelaSessionValid(page)
+    if (sessionOk) {
+      console.log('[' + sessionProvider + '] Using saved session — skipping login ✓')
+      return
+    }
+    console.log('[' + sessionProvider + '] Session expired or missing — logging in fresh')
+    await clearSession(sessionProvider, companyId)
+    await page.waitForTimeout(1500)
+    var frameHandle = await page.waitForSelector('iframe:not(.mask_iframe)', { timeout: 15000 })
+    var frame = await frameHandle.contentFrame()
+    if (!frame) throw new Error('Login iframe not found after waiting')
+    await (await frame.waitForSelector(config.selectors.loginUsername)).fill(credentials.username)
+    await (await frame.waitForSelector(config.selectors.loginPassword)).fill(credentials.password)
+    var result = await solver.recaptcha(config.selectors.loginSiteKey, config.portalUrl)
+    await frame.evaluate(function(token) {
+      document.querySelectorAll('[id="g-recaptcha-response"]').forEach(function(el) {
+        el.style.display = 'block'
+        el.value = token
+        el.dispatchEvent(new Event('input', { bubbles: true }))
+        el.dispatchEvent(new Event('change', { bubbles: true }))
+      })
+      var tryCallback = function(obj, token, depth) {
+        depth = depth || 0
+        if (depth > 5 || !obj) return
+        try {
+          if (typeof obj === 'object') {
+            Object.keys(obj).forEach(function(key) {
+              if (key === 'callback' && typeof obj[key] === 'function') obj[key](token)
+              else tryCallback(obj[key], token, depth + 1)
+            })
+          }
+        } catch(e) {}
+      }
+      if (window.___grecaptcha_cfg) tryCallback(window.___grecaptcha_cfg, token)
+    }, result.data)
+    await page.waitForTimeout(1500)
+    await frame.evaluate(function() {
+      document.querySelectorAll('button').forEach(function(b) {
+        if (b.textContent.includes('Sign In')) b.click()
+      })
+    })
+    await page.waitForURL('**/Dashboard.aspx**', { timeout: 15000 })
+    await page.waitForTimeout(2000)
+    console.log('[' + sessionProvider + '] Login complete — session will be saved for next run')
+  }
+
+  async function aspNetPostBack(eventTarget) {
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 60000 }).catch(function() {}),
+      page.evaluate(function(target) {
+        var form = document.getElementById('aspnetForm') || document.forms[0]
+        if (!form) throw new Error('aspnetForm missing')
+        var et = form.querySelector('input[name="__EVENTTARGET"]')
+        if (!et) {
+          et = document.createElement('input')
+          et.type = 'hidden'
+          et.name = '__EVENTTARGET'
+          form.appendChild(et)
+        }
+        et.value = target
+        var ea = form.querySelector('input[name="__EVENTARGUMENT"]')
+        if (!ea) {
+          ea = document.createElement('input')
+          ea.type = 'hidden'
+          ea.name = '__EVENTARGUMENT'
+          form.appendChild(ea)
+        }
+        ea.value = ''
+        form.submit()
+      }, eventTarget),
+    ])
+    await waitForPortalPostbackQuiet(page, 45000)
+    await page.waitForTimeout(1500)
+  }
+
+  async function getWizardState() {
+    return page.evaluate(function() {
+      var body = document.body ? document.body.innerText : ''
+      var headings = Array.from(document.querySelectorAll('h1, h2, h3, .ACA_Title_Bar, .ACA_SectionTitle'))
+        .map(function(el) { return (el.innerText || '').replace(/\s+/g, ' ').trim() })
+        .filter(Boolean)
+        .slice(0, 30)
+      var currentText = headings.join(' | ')
+      var stepMatch = body.match(/Step\s*\d+\s*:\s*[^\n]+/i)
+      var currentStepLine = stepMatch ? stepMatch[0].replace(/\s+/g, ' ').trim() : ''
+      return {
+        url: location.href,
+        headings: headings,
+        currentText: currentText,
+        currentStepLine: currentStepLine,
+        isReview: /Step\s*4\s*:\s*Review/i.test(currentStepLine) ||
+          /(^|\|\s*)Review(\s*\||$)/i.test(currentText),
+        isPayment: /Step\s*5\s*:\s*Pay Fees/i.test(currentStepLine) ||
+          /Payment information|PAY NOW|CSG Forte/i.test(currentText + ' ' + body.slice(0, 1500)),
+      }
+    })
+  }
+
+  async function assertBeforePaymentBoundary() {
+    var state = await getWizardState()
+    if (state.isPayment || isPaymentBoundaryState(state.url, state.currentStepLine + ' ' + state.currentText)) {
+      throw Object.assign(
+        new Error('Hard stop: Polk Phase 2 reached a Pay Fees or payment boundary'),
+        { errorCode: 'payment_boundary_blocked' }
+      )
+    }
+    return state
+  }
+
+  async function handleResumePageFlowModal() {
+    var deadline = Date.now() + 45000
+    var sawModal = false
+    while (Date.now() < deadline) {
+      var state = await page.evaluate(function() {
+        var layer = document.getElementById('dvACADialogLayer')
+        function visible(el) {
+          if (!el) return false
+          var style = window.getComputedStyle(el)
+          return style.display !== 'none' && style.visibility !== 'hidden' &&
+            el.offsetHeight > 10 && !el.classList.contains('ACA_Hide')
+        }
+        var modalText = layer && visible(layer)
+          ? (layer.innerText || '').replace(/\s+/g, ' ').trim()
+          : ''
+        return {
+          capEdit: /CapEdit\.aspx/i.test(location.href),
+          modal: visible(layer) && /Select Application Page Flow Step|Pick up where I left off/i.test(modalText),
+        }
+      })
+      if (state.capEdit) return { skipped: true }
+      if (state.modal) {
+        sawModal = true
+        break
+      }
+      await page.waitForTimeout(500)
+    }
+    if (!sawModal) {
+      throw new Error('Resume page-flow modal (#dvACADialogLayer) was not detected after Resume Application')
+    }
+
+    var selected = await page.evaluate(function(choiceText) {
+      var layer = document.getElementById('dvACADialogLayer')
+      if (!layer) return false
+      var target = Array.from(layer.querySelectorAll('input[type="radio"]')).find(function(radio) {
+        var label = radio.id ? layer.querySelector('label[for="' + radio.id + '"]') : null
+        var text = label ? label.innerText : ((radio.closest('td, tr, div') || {}).innerText || '')
+        return text.replace(/\s+/g, ' ').trim() === choiceText
+      })
+      if (!target) return false
+      target.checked = true
+      target.click()
+      target.dispatchEvent(new Event('change', { bubbles: true }))
+      return true
+    }, config.resumeApplication.defaultChoiceText)
+    if (!selected) throw new Error('Could not select "' + config.resumeApplication.defaultChoiceText + '" in resume modal')
+
+    var clickedOk = await page.evaluate(function(okText) {
+      var layer = document.getElementById('dvACADialogLayer')
+      if (!layer) return false
+      var button = Array.from(layer.querySelectorAll('a, button, input[type="button"], input[type="submit"]'))
+        .find(function(el) {
+          return (el.innerText || el.value || '').replace(/\s+/g, ' ').trim() === okText
+        })
+      if (!button) return false
+      button.click()
+      return true
+    }, config.resumeApplication.okText)
+    if (!clickedOk) throw new Error('Could not click OK in resume page-flow modal')
+
+    await page.waitForURL(/CapEdit\.aspx/i, { timeout: 45000 })
+    await waitForPortalPostbackQuiet(page, 45000)
+    await page.waitForTimeout(1500)
+    return { skipped: false }
+  }
+
+  async function resumeExactDraft(portalRecordNumber) {
+    await page.goto(config.selectors.myRecordsUrl, { waitUntil: 'domcontentloaded', timeout: 60000 })
+    await page.waitForTimeout(2000)
+    var resumeTarget = await page.evaluate(function(recordNumber) {
+      function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim() }
+      var expected = recordNumber.toUpperCase()
+      var rows = Array.from(document.querySelectorAll('table[id$="gdvPermitList"] tr, tr.ACA_Grid_Row, tr'))
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i]
+        if (row.querySelector('table')) continue
+        var text = clean(row.innerText)
+        if (!text || text.toUpperCase().indexOf(expected) < 0) continue
+        var exactToken = text.split(/\s+/).some(function(token) {
+          return token.replace(/[,:;]+$/, '').toUpperCase() === expected
+        })
+        if (!exactToken) continue
+        var control = Array.from(row.querySelectorAll('a, button')).find(function(el) {
+          return /resume\s+application/i.test(clean(el.innerText || el.title || el.value))
+        })
+        if (!control) continue
+        var href = control.getAttribute('href') || ''
+        var match = href.match(/__doPostBack\('([^']+)'/)
+        return {
+          controlId: control.id || null,
+          postTarget: match ? match[1].replace(/\\'/g, "'") : null,
+        }
+      }
+      return null
+    }, portalRecordNumber)
+
+    if (!resumeTarget) throw new Error('Exact portal_record_number was not found with a Resume Application control')
+    if (resumeTarget.postTarget) {
+      await aspNetPostBack(resumeTarget.postTarget)
+    } else if (resumeTarget.controlId) {
+      await page.locator('#' + resumeTarget.controlId).click({ force: true })
+    } else {
+      throw new Error('Resume Application control did not expose a safe click target')
+    }
+
+    await handleResumePageFlowModal()
+    if (!/CapEdit\.aspx/i.test(page.url())) throw new Error('Resume did not land on the CapEdit wizard')
+    var state = await assertBeforePaymentBoundary()
+    var wizardVisible = await page.locator(
+      config.selectors.streetNo + ', ' +
+      config.selectors.workType + ', ' +
+      config.selectors.jobDescription + ', ' +
+      config.selectors.planUploadAcknowledgement
+    ).count()
+    if (!wizardVisible && !state.isReview) throw new Error('Resume reached CapEdit but no verified wizard surface was found')
+  }
+
+  async function fillTextExact(selector, value, fieldName) {
+    var locator = page.locator(selector).first()
+    await locator.waitFor({ state: 'visible', timeout: 15000 })
+    await locator.fill(String(value))
+    var actual = await locator.inputValue()
+    if (actual.trim() !== String(value).trim()) throw new Error(fieldName + ' did not retain the expected value')
+  }
+
+  async function clearIfPresent(selector) {
+    var locator = page.locator(selector).first()
+    if (await locator.count()) await locator.fill('')
+  }
+
+  async function selectExactLabel(selector, label, fieldName) {
+    var locator = page.locator(selector).first()
+    await locator.waitFor({ state: 'visible', timeout: 15000 })
+    await locator.selectOption({ label: label })
+    var actual = await locator.locator('option:checked').textContent()
+    if (String(actual || '').trim() !== label) throw new Error(fieldName + ' did not select "' + label + '"')
+  }
+
+  async function setChecked(selector, checked, fieldName) {
+    var locator = page.locator(selector).first()
+    await locator.waitFor({ state: 'visible', timeout: 15000 })
+    if (checked) await locator.check()
+    else await locator.uncheck()
+    if (await locator.isChecked() !== checked) throw new Error(fieldName + ' did not retain the expected checked state')
+  }
+
+  async function setRadio(yesSelector, noSelector, yes, fieldName) {
+    var selector = yes ? yesSelector : noSelector
+    var locator = page.locator(selector).first()
+    await locator.waitFor({ state: 'visible', timeout: 15000 })
+    await locator.check()
+    if (!(await locator.isChecked())) throw new Error(fieldName + ' did not retain the expected choice')
+  }
+
+  async function continueUntil(targetSelector, targetName, maxAdvances) {
+    for (var advance = 0; advance <= maxAdvances; advance++) {
+      if (await page.locator(targetSelector).first().isVisible().catch(function() { return false })) return
+      var state = await assertBeforePaymentBoundary()
+      if (state.isReview) throw new Error('Hard stop: refused to Continue from Review while seeking ' + targetName)
+      var continueButton = page.locator(config.selectors.continueBtn).first()
+      if (!(await continueButton.count())) throw new Error('Continue Application control missing before ' + targetName)
+      await continueButton.waitFor({ state: 'visible', timeout: 15000 })
+      await continueButton.click()
+      await waitForPortalPostbackQuiet(page, 45000)
+      await page.waitForTimeout(1200)
+    }
+    throw new Error('Could not reach ' + targetName + ' within the guarded wizard advance limit')
+  }
+
+  async function continueUntilReview(maxAdvances) {
+    for (var advance = 0; advance <= maxAdvances; advance++) {
+      var state = await assertBeforePaymentBoundary()
+      if (state.isReview) return state
+      var continueButton = page.locator(config.selectors.continueBtn).first()
+      if (!(await continueButton.count())) throw new Error('Continue Application control missing before Review')
+      await continueButton.waitFor({ state: 'visible', timeout: 15000 })
+      await continueButton.click()
+      await waitForPortalPostbackQuiet(page, 45000)
+      await page.waitForTimeout(1200)
+    }
+    throw new Error('Could not reach Review within the guarded wizard advance limit')
+  }
+
+  async function captureSanitizedReviewSummary() {
+    var raw = await page.evaluate(function() {
+      function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim() }
+      var sections = Array.from(document.querySelectorAll('h1, h2, h3, .ACA_Title_Bar, .ACA_SectionTitle'))
+        .map(function(el) { return clean(el.innerText) })
+        .filter(Boolean)
+        .slice(0, 40)
+      var fields = []
+      document.querySelectorAll('tr').forEach(function(row) {
+        var cells = Array.from(row.querySelectorAll(':scope > td')).map(function(cell) { return clean(cell.innerText) }).filter(Boolean)
+        if (cells.length < 2) return
+        fields.push({ label: cells[0].slice(0, 160), value: cells.slice(1).join(' | ').slice(0, 500) })
+      })
+      return { url: location.href, sections: sections, fields: fields.slice(0, 250) }
+    })
+    var seen = {}
+    return {
+      capturedAt: new Date().toISOString(),
+      sections: raw.sections,
+      fields: raw.fields.filter(function(field) {
+        var key = field.label + '|' + field.value
+        if (seen[key]) return false
+        seen[key] = true
+        return true
+      }).map(function(field) {
+        return { label: field.label, value: redactReviewValue(field.label, field.value) }
+      }),
+    }
+  }
+
+  async function runBootstrapStep(step, name, fn, checkpointData) {
+    var recoveringPastStep = startFromStep >= step
+    return logStep(page, runId, step, name, fn, checkpointData, recoveringPastStep
+      ? { alwaysRun: true, preserveCheckpoint: true }
+      : undefined)
+  }
+
+  async function runPolkPhase2() {
+    var supabase = getSupabase()
+    var locationCheckpoint = { fields: [] }
+    var detailCheckpoint = { fields: [] }
+    var documentCheckpoint = { fields: [] }
+    var reviewCheckpoint = { stoppedAt: 'review', humanApprovalRequired: true }
+
+    await runBootstrapStep(1, 'phase2_login', performPortalLogin, { bootstrap: true })
+    await runBootstrapStep(2, 'phase2_resume_draft', async function() {
+      await resumeExactDraft(runContract.portalRecordNumber)
+    }, { exactRecordFromCurrentRunPayload: true })
+
+    await logStep(page, runId, 3, 'phase2_location_people', async function() {
+      await continueUntil(config.selectors.workType, 'Location & People permit information', 4)
+      await setRadio(config.selectors.gateAccessYes, config.selectors.gateAccessNo, phase2Values.gateCodeRequired, 'Gate Code')
+      if (phase2Values.gateCodeRequired) await fillTextExact(config.selectors.gateCode, phase2Values.gateCode, 'Gate Code value')
+      else await clearIfPresent(config.selectors.gateCode)
+      await setRadio(config.selectors.codeViolationYes, config.selectors.codeViolationNo, phase2Values.codeViolation, 'Code Violation')
+      if (phase2Values.codeViolation) {
+        await fillTextExact(config.selectors.codeViolationCaseNumber, phase2Values.codeViolationCaseNumber, 'Code Violation case number')
+      } else {
+        await clearIfPresent(config.selectors.codeViolationCaseNumber)
+      }
+      await setRadio(config.selectors.applicantOwnerYes, config.selectors.applicantOwnerNo, false, 'Applicant is Owner')
+      // Construction Waste intentionally left unset (config.fieldFillPolicy.leaveUnset).
+      await setRadio(config.selectors.virtualInspectionYes, config.selectors.virtualInspectionNo, false, 'Virtual Inspections')
+      await setRadio(config.selectors.privateProviderYes, config.selectors.privateProviderNo, false, 'Private Provider')
+      await selectExactLabel(config.selectors.packetSubmission, phase2Values.packetSubmission, 'Packet Submission')
+      await selectExactLabel(config.selectors.fs119Status, phase2Values.fs119Status, 'FS 119 Status')
+      await selectExactLabel(config.selectors.workType, phase2Values.workType, 'Work Type')
+      await selectExactLabel(config.selectors.propertyType, phase2Values.propertyType, 'Property Type')
+      await selectExactLabel(config.selectors.reroofPermitType, phase2Values.reroofPermitType, 'Reroof Permit Type')
+      await fillTextExact(config.selectors.numberOfSquares, phase2Values.numberOfSquares, 'Number of Squares')
+      await selectExactLabel(config.selectors.roofType, phase2Values.roofType, 'Roof Type')
+      await setChecked(config.selectors.reroofAffidavit, true, 'Reroof affidavit')
+      await setChecked(config.selectors.asbestosStatement, true, 'Asbestos statement')
+      await clearIfPresent(config.selectors.commercialFranchiseHolderName)
+      await clearIfPresent(config.selectors.commercialFranchiseHolderPhone)
+      await clearIfPresent(config.selectors.disposalEquipment)
+      await clearIfPresent(config.selectors.disposalFrequency)
+      locationCheckpoint.fields = [
+        'gateCode', 'codeViolation', 'applicantIsOwner', 'virtualInspections',
+        'privateProvider', 'packetSubmission', 'fs119Status', 'workType',
+        'propertyType', 'reroofPermitType', 'numberOfSquares', 'roofType',
+        'reroofAffidavit', 'asbestosStatement',
+      ]
+    }, locationCheckpoint)
+
+    await logStep(page, runId, 4, 'phase2_permit_detail', async function() {
+      await continueUntil(config.selectors.jobDescription, 'Permit Detail', 5)
+      await fillTextExact(config.selectors.jobDescription, phase2Values.jobDescription, 'Job Description')
+      await fillTextExact(config.selectors.jobValue, phase2Values.jobValue, 'Job Value')
+      detailCheckpoint.fields = ['jobDescription', 'jobValue']
+    }, detailCheckpoint)
+
+    await logStep(page, runId, 5, 'phase2_documents_acknowledgement', async function() {
+      await continueUntil(config.selectors.planUploadAcknowledgement, 'Documents acknowledgement', 4)
+      await setChecked(config.selectors.planUploadAcknowledgement, true, 'Plan Upload Acknowledgement')
+      documentCheckpoint.fields = ['planUploadAcknowledgement']
+      documentCheckpoint.uploadAttempted = false
+    }, documentCheckpoint)
+
+    await logStep(page, runId, 6, 'phase2_review_hard_stop', async function() {
+      var reviewState = await continueUntilReview(3)
+      if (!reviewState.isReview) throw new Error('Review screen was not positively confirmed')
+      await assertBeforePaymentBoundary()
+
+      var summary = await captureSanitizedReviewSummary()
+      var fullScreenshotPath = 'runs/' + runId + '/phase2-review-full.png'
+      var fullScreenshot = await page.screenshot({ fullPage: true, type: 'png' })
+      assertSupabaseOk(await supabase.storage.from('screenshots').upload(fullScreenshotPath, fullScreenshot, {
+        contentType: 'image/png',
+        upsert: true,
+      }), 'Upload full Polk Review screenshot')
+
+      assertSupabaseOk(await supabase.from('automation_logs').insert({
+        run_id: runId,
+        step_number: 6,
+        step_name: 'phase2_review_hard_stop',
+        success: true,
+        screenshot_path: fullScreenshotPath,
+        notes: JSON.stringify(summary),
+        logged_at: new Date().toISOString(),
+      }), 'Write Polk Review summary to automation_logs')
+
+      var actionResult = await logRunAction({
+        runId: runId,
+        jobId: jobData.id,
+        companyId: jobData.company_id,
+        action: 'phase2_review_ready',
+        status: 'success',
+        stepNumber: 6,
+        stepName: 'phase2_review_hard_stop',
+        screenshotPath: fullScreenshotPath,
+        portalResponse: 'Review screen loaded; automation stopped before Continue Application',
+        metadata: {
+          reviewSummary: summary,
+          humanApprovalRequired: true,
+          paymentReached: false,
+          documentUploadAttempted: false,
+        },
+      })
+      if (!actionResult.ok) throw new Error('Could not write Polk Review summary to run_actions: ' + actionResult.error)
+
+      assertSupabaseOk(await supabase.from('automation_runs').update({
+        run_status: RUN_STATUS_PHASE2_REVIEW,
+        completed_at: new Date().toISOString(),
+        error_message: null,
+      }).eq('id', runId), 'Mark Polk Phase 2 run needs_review')
+      assertSupabaseOk(await supabase.from('jobs').update({
+        job_status: 'needs_review',
+      }).eq('id', jobData.id), 'Mark Polk Phase 2 job needs_review')
+
+      reviewCheckpoint.screenshotPath = fullScreenshotPath
+      reviewCheckpoint.reviewFieldCount = summary.fields.length
+    }, reviewCheckpoint)
+
+    console.log('POLK PHASE 2 COMPLETE — STOPPED AT REVIEW FOR HUMAN APPROVAL')
+    return { status: 'needs_review', stoppedAt: 'review' }
+  }
+
   var resume = await logRecoveryStart(runId)
   var startFromStep = resume.isResume ? resume.stepNumber : 0
   console.log('[recovery] Starting from step:', startFromStep)
 
   try {
+    if (runContract.runType === 'permit_resume') {
+      return await runPolkPhase2()
+    }
+
     // Step 1 — Login (reuse saved browser session when still valid)
     stepNumber++
     if (!(await shouldSkipStep(runId, stepNumber))) {
@@ -1158,4 +1747,10 @@ async function runPolkCounty(jobData, runId, runnerOptions) {
   })
 }
 
-module.exports = { runPolkCounty, runAccelaPortal }
+module.exports = {
+  runPolkCounty,
+  runAccelaPortal,
+  validatePolkRunContract,
+  resolvePolkPhase2Values,
+  isPaymentBoundaryState,
+}

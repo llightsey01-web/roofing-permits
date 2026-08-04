@@ -53,14 +53,26 @@ async function loadAhjForJob(job) {
   return ahj
 }
 
-async function runPermitWorkflow(job, runId) {
+async function runPermitWorkflow(job, run) {
+  var runId = run && typeof run === 'object' ? run.id : run
+  var runRecord = run && typeof run === 'object' ? run : { id: runId, run_type: null, payload: {} }
   var ahj = await loadAhjForJob(job)
   console.log('[worker] AHJ:', ahj.name, 'workflow:', ahj.workflow_file)
 
   switch (ahj.workflow_file) {
     case 'polk-county.runner.js': {
+      var polkRunType = runRecord.run_type || deriveRunType(job)
+      if (polkRunType === 'permit_submit') {
+        throw Object.assign(
+          new Error('Polk permit_submit is disabled; Phase 2 stops at Review and requires human approval'),
+          { errorCode: 'unsupported_run_type' }
+        )
+      }
       var { runPolkCounty } = loadPolkRunner()
-      await runPolkCounty(job, runId)
+      await runPolkCounty(job, runId, {
+        runType: polkRunType,
+        runPayload: runRecord.payload || {},
+      })
       return
     }
     case 'lee-county.runner.js': {
@@ -94,7 +106,7 @@ async function executeRun(job, run) {
       return
     }
 
-    await runPermitWorkflow(job, runId)
+    await runPermitWorkflow(job, runRecord)
 
     console.log('[worker] Run complete:', runId)
   } catch (err) {
