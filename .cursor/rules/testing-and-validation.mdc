@@ -1,0 +1,16 @@
+---
+description: Safe testing and validation commands for DART iQ
+globs: "tests/**/*,jest.config.js,eslint.config.mjs,package.json,worker/package.json,automation/**/*,worker/**/*,trigger/**/*,workflows/**/*,.github/workflows/**/*"
+alwaysApply: false
+---
+
+# Testing And Validation
+
+- Follow `AGENTS.md`; never claim a test passed unless you ran it successfully.
+- Safe default commands: `npm run lint`, `npm run test:unit`, `npm run build`, `node --check <changed-file>`.
+- AHJ config changes should run `node -e "require('./automation/ahjs/config-validator.js').validateAllConfigs()"`.
+- Do not run tests or scripts that contact live government portals, submit permits, send customer messages, process queued jobs, create charges, notarize, e-record, mutate live data, or trigger production workflows.
+- Inspect integration tests before running them; skip and explain if they require real Supabase, real credentials, live portals, webhooks, or external side effects.
+- Worker changes need worker-specific validation; a successful Next.js build alone is insufficient.
+- Current repository caveat: tracked test coverage is sparse and `.gitignore` historically ignored `*.test.js`. Document missing validation honestly.
+- For existing lint/test debt, report the failing command and representative errors without hiding or over-fixing unrelated code.

@@ -1,0 +1,17 @@
+---
+description: Supabase, PostgreSQL, migrations, RLS, and database access rules
+globs: "supabase/**/*,app/api/**/*.js,app/api/**/*.ts,lib/supabase*.js,lib/auth/**/*.js,lib/**/workflow-state.js,lib/**/workflow-*.js,scripts/*sql*.js,scripts/migrate-*.js"
+alwaysApply: false
+---
+
+# Supabase And Database
+
+- Follow `AGENTS.md` and `MIGRATIONS.md`, especially the staging/production database boundary.
+- Agents may write and apply migrations against staging (`trimwcwzimfgzgimfwby`) for testing. Production SQL requires Logan's review and manual execution.
+- Put schema changes in `supabase/migrations/` as complete migration files. Do not rewrite historical migrations.
+- `company_id` is the tenant key. Every tenant-owned query must include or inherit verified company scope.
+- Browser code uses `lib/supabase.js` with anon credentials. Service-role access from `lib/supabase-server.js` is server/worker only and must include explicit auth and tenant checks.
+- Never expose `SUPABASE_SERVICE_ROLE_KEY`, signed URLs, credentials, or PII to browser code/logs.
+- Never disable RLS as a shortcut. New tenant-owned tables need RLS policies before production use.
+- Evaluate indexes for new foreign keys and common query paths. Update database types if schema changes require it.
+- Validate with safe static commands and staging migration checks where appropriate. Do not query or mutate production data.

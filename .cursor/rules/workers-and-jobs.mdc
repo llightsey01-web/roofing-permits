@@ -1,0 +1,17 @@
+---
+description: Railway workers, queues, Trigger tasks, retries, checkpoints, and workflow rules
+globs: "worker/**/*,trigger/**/*,workflows/**/*,lib/workflow/**/*,lib/automation/automation-gate.js,app/api/automation/**/*,app/api/admin/workflows/**/*,app/api/workflows/**/*"
+alwaysApply: false
+---
+
+# Workers Jobs And Workflows
+
+- Follow `AGENTS.md` and `MIGRATIONS.md`. Staging migrations are allowed; production SQL requires Logan's review and manual execution.
+- All job-processing workers must call `isAutomationEnabled()` before claiming or processing queued `automation_runs`. Keep the gate fail-closed.
+- Do not trigger, replay, deploy, or mutate production Trigger.dev runs.
+- `workflows/permit-workflow.js` defines the 16-step durable permit workflow; keep step keys and run types backward-compatible unless the task explicitly changes workflow contracts.
+- Legacy production processing still uses `automation_runs`; durable workflow paths bridge into legacy runs when enabled. Check both paths when changing behavior.
+- Maintain idempotency, retry limits, checkpoint/resume behavior, and positive confirmation before irreversible actions.
+- Do not mark permits, NOCs, recordings, or workflows complete solely because a click, enqueue, or API call succeeded.
+- Use sanitized logging through existing worker/monitoring/audit helpers. Do not log credentials, tokens, signed URLs, PII dumps, or document contents.
+- Safe validation usually includes `node --check` for changed worker/workflow files plus `npm run lint`; do not run production workers for validation.

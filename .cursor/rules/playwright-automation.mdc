@@ -1,0 +1,17 @@
+---
+description: Playwright AHJ portal automation and session rules
+globs: "automation/**/*,worker/runner.js,worker/handlers/**/*,lib/automation/**/*,lib/proof/**/*,lib/epn/**/*,lib/erecord/**/*"
+alwaysApply: false
+---
+
+# Playwright And AHJ Automation
+
+- Follow `AGENTS.md` before changing automation code.
+- Worker-side processing must respect `lib/automation/automation-gate.js`; do not add a path that processes queued work while the gate is off.
+- Do not run scripts that contact live AHJ, Proof, ePN, DocuSign, or government portals unless the founder explicitly requests it.
+- Session persistence uses `lib/automation/session-store.js` and providers `polk_accela`, `lee_accela`, `proof`, and `epn`. Do not commit or print storage state.
+- Credentials must come through `lib/credentials/*`; never decrypt or expose them in browser code or logs.
+- Use config-driven selectors in `automation/ahjs/configs/*` and shared runners in `automation/ahjs/shared/*` where possible.
+- Do not bypass CAPTCHA, MFA, rate limits, portal security, or validation checks. Stop and report blockers.
+- Before retries or finalization, check for saved drafts, existing permit numbers, receipts, confirmations, workflow events, or prior run state.
+- Validate AHJ config edits with `node -e "require('./automation/ahjs/config-validator.js').validateAllConfigs()"` and syntax-check changed CommonJS files with `node --check`.

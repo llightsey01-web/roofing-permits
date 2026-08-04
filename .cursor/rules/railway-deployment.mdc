@@ -1,0 +1,17 @@
+---
+description: Railway deployment, Docker, environment, and service-boundary rules
+globs: "railway.json,worker/railway*.json,worker/Dockerfile*,marketing/railway.json,.github/workflows/**/*,.env*.example,package.json,worker/package.json,trigger.config.mjs"
+alwaysApply: false
+---
+
+# Railway And Deployment
+
+- Follow `AGENTS.md` before changing deployment surfaces.
+- Do not rename, delete, merge, or repurpose Railway services automatically.
+- Do not change production Railway variables, domains, database URLs, or service identities automatically.
+- Do not point staging services at production Supabase.
+- Root `railway.json` is the web app. `worker/railway.json`, `worker/railway.noc-proof-erecord.json`, and `worker/railway.ops.json` are separate workers. `marketing/railway.json` is separate marketing deployment.
+- A root `npm run build` does not validate worker containers. Worker changes need service-specific syntax/build checks when safe.
+- Trigger.dev is control-plane orchestration only; Playwright stays on Railway workers.
+- Env var additions must update `.env.staging.example` and `.env.production.example` with placeholders only.
+- Never run `npm run trigger:deploy` or production deploy/replay commands as validation.

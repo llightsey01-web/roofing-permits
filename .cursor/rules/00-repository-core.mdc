@@ -1,0 +1,15 @@
+---
+description: Core DART iQ repository instructions
+alwaysApply: true
+---
+
+# Core Repository Rule
+
+- Read and follow `AGENTS.md` before making changes. It is the canonical instruction file for DART iQ.
+- Treat this as a live multi-tenant production SaaS repository. Correctness, tenant isolation, credential safety, and workflow recoverability are mandatory.
+- The tenant key is `company_id`. Never trust a client-supplied `company_id` without authenticated context from `lib/auth/session.js`.
+- Agents may write and apply migrations against staging (`trimwcwzimfgzgimfwby`). Production SQL requires Logan's review and manual execution.
+- Do not change live data, production Railway variables, persisted browser sessions, credentials, encryption keys, or Trigger.dev production runs.
+- Preserve `lib/automation/automation-gate.js` fail-closed semantics. Workers must not process queued runs while `platform_settings.automation_enabled` is not true.
+- Keep changes small and scoped. Do not make unrelated refactors or resurrect the removed contractor materials system.
+- Before finalizing, review the diff for secrets, tenant leaks, SQL execution, automation-gate bypasses, weakened auth/RLS/encryption, and unrelated source changes.

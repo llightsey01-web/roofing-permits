@@ -1,0 +1,16 @@
+---
+description: Next.js UI, API route, and browser-code rules
+globs: "app/**/*.{js,ts,jsx,tsx},components/**/*.{js,ts,jsx,tsx},lib/ui/**/*.js"
+alwaysApply: false
+---
+
+# Frontend And API Routes
+
+- Follow `AGENTS.md` and keep server-only logic out of client components.
+- Client components must not import service-role Supabase, credential services, encryption modules, Node-only SDKs, or secret-bearing env vars.
+- Contractor-facing API routes should authenticate with `lib/auth/session.js` and scope by `company_id`.
+- Admin-only routes must call `requireSuperAdmin()` or an equivalent verified check before service-role reads/writes.
+- Do not trust client-supplied `company_id`, job IDs, run IDs, or storage paths without server-side ownership checks.
+- The contractor chat widget is not working unless server-side `ANTHROPIC_API_KEY` is configured. Never expose that key or any AI/provider secret to browser code.
+- Do not reintroduce the removed contractor materials tab/system.
+- Validate UI/API changes with relevant `npm run lint`, `npm run build`, and safe route/module tests. Do not call live webhooks or external portals for validation.
