@@ -145,9 +145,28 @@ function main() {
   assert.strictEqual(overrides.reroofPermitType, 'Roof Cover 3 inches or Less')
   assert.strictEqual(overrides.privateProvider, false)
 
-  assert.strictEqual(isPaymentBoundaryState('https://example.test/Cap/CapEdit.aspx', 'Step 4: Review'), false)
-  assert.strictEqual(isPaymentBoundaryState('https://example.test/ShoppingCart/ShoppingCart.aspx', ''), true)
-  assert.strictEqual(isPaymentBoundaryState('https://example.test/Cap/CapEdit.aspx', 'Step 5: Pay Fees'), true)
+  // Signature: (url, currentStepLine, pageText)
+  assert.strictEqual(isPaymentBoundaryState('https://example.test/Cap/CapEdit.aspx', 'Step 4: Review', ''), false)
+  assert.strictEqual(isPaymentBoundaryState('https://example.test/ShoppingCart/ShoppingCart.aspx', '', ''), true)
+  assert.strictEqual(isPaymentBoundaryState('https://example.test/Cap/CapEdit.aspx', 'Step 5: Pay Fees', ''), true)
+  // CapEdit query param must not trip ShoppingCart (forensics false positive)
+  assert.strictEqual(
+    isPaymentBoundaryState(
+      'https://aca-prod.accela.com/POLKCO/Cap/CapEdit.aspx?isFromShoppingCart=&Module=Building',
+      'Step 1 : Location & People > Permit Information',
+      ''
+    ),
+    false
+  )
+  // Wizard breadcrumb listing "Pay Fees" must not trip Step-5 detection
+  assert.strictEqual(
+    isPaymentBoundaryState(
+      'https://aca-prod.accela.com/POLKCO/Cap/CapEdit.aspx',
+      'Step 1 : Location & People > Permit Information',
+      '1 Location & People 2 Permit Detail 3 Documents 4 Review 5 Pay Fees 6'
+    ),
+    false
+  )
 
   var captured = validateCapturedSelectorIds()
   console.log(JSON.stringify({

@@ -143,11 +143,31 @@ function resolvePolkPhase2Values(jobData, config) {
   return values
 }
 
-function isPaymentBoundaryState(url, pageText) {
+function paymentBoundaryPathname(url) {
   var location = String(url || '')
+  if (!location) return ''
+  // Playwright page.url() is absolute; still guard relative/invalid inputs.
+  if (/^https?:\/\//i.test(location)) {
+    try {
+      return new URL(location).pathname || ''
+    } catch (e) {
+      // fall through to query/hash strip
+    }
+  }
+  return location.split(/[?#]/)[0]
+}
+
+function isPaymentBoundaryState(url, currentStepLine, pageText) {
+  var path = paymentBoundaryPathname(url)
+  var stepLine = String(currentStepLine || '')
   var text = String(pageText || '')
-  return /ShoppingCart|\/payment\/|pay\.aspx|checkout/i.test(location) ||
-    /Step\s*5\s*:\s*Pay Fees|Payment information|PAY NOW|CSG Forte/i.test(text)
+  // Path-only URL checks — CapEdit query params include isFromShoppingCart= and must not match.
+  return /\/ShoppingCart\//i.test(path) ||
+    /\/payment\//i.test(path) ||
+    /pay\.aspx/i.test(path) ||
+    /checkout/i.test(path) ||
+    /Step\s*5\s*:\s*Pay Fees/i.test(stepLine) ||
+    /Payment information|PAY NOW|CSG Forte/i.test(text)
 }
 
 function redactReviewValue(label, value) {
@@ -944,7 +964,7 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
 
   async function assertBeforePaymentBoundary() {
     var state = await getWizardState()
-    if (state.isPayment || isPaymentBoundaryState(state.url, state.currentStepLine + ' ' + state.currentText)) {
+    if (state.isPayment || isPaymentBoundaryState(state.url, state.currentStepLine, state.currentText)) {
       throw Object.assign(
         new Error('Hard stop: Polk Phase 2 reached a Pay Fees or payment boundary'),
         { errorCode: 'payment_boundary_blocked' }
