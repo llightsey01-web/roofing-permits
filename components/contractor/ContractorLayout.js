@@ -57,6 +57,11 @@ const navSections = [
     label: 'ACCOUNT',
     items: [
       {
+        href: '/contractor/billing',
+        label: 'Billing',
+        match: (p) => p.startsWith('/contractor/billing'),
+      },
+      {
         href: '/contractor/settings',
         label: 'Settings',
         match: (p) => p.startsWith('/contractor/settings'),
