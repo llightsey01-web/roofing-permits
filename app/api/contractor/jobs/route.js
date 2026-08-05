@@ -18,6 +18,7 @@ const {
   isValidRoofType,
   isValidWorkType,
 } = require('../../../../lib/intake/portal-field-options.js')
+const { canCompanySubmitNewPermit } = require('../../../../lib/billing/submission-gate.js')
 
 export async function GET(request) {
   try {
@@ -55,6 +56,15 @@ export async function POST(request) {
     context = await requireCompanyUser(context)
     if (context.error) {
       return Response.json({ error: context.error }, { status: context.status })
+    }
+
+    // Billing shutoff: block NEW permit submissions only (not in-progress jobs).
+    const submissionGate = await canCompanySubmitNewPermit(context.companyId)
+    if (!submissionGate.allowed) {
+      return Response.json({
+        error: submissionGate.reason || 'New permit submissions are blocked due to overdue invoices.',
+        code: 'permit_submission_blocked',
+      }, { status: 403 })
     }
 
     const body = await request.json()
