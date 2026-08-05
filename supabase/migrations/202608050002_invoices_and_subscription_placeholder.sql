@@ -86,7 +86,10 @@ CREATE INDEX IF NOT EXISTS invoices_status_due_date_idx
   ON public.invoices (status, due_date);
 
 COMMENT ON TABLE public.invoices IS
-  'Monthly company invoices. permit_fees_total_cents from confirmed vendor_payments; subscription_amount_cents is a pricing placeholder (0 until priced).';
+  'Monthly company invoices. permit_fees_total_cents = confirmed vendor_payments on jobs with job_status=permit_issued and permit_issued_at in the billing period — not all confirmed vendor spend. subscription_amount_cents is a pricing placeholder (0 until priced).';
+
+COMMENT ON COLUMN public.invoices.permit_fees_total_cents IS
+  'Sum of confirmed vendor_payments for jobs issued (permit_issued / permit_issued_at) in this period. Confirmed payout alone is not billable.';
 
 COMMENT ON COLUMN public.invoices.subscription_amount_cents IS
   'Placeholder for future subscription pricing. Default 0; do not invent tier amounts here.';
