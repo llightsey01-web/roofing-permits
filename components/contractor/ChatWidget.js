@@ -179,7 +179,7 @@ export default function ChatWidget({ jobId }) {
           width: '52px',
           height: '52px',
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+          background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
           border: 'none',
           cursor: 'pointer',
           display: 'flex',
@@ -240,7 +240,7 @@ export default function ChatWidget({ jobId }) {
               width: '32px',
               height: '32px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -316,7 +316,7 @@ export default function ChatWidget({ jobId }) {
                     padding: '10px 14px',
                     borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                     background: isUser
-                      ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                      ? 'linear-gradient(135deg, #1d4ed8, #3b82f6)'
                       : assistantBg,
                     border: isUser ? 'none' : '1px solid ' + assistantBorder,
                     fontSize: '13px',
@@ -432,7 +432,7 @@ export default function ChatWidget({ jobId }) {
                 height: '36px',
                 borderRadius: '10px',
                 background: input.trim() && !loading
-                  ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                  ? 'linear-gradient(135deg, #1d4ed8, #3b82f6)'
                   : (isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.1)'),
                 border: 'none',
                 cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',

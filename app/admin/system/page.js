@@ -208,7 +208,7 @@ export default function AdminSystemPage() {
               {formatMinutes(performance.avg_permit_completion_minutes)}
             </p>
           </div>
-          <div style={adminStatCardStyle('#8b5cf6')}>
+          <div style={adminStatCardStyle('var(--portal-accent)')}>
             <p style={{ margin: 0, fontSize: '10px', color: adminTheme.textDim }}>AVG NOC GENERATION</p>
             <p style={{ margin: '6px 0 0', fontSize: '18px', fontWeight: 700 }}>
               {formatMinutes(performance.avg_noc_generation_minutes)}

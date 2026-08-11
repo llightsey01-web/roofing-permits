@@ -279,7 +279,7 @@ export default function AdminOperationsPage() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '18px' }}>
-        <div style={adminStatCardStyle('#818cf8')}>
+        <div style={adminStatCardStyle('var(--portal-accent)')}>
           <p style={{ margin: 0, fontSize: '10px', color: adminTheme.textDim }}>PERMIT QUEUE</p>
           <p style={{ margin: '6px 0 0', fontSize: '22px', fontWeight: 700 }}>{data?.queue?.permit ?? 0}</p>
         </div>
@@ -372,7 +372,7 @@ export default function AdminOperationsPage() {
                       type="button"
                       disabled={busy}
                       onClick={function () { callAction(run.job_id, 'resume') }}
-                      style={btnStyle('#6366f1')}
+                      style={btnStyle('var(--portal-accent-hover)')}
                     >
                       Resume
                     </button>
