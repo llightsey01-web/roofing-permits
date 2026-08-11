@@ -65,3 +65,5 @@ next-env.d.ts
 trace.zip
 /test-results/
 /playwright-report/
+
+.cursor/settings.json
