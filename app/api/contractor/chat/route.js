@@ -150,8 +150,9 @@ export async function POST(request) {
 
     const { data: ahjRequirements } = await supabase
       .from('ahj_requirements')
-      .select('*, ahj_portals(name, county_or_city, portal_url, avg_approval_days, portal_tips)')
+      .select('*, ahj_portals!inner(name, county_or_city, portal_url, avg_approval_days, portal_tips)')
       .eq('is_active', true)
+      .eq('ahj_portals.is_active', true)
 
     const { data: products } = await supabase
       .from('product_approvals')

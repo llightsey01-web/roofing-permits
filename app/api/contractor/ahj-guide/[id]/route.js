@@ -34,6 +34,7 @@ export async function GET(_request, { params }) {
       `
       )
       .eq('id', id)
+      .eq('is_active', true)
       .single()
 
     if (ahjError || !ahj) {
