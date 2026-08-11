@@ -1248,15 +1248,22 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
         var rows = Array.from(document.querySelectorAll('table[id$="gdvPermitList"] tr, tr.ACA_Grid_Row, tr'))
         for (var i = 0; i < rows.length; i++) {
           var row = rows[i]
-          var text = clean(row.innerText).toUpperCase()
-          if (text.indexOf(expected) < 0) continue
+          if (row.querySelector('table')) continue
+          var text = clean(row.innerText)
+          if (!text) continue
+          // Exact token match (same discipline as resumeExactDraft) — avoids
+          // 26TMP-04376 falsely matching a row that shows 26TMP-043760.
+          var exactToken = text.split(/\s+/).some(function (token) {
+            return token.replace(/[,:;]+$/, '').toUpperCase() === expected
+          })
+          if (!exactToken) continue
           // Prefer a CapDetail / Record Number link — never Resume Application (draft path).
           var links = Array.from(row.querySelectorAll('a'))
           var detail = links.find(function (a) {
             var href = String(a.getAttribute('href') || '')
             var label = clean(a.innerText)
             if (/Resume Application/i.test(label)) return false
-            return /CapDetail\.aspx/i.test(href) || label === expected || /View|Detail|Record/i.test(label)
+            return /CapDetail\.aspx/i.test(href) || label.toUpperCase() === expected || /View|Detail|Record/i.test(label)
           })
           if (!detail) {
             detail = links.find(function (a) {
