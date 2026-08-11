@@ -142,20 +142,31 @@ async function main() {
   if (kinds[0] !== 'BEGIN') fail('First statement must be BEGIN')
   if (kinds[kinds.length - 1] !== 'COMMIT') fail('Last statement must be COMMIT')
   const inserts = kinds.slice(1, -1)
-  if (inserts.length !== 14) fail(`Expected 14 INSERTs, got ${inserts.length}`)
-  if (!inserts.every((k) => k === 'INSERT public.ahj_portals')) {
-    fail(`Unexpected INSERT targets: ${inserts.join(', ')}`)
+  if (inserts.length === 0) fail('Expected at least one INSERT between BEGIN and COMMIT')
+  if (!inserts.every((k) => k.startsWith('INSERT '))) {
+    fail(`Unexpected non-INSERT statements between BEGIN/COMMIT: ${inserts.join(', ')}`)
   }
 
-  const insertStmts = stmts.slice(1, -1).map((s) => s.stmt.InsertStmt)
-  for (let i = 0; i < insertStmts.length; i++) {
-    const notes = notesFromInsert(insertStmts[i])
-    if (!notes || !notes.includes('backlog=2026-08-11')) {
-      fail(`INSERT #${i + 1} notes missing backlog=2026-08-11: ${JSON.stringify(notes)}`)
+  const isAccelaBacklog = /accela_ahj_backlog\.sql$/.test(seedPath)
+  if (isAccelaBacklog) {
+    if (inserts.length !== 14) fail(`Expected 14 INSERTs, got ${inserts.length}`)
+    if (!inserts.every((k) => k === 'INSERT public.ahj_portals')) {
+      fail(`Unexpected INSERT targets: ${inserts.join(', ')}`)
     }
+
+    const insertStmts = stmts.slice(1, -1).map((s) => s.stmt.InsertStmt)
+    for (let i = 0; i < insertStmts.length; i++) {
+      const notes = notesFromInsert(insertStmts[i])
+      if (!notes || !notes.includes('backlog=2026-08-11')) {
+        fail(`INSERT #${i + 1} notes missing backlog=2026-08-11: ${JSON.stringify(notes)}`)
+      }
+    }
+
+    console.log('all 14 INSERT notes contain backlog=2026-08-11')
+  } else {
+    console.log(`generic seed: ${inserts.length} INSERT(s) between BEGIN/COMMIT`)
   }
 
-  console.log('all 14 INSERT notes contain backlog=2026-08-11')
   console.log('OK')
 }
 
