@@ -23,7 +23,8 @@ function statusStyle(status) {
     queued: { bg: '#1e293b', text: '#94a3b8' },
     running: { bg: '#422006', text: '#fcd34d' },
     waiting: { bg: '#1e3a5f', text: '#93c5fd' },
-    paused: { bg: '#312e81', text: '#a5b4fc' },
+    // Shifted one step from mapped blue-900/300 to stay distinct from waiting (#1e3a5f/#93c5fd)
+    paused: { bg: '#1e40af', text: '#bfdbfe' },
     failed: { bg: '#450a0a', text: '#fca5a5' },
     completed: { bg: '#064e3b', text: '#6ee7b7' },
     cancelled: { bg: '#1e293b', text: '#64748b' },

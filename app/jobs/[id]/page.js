@@ -507,12 +507,12 @@ export default function JobDetailPage({ params }) {
           {(nocStatus === 'notarized' || nocStatus === 'queued_for_erecord' || nocStatus === 'ready_for_erecord_review' || nocStatus === 'recorded') && (
             <div style={{
               marginTop: '24px', padding: '20px', borderRadius: '10px',
-              border: '1px solid #c7d2fe', backgroundColor: '#eef2ff',
+              border: '1px solid #bfdbfe', backgroundColor: '#eff6ff',
             }}>
-              <p style={{ fontSize: '14px', fontWeight: '600', color: '#312e81', margin: '0 0 6px 0' }}>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#1e3a8a', margin: '0 0 6px 0' }}>
                 eRecording
               </p>
-              <p style={{ fontSize: '13px', color: '#4338ca', margin: '0 0 16px 0' }}>
+              <p style={{ fontSize: '13px', color: '#1d4ed8', margin: '0 0 16px 0' }}>
                 Current NOC status: <strong>{nocStatus.replace(/_/g, ' ')}</strong>
               </p>
 
@@ -561,7 +561,7 @@ export default function JobDetailPage({ params }) {
               )}
 
               {nocStatus === 'queued_for_erecord' && recordingProvider === 'epn' && (
-                <div style={{ marginBottom: '16px', fontSize: '13px', color: '#4338ca', lineHeight: 1.6 }}>
+                <div style={{ marginBottom: '16px', fontSize: '13px', color: '#1d4ed8', lineHeight: 1.6 }}>
                   <p style={{ margin: 0 }}>
                     eRecording queued — ePN package preparation pending or in progress.
                   </p>
@@ -569,7 +569,7 @@ export default function JobDetailPage({ params }) {
               )}
 
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: '#4338ca', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#1d4ed8', marginBottom: '6px' }}>
                   Recording provider
                 </label>
                 <select
@@ -577,7 +577,7 @@ export default function JobDetailPage({ params }) {
                   disabled={providerSaving || nocStatus === 'recorded'}
                   onChange={e => handleRecordingProviderChange(e.target.value)}
                   style={{
-                    padding: '8px 12px', border: '1px solid #c7d2fe', borderRadius: '8px',
+                    padding: '8px 12px', border: '1px solid #bfdbfe', borderRadius: '8px',
                     fontSize: '14px', backgroundColor: 'white', minWidth: '200px',
                   }}
                 >
@@ -606,7 +606,7 @@ export default function JobDetailPage({ params }) {
               {nocStatus === 'notarized' && recordingProvider === 'manual' && (
                 <form onSubmit={handleMarkNocRecorded} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#4338ca', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#1d4ed8', marginBottom: '6px' }}>
                       Recording number *
                     </label>
                     <input
@@ -616,13 +616,13 @@ export default function JobDetailPage({ params }) {
                       placeholder="e.g. 2026-123456"
                       style={{
                         width: '100%', maxWidth: '320px', padding: '10px 12px',
-                        border: '1px solid #c7d2fe', borderRadius: '8px', fontSize: '14px',
+                        border: '1px solid #bfdbfe', borderRadius: '8px', fontSize: '14px',
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#4338ca', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#1d4ed8', marginBottom: '6px' }}>
                       Recorded / stamped NOC (PDF)
                     </label>
                     <input
@@ -633,7 +633,7 @@ export default function JobDetailPage({ params }) {
                     />
                   </div>
 
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#4338ca' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#1d4ed8' }}>
                     <input
                       type="checkbox"
                       checked={recordingNumberOnly}
@@ -647,7 +647,7 @@ export default function JobDetailPage({ params }) {
                     disabled={recordingSubmitting}
                     style={{
                       alignSelf: 'flex-start', padding: '10px 18px',
-                      backgroundColor: recordingSubmitting ? '#94a3b8' : '#4338ca',
+                      backgroundColor: recordingSubmitting ? '#94a3b8' : '#2563eb',
                       color: 'white', border: 'none', borderRadius: '8px',
                       fontSize: '13px', fontWeight: '600', cursor: recordingSubmitting ? 'not-allowed' : 'pointer',
                     }}
@@ -658,7 +658,7 @@ export default function JobDetailPage({ params }) {
               )}
 
               {nocStatus === 'notarized' && recordingProvider === 'epn' && (
-                <div style={{ fontSize: '13px', color: '#4338ca', lineHeight: 1.6 }}>
+                <div style={{ fontSize: '13px', color: '#1d4ed8', lineHeight: 1.6 }}>
                   <p style={{ margin: '0 0 8px 0' }}>
                     Notarized NOC ready. ePN package preparation runs automatically after Proof completion.
                   </p>
@@ -680,7 +680,7 @@ export default function JobDetailPage({ params }) {
               )}
 
               {nocStatus === 'notarized' && (recordingProvider === 'simplifile' || recordingProvider === 'csc') && (
-                <p style={{ fontSize: '13px', color: '#4338ca', margin: 0 }}>
+                <p style={{ fontSize: '13px', color: '#1d4ed8', margin: 0 }}>
                   {recordingProvider === 'simplifile' ? 'Simplifile' : 'CSC'} automation is not configured yet. Switch to <strong>Manual</strong> to complete recording.
                 </p>
               )}

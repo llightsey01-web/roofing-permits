@@ -26,7 +26,8 @@ const nocStatusConfig = {
   sent_for_notarization: { bg: '#422006', text: '#fcd34d', label: 'Awaiting sig' },
   signed: { bg: '#064e3b', text: '#6ee7b7', label: 'Signed' },
   notarized: { bg: '#064e3b', text: '#34d399', label: 'Notarized' },
-  submitted_to_erecord: { bg: '#312e81', text: '#a5b4fc', label: 'eRecord' },
+  // Shifted one step from mapped blue-900/300 to stay distinct from generated/sent (#1e3a5f/#93c5fd)
+  submitted_to_erecord: { bg: '#1e40af', text: '#bfdbfe', label: 'eRecord' },
   recorded: { bg: '#14532d', text: '#86efac', label: 'Recorded' },
   error: { bg: '#450a0a', text: '#fca5a5', label: 'Error' },
 }
