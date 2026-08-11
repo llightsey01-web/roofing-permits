@@ -98,9 +98,74 @@ function main() {
   expectThrow(function() {
     validatePolkRunContract('permit_resume', {})
   }, 'missing_portal_record_number')
+  expectThrow(function() {
+    validatePolkRunContract('permit_document_upload', {})
+  }, 'missing_portal_record_number')
+  expectThrow(function() {
+    validatePolkRunContract('permit_phase_2', { portal_record_number: 'X' })
+  }, 'unsupported_run_type')
 
   var contract = validatePolkRunContract('permit_resume', { portal_record_number: 'TEST-DRAFT-1' })
   assert.strictEqual(contract.portalRecordNumber, 'TEST-DRAFT-1')
+
+  var uploadContract = validatePolkRunContract('permit_document_upload', {
+    portal_record_number: 'BT-TEST-1',
+  })
+  assert.strictEqual(uploadContract.runType, 'permit_document_upload')
+  assert.strictEqual(uploadContract.portalRecordNumber, 'BT-TEST-1')
+
+  assert.strictEqual(config.postSubmitAttachments.confirmedForRoofingPermit, false)
+  assert.strictEqual(typeof config.postSubmitAttachments.selectors.fileInput, 'string')
+
+  var {
+    buildPostSubmitUploadPlan,
+    assertUploadSelectorsConfirmed,
+    isPostSubmitAttachmentSurface,
+  } = require('./polk-document-upload.js')
+
+  expectThrow(function() {
+    assertUploadSelectorsConfirmed(config)
+  }, 'selectors_unconfirmed')
+
+  var missingPlan = buildPostSubmitUploadPlan({
+    requirements: [
+      { document_role: 'notice_of_commencement', required: true, requires_permit_number: false },
+      { document_role: 'product_approval', required: true, requires_permit_number: false },
+      { document_role: 'approved_permit', required: true, requires_permit_number: true },
+    ],
+    documents: [
+      { id: '1', document_type: 'notice_of_commencement', file_path: 'a/noc.pdf', file_name: 'noc.pdf' },
+    ],
+  })
+  assert.strictEqual(missingPlan.ok, false)
+  assert.deepStrictEqual(missingPlan.missingRoles, ['product_approval'])
+
+  var okPlan = buildPostSubmitUploadPlan({
+    requirements: [
+      { document_role: 'notice_of_commencement', required: true, requires_permit_number: false },
+      { document_role: 'product_approval', required: true, requires_permit_number: false },
+      { document_role: 'approved_permit', required: true, requires_permit_number: true },
+    ],
+    documents: [
+      { id: '1', document_type: 'notice_of_commencement', file_path: 'a/noc.pdf', file_name: 'noc.pdf' },
+      { id: '2', document_type: 'product_approval', file_path: 'a/pa.pdf', file_name: 'pa.pdf' },
+    ],
+  })
+  assert.strictEqual(okPlan.ok, true)
+  assert.strictEqual(okPlan.items.length, 2)
+
+  assert.strictEqual(
+    isPostSubmitAttachmentSurface('https://aca-prod.accela.com/POLKCO/Cap/CapDetail.aspx', ''),
+    true
+  )
+  assert.strictEqual(
+    isPostSubmitAttachmentSurface('https://aca-prod.accela.com/POLKCO/Cap/CapEdit.aspx', ''),
+    false
+  )
+  assert.strictEqual(
+    isPostSubmitAttachmentSurface('https://aca-prod.accela.com/POLKCO/ShoppingCart/ShoppingCart.aspx', ''),
+    false
+  )
 
   REQUIRED_SELECTOR_KEYS.forEach(function(key) {
     assert.strictEqual(typeof config.selectors[key], 'string', 'Missing selector: ' + key)

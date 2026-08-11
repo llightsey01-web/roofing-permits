@@ -12,7 +12,7 @@ const supabase = createClient(
   { realtime: { transport: ws } }
 )
 
-var PERMIT_RUN_TYPES = ['permit_phase_1', 'permit_resume', 'permit_submit']
+var PERMIT_RUN_TYPES = ['permit_phase_1', 'permit_resume', 'permit_submit', 'permit_document_upload']
 
 var verifiedPaths = verifyPolkRunnerUsesDirectTrigger()
 console.log('[worker] Project root:', getProjectRoot())

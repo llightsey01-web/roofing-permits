@@ -569,6 +569,8 @@ Still default **`Residential`** hardcoded (not on intake) until commercial jobs 
 
 **Runner / config merge action:** Do not add `upload_documents` to the same step array as `fill_permit_detail`. Add a documented **`post_submit_upload`** phase (new run step or run type) with its own selectors discovered from CapDetail attachments tab (Batch B located `AttachmentsList.aspx`, no file input in main CapEdit DOM).
 
+**Stage 4 status (2026-08-11):** `permit_document_upload` run type is scaffolded. Upload selectors remain **unconfirmed** for BT Re-Roof CapDetail (`postSubmitAttachments.confirmedForRoofingPermit: false`). Live discovery script: `scripts/diagnostics/ahj-discovery/polk-attachments-discovery.js` — do not enable uploads until that pass confirms DOM.
+
 **DART iQ prep requirements** (from Step 3 guidance): filename sanitization, approved digital-signature CAs, unique sheet numbers, TOC/bookmark order (C/B/G/S/A/E/M/P/L/I/T).
 
 #### 1c. Contact Information — Primary Licensed Professional

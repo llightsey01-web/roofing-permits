@@ -37,9 +37,9 @@ const POLL_INTERVAL_MS = 30000
 const PROOF_POLL_INTERVAL_MS = 30 * 60 * 1000
 const PROOF_POLL_START_DELAY_MS = 5 * 60 * 1000
 
-const PERMIT_RUN_TYPES = ['permit_phase_1', 'permit_resume', 'permit_submit']
-const PERMIT_RUN_TYPE_FILTER = 'run_type.in.(permit_phase_1,permit_resume,permit_submit),run_type.is.null'
-const PERMIT_STUCK_RUN_FILTER = 'run_type.in.(permit_phase_1,permit_resume,permit_submit),run_type.is.null'
+const PERMIT_RUN_TYPES = ['permit_phase_1', 'permit_resume', 'permit_submit', 'permit_document_upload']
+const PERMIT_RUN_TYPE_FILTER = 'run_type.in.(permit_phase_1,permit_resume,permit_submit,permit_document_upload),run_type.is.null'
+const PERMIT_STUCK_RUN_FILTER = 'run_type.in.(permit_phase_1,permit_resume,permit_submit,permit_document_upload),run_type.is.null'
 
 async function recoverStuckRuns() {
   console.log('[worker] Checking for stuck running permit runs...')

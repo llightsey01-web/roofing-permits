@@ -40,7 +40,7 @@ export async function GET(request) {
         .from('automation_runs')
         .select('id', { count: 'exact', head: true })
         .eq('run_status', 'queued')
-        .or('run_type.in.(permit_phase_1,permit_resume,permit_submit),run_type.is.null'),
+        .or('run_type.in.(permit_phase_1,permit_resume,permit_submit,permit_document_upload),run_type.is.null'),
       supabase
         .from('automation_runs')
         .select('id', { count: 'exact', head: true })

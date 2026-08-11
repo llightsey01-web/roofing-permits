@@ -20,6 +20,12 @@ const {
   clearSession,
   isAccelaSessionValid,
 } = require('../../lib/automation/session-store')
+const {
+  resolvePostSubmitUploadPlan,
+  isPostSubmitAttachmentSurface,
+  assertUploadSelectorsConfirmed,
+} = require('./polk-document-upload.js')
+const os = require('os')
 
 function getSupabase() {
   const ws = require('ws')
@@ -43,6 +49,7 @@ function assertSupabaseOk(result, label) {
 var RUN_STATUS_PHASE1_SUCCESS = 'needs_review'
 var RUN_STATUS_PHASE1_FAILURE = 'error'
 var RUN_STATUS_PHASE2_REVIEW = 'needs_review'
+var RUN_STATUS_DOCUMENT_UPLOAD = 'needs_review'
 
 function validatePolkRunContract(runType, runPayload) {
   var type = runType || 'permit_phase_1'
@@ -52,19 +59,25 @@ function validatePolkRunContract(runType, runPayload) {
       { errorCode: 'unsupported_run_type' }
     )
   }
-  if (type !== 'permit_phase_1' && type !== 'permit_resume') {
+  if (
+    type !== 'permit_phase_1' &&
+    type !== 'permit_resume' &&
+    type !== 'permit_document_upload'
+  ) {
     throw Object.assign(
       new Error('Unsupported Polk permit run type: ' + type),
       { errorCode: 'unsupported_run_type' }
     )
   }
-  if (type === 'permit_resume') {
+  if (type === 'permit_resume' || type === 'permit_document_upload') {
     var recordNumber = runPayload && typeof runPayload.portal_record_number === 'string'
       ? runPayload.portal_record_number.trim()
       : ''
     if (!recordNumber) {
       throw Object.assign(
-        new Error('permit_resume requires current automation_runs.payload.portal_record_number'),
+        new Error(
+          type + ' requires current automation_runs.payload.portal_record_number'
+        ),
         { errorCode: 'missing_portal_record_number' }
       )
     }
@@ -1193,6 +1206,246 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
       : undefined)
   }
 
+  /**
+   * Phase B — Post-submit attachments upload.
+   * Requires explicit portal_record_number (submitted Accela alt ID).
+   * Does not use jobs.permit_number (that is set only after Mark Permit Issued).
+   * Fail-closed on missing docs and unconfirmed upload selectors.
+   */
+  async function runPolkDocumentUpload() {
+    var supabase = getSupabase()
+    var uploadPlan = await resolvePostSubmitUploadPlan(supabase, jobData)
+    var attachmentCfg = config.postSubmitAttachments || {}
+    var uploadResults = []
+
+    async function assertDocumentUploadSurface(label) {
+      var state = await assertBeforePaymentBoundary()
+      var pageText = state.currentText || ''
+      if (!isPostSubmitAttachmentSurface(state.url, pageText + ' ' + (state.currentStepLine || ''))) {
+        // CapDetail/AttachmentsList may not match isPayment; still reject CapEdit/cart.
+        if (/CapEdit\.aspx|ShoppingCart\.aspx|Pay Fees|CSG Forte/i.test(state.url + ' ' + pageText)) {
+          throw Object.assign(
+            new Error('Hard stop: permit_document_upload reached CapEdit/payment surface (' + label + ')'),
+            { errorCode: 'payment_boundary_blocked' }
+          )
+        }
+      }
+      if (/CapEdit\.aspx/i.test(state.url)) {
+        throw Object.assign(
+          new Error('Hard stop: permit_document_upload must open CapDetail/AttachmentsList, not CapEdit'),
+          { errorCode: 'payment_boundary_blocked' }
+        )
+      }
+      return state
+    }
+
+    async function openSubmittedRecordCapDetail(portalRecordNumber) {
+      await page.goto(config.selectors.myRecordsUrl, { waitUntil: 'domcontentloaded', timeout: 60000 })
+      await page.waitForTimeout(2000)
+      var opened = await page.evaluate(function (recordNumber) {
+        function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim() }
+        var expected = recordNumber.toUpperCase()
+        var rows = Array.from(document.querySelectorAll('table[id$="gdvPermitList"] tr, tr.ACA_Grid_Row, tr'))
+        for (var i = 0; i < rows.length; i++) {
+          var row = rows[i]
+          var text = clean(row.innerText).toUpperCase()
+          if (text.indexOf(expected) < 0) continue
+          // Prefer a CapDetail / Record Number link — never Resume Application (draft path).
+          var links = Array.from(row.querySelectorAll('a'))
+          var detail = links.find(function (a) {
+            var href = String(a.getAttribute('href') || '')
+            var label = clean(a.innerText)
+            if (/Resume Application/i.test(label)) return false
+            return /CapDetail\.aspx/i.test(href) || label === expected || /View|Detail|Record/i.test(label)
+          })
+          if (!detail) {
+            detail = links.find(function (a) {
+              return !/Resume Application/i.test(clean(a.innerText))
+            })
+          }
+          if (!detail) return { ok: false, reason: 'no_capdetail_link' }
+          detail.click()
+          return { ok: true }
+        }
+        return { ok: false, reason: 'record_not_found' }
+      }, portalRecordNumber)
+
+      if (!opened || !opened.ok) {
+        throw Object.assign(
+          new Error(
+            'Exact portal_record_number was not found as a submitted CapDetail record (' +
+            ((opened && opened.reason) || 'unknown') + ')'
+          ),
+          { errorCode: 'portal_record_not_found' }
+        )
+      }
+
+      await page.waitForLoadState('domcontentloaded', { timeout: 60000 }).catch(function () {})
+      await page.waitForTimeout(2000)
+      await assertDocumentUploadSurface('after_open_record')
+    }
+
+    async function downloadJobDocumentToTemp(item) {
+      var { data, error } = await supabase.storage.from('job-documents').download(item.filePath)
+      if (error || !data) {
+        throw new Error('Could not download job document ' + item.role + ': ' + (error && error.message))
+      }
+      var buf = Buffer.from(await data.arrayBuffer())
+      var safeName = String(item.fileName || item.role + '.pdf').replace(/[^\w.\-]+/g, '_')
+      var tmpPath = path.join(os.tmpdir(), 'dartiq-polk-upload-' + runId + '-' + item.role + '-' + safeName)
+      fs.writeFileSync(tmpPath, buf)
+      return tmpPath
+    }
+
+    async function uploadOneDocument(item, index) {
+      var tmpPath = null
+      var stepName = 'document_upload_' + item.role
+      try {
+        await assertDocumentUploadSurface('before_upload_' + item.role)
+        tmpPath = await downloadJobDocumentToTemp(item)
+        var fileInputSel = attachmentCfg.selectors.fileInput
+        var browseSel = attachmentCfg.selectors.browseAdd
+        var input = page.locator(fileInputSel).first()
+        var inputCount = await input.count()
+        if (inputCount === 0 && browseSel) {
+          await page.locator(browseSel).first().click({ timeout: 10000 }).catch(function () {})
+          await page.waitForTimeout(1000)
+        }
+        await page.setInputFiles(fileInputSel, tmpPath)
+        await page.waitForTimeout(2000)
+        await assertDocumentUploadSurface('after_upload_' + item.role)
+
+        assertSupabaseOk(await supabase.from('automation_logs').insert({
+          run_id: runId,
+          step_number: 10 + index,
+          step_name: stepName,
+          success: true,
+          notes: JSON.stringify({
+            role: item.role,
+            documentId: item.documentId,
+            fileName: item.fileName,
+            portalRecordNumber: runContract.portalRecordNumber,
+          }),
+          logged_at: new Date().toISOString(),
+        }), 'Log successful document upload')
+
+        uploadResults.push({ role: item.role, success: true })
+      } catch (uploadErr) {
+        assertSupabaseOk(await supabase.from('automation_logs').insert({
+          run_id: runId,
+          step_number: 10 + index,
+          step_name: stepName,
+          success: false,
+          notes: JSON.stringify({
+            role: item.role,
+            documentId: item.documentId,
+            error: uploadErr.message,
+            errorCode: uploadErr.errorCode || null,
+          }),
+          raw_error: uploadErr.stack || '',
+          logged_at: new Date().toISOString(),
+        }), 'Log failed document upload')
+        uploadResults.push({ role: item.role, success: false, error: uploadErr.message })
+        throw uploadErr
+      } finally {
+        if (tmpPath) {
+          try { fs.unlinkSync(tmpPath) } catch (e) {}
+        }
+      }
+    }
+
+    await runBootstrapStep(1, 'doc_upload_login', performPortalLogin, { bootstrap: true })
+    await runBootstrapStep(2, 'doc_upload_open_record', async function () {
+      await openSubmittedRecordCapDetail(runContract.portalRecordNumber)
+    }, { exactRecordFromCurrentRunPayload: true })
+
+    await logStep(page, runId, 3, 'doc_upload_open_attachments', async function () {
+      await assertDocumentUploadSurface('before_attachments_tab')
+      var tabSel = (attachmentCfg.selectors && attachmentCfg.selectors.attachmentsTab) ||
+        'a[data-control="tab-attachments"]'
+      var tab = page.locator(tabSel).first()
+      if (await tab.count()) {
+        await tab.click({ timeout: 15000 })
+        await page.waitForTimeout(2000)
+      }
+      // AttachmentsList may open in same frame or navigate.
+      await page.waitForTimeout(1000)
+      await assertDocumentUploadSurface('after_attachments_tab')
+    }, { portalRecordNumber: runContract.portalRecordNumber })
+
+    await logStep(page, runId, 4, 'doc_upload_selector_gate', async function () {
+      // Fail closed before any setInputFiles if discovery has not confirmed selectors.
+      assertUploadSelectorsConfirmed(config)
+      await assertDocumentUploadSurface('selector_gate')
+    }, {
+      confirmedForRoofingPermit: !!(attachmentCfg && attachmentCfg.confirmedForRoofingPermit),
+    })
+
+    for (var i = 0; i < uploadPlan.items.length; i++) {
+      await logStep(page, runId, 5 + i, 'doc_upload_' + uploadPlan.items[i].role, async function () {
+        await uploadOneDocument(uploadPlan.items[i], i)
+      }, { role: uploadPlan.items[i].role })
+    }
+
+    await logStep(page, runId, 20, 'doc_upload_complete', async function () {
+      await assertDocumentUploadSurface('complete')
+      var summary = {
+        portalRecordNumber: runContract.portalRecordNumber,
+        uploaded: uploadResults,
+        requiredRoles: uploadPlan.items.map(function (it) { return it.role }),
+        humanApprovalRequired: false,
+        markPermitIssuedNotPerformed: true,
+        awaitingCountyReview: true,
+      }
+      var fullScreenshotPath = 'runs/' + runId + '/document-upload-complete.png'
+      var fullScreenshot = await page.screenshot({ fullPage: true, type: 'png' })
+      assertSupabaseOk(await supabase.storage.from('screenshots').upload(fullScreenshotPath, fullScreenshot, {
+        contentType: 'image/png',
+        upsert: true,
+      }), 'Upload document-upload completion screenshot')
+
+      assertSupabaseOk(await supabase.from('automation_logs').insert({
+        run_id: runId,
+        step_number: 20,
+        step_name: 'document_upload_complete',
+        success: true,
+        screenshot_path: fullScreenshotPath,
+        notes: JSON.stringify(summary),
+        logged_at: new Date().toISOString(),
+      }), 'Write document upload summary to automation_logs')
+
+      var actionResult = await logRunAction({
+        runId: runId,
+        jobId: jobData.id,
+        companyId: jobData.company_id,
+        action: 'document_upload_complete',
+        status: 'success',
+        stepNumber: 20,
+        stepName: 'document_upload_complete',
+        screenshotPath: fullScreenshotPath,
+        portalResponse: 'Required post-submit documents uploaded; awaiting county review',
+        metadata: summary,
+      })
+      if (!actionResult.ok) {
+        throw new Error('Could not write document upload summary to run_actions: ' + actionResult.error)
+      }
+
+      assertSupabaseOk(await supabase.from('automation_runs').update({
+        run_status: RUN_STATUS_DOCUMENT_UPLOAD,
+        completed_at: new Date().toISOString(),
+        error_message: null,
+      }).eq('id', runId), 'Mark document upload run complete')
+
+      // Existing status: submitted = filed with county, awaiting review. Do not invent a new status.
+      assertSupabaseOk(await supabase.from('jobs').update({
+        job_status: 'submitted',
+      }).eq('id', jobData.id), 'Mark job submitted after document upload')
+    }, { uploadResults: uploadResults })
+
+    console.log('POLK DOCUMENT UPLOAD COMPLETE — AWAITING COUNTY REVIEW')
+    return { status: 'needs_review', stoppedAt: 'document_upload_complete', uploadResults: uploadResults }
+  }
+
   async function runPolkPhase2() {
     var supabase = getSupabase()
     var locationCheckpoint = { fields: [] }
@@ -1319,6 +1572,9 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
   console.log('[recovery] Starting from step:', startFromStep)
 
   try {
+    if (runContract.runType === 'permit_document_upload') {
+      return await runPolkDocumentUpload()
+    }
     if (runContract.runType === 'permit_resume') {
       return await runPolkPhase2()
     }

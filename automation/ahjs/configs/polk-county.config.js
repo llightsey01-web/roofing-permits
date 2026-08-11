@@ -284,11 +284,36 @@ module.exports = {
       name: 'Phase B — Post-submit attachments',
       scope: 'CapDetail / FileUpload/AttachmentsList.aspx after a record exists',
       inlineWithWizard: false,
+      runType: 'permit_document_upload',
     },
     payment: {
       name: 'Phase C — Payment',
       scope: 'Shopping Cart → payment information → Forte modal',
       stopAt: 'forte_payment_modal',
+    },
+  },
+
+  /**
+   * Post-submit attachments upload (permit_document_upload).
+   *
+   * Selectors below were LOCATED in Batch B / correction-inspect on a license CapDetail
+   * (and AttachmentsList.aspx was observed opening from CapDetail). They were NOT
+   * activated and are NOT confirmed against a BT Re-Roof CapDetail upload flow.
+   * confirmedForRoofingPermit must remain false until
+   * scripts/diagnostics/ahj-discovery/polk-attachments-discovery.js confirms live DOM.
+   */
+  postSubmitAttachments: {
+    confirmedForRoofingPermit: false,
+    validatedOn: 'provisional_license_capdetail_batch_b_only',
+    notes:
+      'File input and Browse/Add were located in DOM but never activated. Re-verify on a ' +
+      'submitted BT Re-Roof CapDetail before enabling uploads.',
+    selectors: {
+      attachmentsTab: 'a[data-control="tab-attachments"]',
+      selectFromAccount: '#ctl00_PlaceHolderMain_attachmentEdit_btnSelectFromAccount',
+      browseAdd: '#ctl00_PlaceHolderMain_attachmentEdit_btnBrowse',
+      fileInput: '#fileInput_ctl00_PlaceHolderMain_attachmentEdit_divHtml5Upload',
+      attachmentsListPath: '/POLKCO/FileUpload/AttachmentsList.aspx',
     },
   },
 
