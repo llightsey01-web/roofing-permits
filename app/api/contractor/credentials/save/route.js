@@ -48,7 +48,6 @@ export async function POST(request) {
         .from('ahj_portals')
         .select('id, name, county_or_city, credential_key')
         .eq('id', ahjId)
-        .eq('is_active', true)
         .maybeSingle()
       portal = data
     }
