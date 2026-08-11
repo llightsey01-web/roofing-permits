@@ -162,8 +162,8 @@ export default function ChatWidget({ jobId }) {
   const inputBg = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)'
   const inputBorder = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'
   const inputColor = isLight ? 'rgba(15,23,42,0.95)' : 'white'
-  const chipBorder = isLight ? 'rgba(99,102,241,0.35)' : 'rgba(99,102,241,0.4)'
-  const chipBg = isLight ? 'rgba(99,102,241,0.08)' : 'rgba(99,102,241,0.1)'
+  const chipBorder = isLight ? 'rgba(37,99,235,0.35)' : 'rgba(59,130,246,0.4)'
+  const chipBg = isLight ? 'rgba(37,99,235,0.08)' : 'rgba(59,130,246,0.1)'
   const chipColor = isLight ? 'rgba(15,23,42,0.7)' : 'rgba(255,255,255,0.7)'
 
   return (
@@ -185,7 +185,7 @@ export default function ChatWidget({ jobId }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 4px 24px rgba(99,102,241,0.4)',
+          boxShadow: '0 4px 24px rgba(37,99,235,0.4)',
           zIndex: 9999,
           transition: 'transform 0.2s',
         }}
@@ -234,7 +234,7 @@ export default function ChatWidget({ jobId }) {
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
-            background: 'rgba(99,102,241,0.1)',
+            background: 'rgba(59,130,246,0.1)',
           }}>
             <div style={{
               width: '32px',
