@@ -1,0 +1,723 @@
+-- =====================================================================
+-- ALREADY APPLIED — reference snapshot of the live `public` schema,
+-- captured 2026-08-12 via Supabase MCP introspection (list_tables,
+-- verbose) against project roofing-permits (yhxzwjoouiurxrmhjslg).
+--
+-- NEVER EXECUTE. Not part of any migration runner. All future schema
+-- changes go through supabase/migrations as normal.
+--
+-- METHOD NOTE: this file was generated from Supabase's schema metadata
+-- API (read-only, no credentials involved), NOT from pg_dump — pg_dump
+-- was blocked locally (Supabase CLI requires Docker; direct pg_dump
+-- connections to both the db.* host and the pooler repeatedly failed
+-- password auth from this machine/network, cause not fully diagnosed).
+-- As a result this file documents structure (tables, columns, types,
+-- nullability, defaults, primary keys, foreign keys, enum values,
+-- table comments, table-level CHECK constraints) but is NOT a
+-- byte-exact pg_dump — it omits some detail a true pg_dump would
+-- capture: exact constraint names for non-PK/FK constraints beyond
+-- inline CHECKs shown, index definitions beyond primary keys, triggers,
+-- functions, RLS policy bodies (RLS enabled/disabled is noted per
+-- table; policy definitions are not). If a byte-exact dump is later
+-- needed (e.g. once Docker is available, or pg_dump auth is resolved),
+-- regenerate with:
+--   supabase db dump --schema public -f <file>
+-- or
+--   pg_dump "<connection-string>" --schema-only --schema=public \
+--     --no-owner --no-privileges -f <file>
+-- and this file's header should be updated accordingly.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- ENUMS (public schema)
+-- ---------------------------------------------------------------------
+-- document_type: approved_permit, combined_packet, contractor_license,
+--   insurance_certificate, noc_uploaded_notarized, noc_uploaded_recorded,
+--   noc_uploaded_signed, notice_of_commencement, other, owners_affidavit,
+--   permit_screenshot, photo_existing_roof, product_approval,
+--   qualifier_license, signed_contract, site_plan
+-- error_code: captcha_detected, login_failed, missing_document,
+--   portal_down, selector_not_found, timeout, unknown, validation_failed
+-- job_status: approved, automation_running, cancelled, draft,
+--   needs_correction, needs_review, on_hold, permit_issued, ready,
+--   submitted, waiting_for_noc
+-- run_status: cancelled, error, needs_review, queued, running, submitted
+-- user_role: company_admin, permit_staff, super_admin
+-- workflow_type: email, hybrid, pdf_packet, portal   (NOTE: no 'api'
+--   value yet — the Accela API adapter work in the feasibility study
+--   §8.1 will need to add one via a real migration when that work starts)
+
+-- ---------------------------------------------------------------------
+-- public.companies  (RLS enabled, 4 rows)
+-- ---------------------------------------------------------------------
+-- id                        uuid            PK, default gen_random_uuid()
+-- name                      text            not null
+-- license_number            text            nullable
+-- qualifier_name            text            nullable
+-- qualifier_license         text            nullable
+-- primary_email             text            nullable
+-- phone                     text            nullable
+-- address                   text            nullable
+-- city                      text            nullable
+-- state                     bpchar          nullable
+-- zip                       text            nullable
+-- is_active                 boolean         not null, default true
+-- created_at                timestamptz     not null, default now()
+-- updated_at                timestamptz     not null, default now()
+-- owner_user_id             uuid            nullable, FK -> auth.users(id)
+-- review_gates              jsonb           nullable, default
+--   {"noc_before_send": false, "auto_approve_all": true, "permit_before_submit": false}
+-- dba_name                  text            nullable
+-- onboarding_status         text            nullable, default 'pending'
+-- onboarding_completed_at   timestamptz     nullable
+-- subscription_plan         text            nullable, default 'unpriced'
+--   comment: placeholder plan key only; no pricing logic attached yet
+-- subscription_status       text            nullable, default 'trial'
+-- trial_ends_at             timestamptz     nullable, default now() + 30 days
+-- notes                     text            nullable
+-- onboarding_step           integer         nullable, default 0
+-- covered_counties          text[]          nullable, default '{}'
+-- is_demo                   boolean         nullable, default false
+-- Referenced by (FK from): invoices, vendor_payments, workflow_events,
+--   workflow_runs, product_approvals(submitted_by_company_id), run_actions,
+--   leads(converted_company_id), system_alerts, company_credentials,
+--   review_requests, jobs, audit_log, company_ahj_credentials, users
+
+-- ---------------------------------------------------------------------
+-- public.users  (RLS enabled, 7 rows)
+-- ---------------------------------------------------------------------
+-- id                uuid          PK
+-- company_id        uuid          not null, FK -> companies(id)
+-- email              text         not null, unique
+-- full_name          text         not null
+-- role               user_role    not null, default 'permit_staff'
+-- is_active          boolean      not null, default true
+-- created_at         timestamptz  not null, default now()
+-- last_login_at      timestamptz  nullable
+-- Referenced by: platform_settings(updated_by), product_approvals(verified_by),
+--   automation_runs(reviewed_by), audit_log(user_id),
+--   company_ahj_credentials(created_by), jobs(created_by),
+--   job_documents(uploaded_by), vendor_payments(confirmed_by),
+--   review_requests(reviewer_id)
+
+-- ---------------------------------------------------------------------
+-- public.ahj_portals  (RLS enabled, 16 rows)  *** the AHJ backlog table ***
+-- ---------------------------------------------------------------------
+-- id                  uuid           PK, default gen_random_uuid()
+-- name                text           not null
+-- state               bpchar         not null
+-- county_or_city      text           not null
+-- portal_url          text           nullable
+-- workflow_type       workflow_type  not null, default 'portal'
+-- credential_key      text           nullable
+-- workflow_file       text           nullable
+-- notes               text           nullable
+-- zip_codes           text[]         nullable
+-- config_version      text           nullable
+-- is_active           boolean        not null, default true   <-- default is
+--                                    TRUE; every backlog seed row sets this
+--                                    explicitly to false, never relies on default
+-- last_verified_at    timestamptz    nullable
+-- created_at          timestamptz    not null, default now()
+-- updated_at          timestamptz    not null, default now()
+-- submission_method   text           nullable, default 'portal'
+-- avg_approval_days   integer        nullable
+-- permit_fee_info     text           nullable
+-- portal_tips         text           nullable
+-- phone               text           nullable
+-- email               text           nullable
+-- office_address      text           nullable
+-- office_hours        text           nullable
+-- ONLY constraint besides PK: no unique constraint on (name) or
+--   (county_or_city) — idempotent seeds must use WHERE NOT EXISTS, not
+--   ON CONFLICT. (Housekeeping backlog: add a unique index on
+--   (lower(name), state).)
+-- Referenced by (FK from): ahj_document_requirements, company_ahj_credentials,
+--   jobs(ahj_id), company_credentials(ahj_id), ahj_requirements,
+--   ahj_inspections
+
+-- ---------------------------------------------------------------------
+-- public.company_ahj_credentials  (RLS enabled, 2 rows)
+-- ---------------------------------------------------------------------
+-- id                    uuid     PK
+-- company_id            uuid     not null, FK -> companies(id)
+-- ahj_id                uuid     not null, FK -> ahj_portals(id)
+-- credential_key_ref    text     not null
+-- is_active             boolean  not null, default true
+-- created_at            timestamptz  not null, default now()
+-- created_by            uuid     nullable, FK -> users(id)
+-- username              text     nullable
+-- portal_password       text     nullable   comment: LEGACY plaintext —
+--                                 deprecated, use password_encrypted
+-- password_encrypted    text     nullable   comment: AES-256-GCM
+--                                 encrypted; server-side decrypt only
+-- notes                 text     nullable
+
+-- ---------------------------------------------------------------------
+-- public.jobs  (RLS enabled, 13 rows)
+-- ---------------------------------------------------------------------
+-- id                          uuid         PK
+-- company_id                  uuid         not null, FK -> companies(id)
+-- ahj_id                      uuid         nullable, FK -> ahj_portals(id)
+-- created_by                  uuid         nullable, FK -> users(id)
+-- job_status                  job_status   not null, default 'draft'
+-- internal_notes              text         nullable
+-- owner_name                  text         not null
+-- owner_email                 text         nullable
+-- owner_phone                 text         nullable
+-- property_address            text         not null
+-- property_city               text         not null
+-- property_state              bpchar       not null
+-- property_zip                text         not null
+-- scope_of_work                text        nullable
+-- roof_type                    text        nullable
+-- roof_specs                   jsonb       nullable
+-- material_manufacturer        text        nullable
+-- material_model                text       nullable
+-- material_approval_num         text       nullable
+-- valuation                    numeric     nullable
+-- contractor_name               text       nullable
+-- contractor_license            text       nullable
+-- qualifier_name                 text      nullable
+-- qualifier_license               text     nullable
+-- permit_number                  text      nullable   comment: official
+--                                 AHJ permit/confirmation number, set when
+--                                 marked issued (distinct from
+--                                 portal_confirmation draft JSON)
+-- portal_confirmation             text     nullable
+-- created_at                      timestamptz  not null, default now()
+-- updated_at                      timestamptz  not null, default now()
+-- property_type                    text    nullable
+-- job_specs                        jsonb   nullable, default '{}'
+-- parcel_number                    text    nullable
+-- legal_description                text    nullable
+-- noc_status                       text    nullable, default 'not_started'
+-- noc_generated_at                 timestamptz  nullable
+-- noc_sent_at                      timestamptz  nullable
+-- noc_signed_at                    timestamptz  nullable
+-- noc_notarized_at                 timestamptz  nullable
+-- noc_submitted_to_erecord_at      timestamptz  nullable
+-- noc_recorded_at                  timestamptz  nullable
+-- noc_recording_number             text    nullable
+-- noc_file_path                    text    nullable
+-- noc_recorded_file_path           text    nullable
+-- noc_option                       text    nullable, default 'auto_generate'
+-- permit_issued_at                 timestamptz  nullable  comment: set
+--                                   when admin marks permit issued
+-- work_type                        text    nullable  comment: Accela
+--                                   portal Work Type — New/Repair/
+--                                   Addition/Alteration
+-- Referenced by: audit_log, automation_runs, job_documents,
+--   run_actions, vendor_payments, workflow_events, workflow_runs,
+--   system_alerts, review_requests
+
+-- ---------------------------------------------------------------------
+-- public.job_documents  (RLS enabled, 0 rows)
+-- ---------------------------------------------------------------------
+-- id               uuid           PK
+-- job_id           uuid           not null, FK -> jobs(id)
+-- document_type    document_type  not null
+-- file_name        text           not null
+-- file_path        text           not null
+-- file_size_bytes  integer        nullable
+-- mime_type        text           nullable
+-- uploaded_by      uuid           nullable, FK -> users(id)
+-- uploaded_at      timestamptz    not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.automation_runs  (RLS enabled, 49 rows)
+-- ---------------------------------------------------------------------
+-- id                          uuid        PK
+-- job_id                      uuid        not null, FK -> jobs(id)
+-- ahj_workflow_version        text        nullable
+-- run_status                  run_status  not null, default 'running'
+-- error_code                  error_code  nullable
+-- error_message                text      nullable
+-- reviewed_by                  uuid      nullable, FK -> users(id)
+-- reviewed_at                  timestamptz nullable
+-- reviewer_notes                text     nullable
+-- portal_confirmation_number    text     nullable
+-- started_at                    timestamptz  not null, default now()
+-- completed_at                  timestamptz  nullable
+-- run_type                       text    nullable, default 'permit_phase_1'
+--                                comment: permit_phase_1 | permit_resume |
+--                                permit_submit | noc_generate | proof_send |
+--                                proof_check | erecord_prepare |
+--                                erecord_submit | notify_admin |
+--                                build_packet | status_reconcile
+-- payload                        jsonb   nullable, default '{}'
+-- dependency_run_id              uuid    nullable, FK -> automation_runs(id)
+-- attempts                        integer nullable, default 0
+-- last_completed_step             text   nullable  comment: last step
+--                                  that completed successfully
+-- last_completed_step_number       integer nullable
+-- checkpoint_data                   jsonb  nullable, default '{}'
+--                                  comment: state data needed to resume
+--                                  from checkpoint
+-- resume_from_step                   text  nullable  comment: step to
+--                                  resume from on retry
+-- Referenced by: run_actions(run_id), automation_logs(run_id)
+-- NOTE: this is the LEGACY polling automation path — currently the
+-- active production default per standing project knowledge, distinct
+-- from the durable workflow_runs/workflow_steps Trigger.dev engine below.
+
+-- ---------------------------------------------------------------------
+-- public.automation_logs  (RLS enabled, 85 rows)
+-- ---------------------------------------------------------------------
+-- id               uuid         PK
+-- run_id           uuid         not null, FK -> automation_runs(id)
+-- step_number      integer      not null
+-- step_name        text         not null
+-- success          boolean      not null
+-- notes            text         nullable
+-- screenshot_path  text         nullable
+-- raw_error        text         nullable
+-- logged_at        timestamptz  not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.audit_log  (RLS enabled, 0 rows)
+-- ---------------------------------------------------------------------
+-- id             uuid         PK
+-- company_id     uuid         nullable, FK -> companies(id)
+-- user_id        uuid         nullable, FK -> users(id)
+-- job_id         uuid         nullable, FK -> jobs(id)
+-- action          text        not null
+-- entity_type     text        nullable
+-- entity_id       uuid        nullable
+-- before_state    jsonb       nullable
+-- after_state     jsonb       nullable
+-- ip_address      text        nullable
+-- user_agent      text        nullable
+-- created_at      timestamptz not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.product_approvals  (RLS enabled, 194 rows)
+-- ---------------------------------------------------------------------
+-- id                     uuid     PK
+-- manufacturer            text    not null
+-- product_name            text    not null
+-- layer_type              text    not null
+--   CHECK: layer_type = ANY ('primary','underlayment','ventilation')
+-- approval_number         text    not null
+-- is_active               boolean not null, default true
+-- created_at              timestamptz not null, default now()
+-- fl_approval_number      text    nullable
+-- pdf_path                text    nullable
+-- pdf_url                 text    nullable
+-- effective_date          date    nullable
+-- expiration_date         date    nullable
+-- last_synced_at          timestamptz nullable
+-- is_expired              boolean nullable, default false
+-- category                text    nullable
+-- subcategory             text    nullable
+-- approval_status         text    nullable
+-- needs_verification      boolean nullable, default false
+-- submitted_by_company_id uuid    nullable, FK -> companies(id)
+-- verified_at             timestamptz nullable
+-- verified_by             uuid    nullable, FK -> users(id)
+
+-- ---------------------------------------------------------------------
+-- public.review_requests  (RLS enabled, 0 rows)
+-- ---------------------------------------------------------------------
+-- id             uuid        PK
+-- job_id         uuid        nullable, FK -> jobs(id)
+-- company_id     uuid        nullable, FK -> companies(id)
+-- review_type    text        not null
+-- review_status  text        not null, default 'pending'
+-- reviewer_id    uuid        nullable, FK -> users(id)
+-- reviewer_notes text        nullable
+-- created_at     timestamptz nullable, default now()
+-- reviewed_at    timestamptz nullable
+
+-- ---------------------------------------------------------------------
+-- public.company_credentials  (RLS enabled, 11 rows)
+-- ---------------------------------------------------------------------
+-- id                  uuid     PK
+-- company_id          uuid     not null, FK -> companies(id)
+-- provider            text     not null   comment: polk_accela |
+--                              lee_accela | epn | proof | twocaptcha
+-- ahj_id              uuid     nullable, FK -> ahj_portals(id)
+-- credential_type     text     not null, default 'portal'   comment:
+--                              ahj_portal | proof | erecord | api_key
+-- encrypted_username  text     nullable
+-- encrypted_password  text     nullable
+-- encrypted_extra     jsonb    nullable
+-- is_active           boolean  nullable, default true
+-- created_at          timestamptz nullable, default now()
+-- updated_at          timestamptz nullable, default now()
+-- last_used_at        timestamptz nullable
+
+-- ---------------------------------------------------------------------
+-- public.system_alerts  (RLS enabled, 4 rows)
+-- ---------------------------------------------------------------------
+-- id          uuid        PK
+-- type        text        not null
+-- severity    text        not null
+-- job_id      uuid        nullable, FK -> jobs(id)
+-- company_id  uuid        nullable, FK -> companies(id)
+-- message     text        not null
+-- details     jsonb       nullable, default '{}'
+-- created_at  timestamptz nullable, default now()
+
+-- ---------------------------------------------------------------------
+-- public.worker_heartbeats  (RLS enabled, 3 rows)
+-- ---------------------------------------------------------------------
+-- worker_name   text        PK
+-- last_poll_at  timestamptz not null
+-- metadata      jsonb       nullable, default '{}'
+
+-- ---------------------------------------------------------------------
+-- public.leads  (RLS enabled, 1 row)
+-- ---------------------------------------------------------------------
+-- id                    uuid        PK
+-- name                  text        not null
+-- company                text       nullable
+-- email                  text       not null
+-- phone                  text       nullable
+-- monthly_volume          text      nullable
+-- source                  text      nullable, default 'marketing_site'
+-- status                  text      nullable, default 'new'
+-- notes                   text      nullable
+-- created_at              timestamptz nullable, default now()
+-- contacted_at            timestamptz nullable
+-- converted_company_id    uuid      nullable, FK -> companies(id)
+
+-- ---------------------------------------------------------------------
+-- public.run_actions  (RLS enabled, 1 row)
+-- ---------------------------------------------------------------------
+-- id               uuid     PK
+-- run_id           uuid     nullable, FK -> automation_runs(id)
+-- job_id           uuid     nullable, FK -> jobs(id)
+-- company_id       uuid     nullable, FK -> companies(id)
+-- action            text    not null
+-- status             text   not null
+-- step_number         integer nullable
+-- step_name            text  nullable
+-- portal_response       text nullable
+-- screenshot_path        text nullable
+-- file_path                text nullable
+-- error_message              text nullable
+-- duration_ms                  integer nullable
+-- metadata                      jsonb nullable, default '{}'
+-- created_at                     timestamptz nullable, default now()
+
+-- ---------------------------------------------------------------------
+-- public.platform_metrics  (RLS enabled, 329 rows)
+-- ---------------------------------------------------------------------
+-- id           uuid     PK
+-- metric_name  text     not null
+-- metric_value numeric  nullable
+-- metric_date  date     nullable, default CURRENT_DATE
+-- metadata     jsonb    nullable, default '{}'
+-- created_at   timestamptz nullable, default now()
+
+-- ---------------------------------------------------------------------
+-- public.platform_settings  (RLS enabled, 1 row)  *** automation gate ***
+-- ---------------------------------------------------------------------
+-- key          text        PK
+-- value        text        not null
+-- description  text        nullable
+-- updated_at   timestamptz nullable, default now()
+-- updated_by   uuid        nullable, FK -> users(id)
+
+-- ---------------------------------------------------------------------
+-- public.ahj_requirements  (RLS enabled, 16 rows)
+-- ---------------------------------------------------------------------
+-- id                uuid     PK
+-- ahj_id            uuid     not null, FK -> ahj_portals(id)
+-- requirement_type  text     not null
+-- name              text     not null
+-- description       text     nullable
+-- is_required       boolean  nullable, default true
+-- sequence_order    integer  nullable, default 0
+-- when_needed       text     nullable
+-- download_url      text     nullable
+-- notes             text     nullable
+-- is_active         boolean  nullable, default true
+-- created_at        timestamptz nullable, default now()
+
+-- ---------------------------------------------------------------------
+-- public.ahj_inspections  (RLS enabled, 5 rows)
+-- ---------------------------------------------------------------------
+-- id                  uuid     PK
+-- ahj_id              uuid     not null, FK -> ahj_portals(id)
+-- inspection_name     text     not null
+-- description         text     nullable
+-- sequence_order      integer  nullable, default 0
+-- when_to_schedule    text     nullable
+-- typical_wait_days   integer  nullable
+-- notes               text     nullable
+-- is_active           boolean  nullable, default true
+-- created_at          timestamptz nullable, default now()
+
+-- ---------------------------------------------------------------------
+-- public.ahj_document_requirements  (RLS enabled, 3 rows)
+-- comment: Per-AHJ required document roles for the job document folder.
+--   document_role maps to job_documents.document_type.
+-- ---------------------------------------------------------------------
+-- id                       uuid     PK
+-- ahj_id                   uuid     nullable, FK -> ahj_portals(id)
+-- document_role            text     not null
+-- display_name             text     not null
+-- required                 boolean  nullable, default true
+-- template_storage_path    text     nullable
+-- requires_permit_number   boolean  nullable, default false
+-- field_map                jsonb    nullable
+-- sort_order                integer nullable, default 0
+
+-- ---------------------------------------------------------------------
+-- public.vendor_payments  (RLS enabled, 0 rows)
+-- comment: Per-job third-party vendor payout ledger (permit fees,
+--   notarization, recording, etc.). amount_cents is integer cents.
+-- ---------------------------------------------------------------------
+-- id               uuid     PK
+-- job_id           uuid     not null, FK -> jobs(id)
+-- company_id       uuid     not null, FK -> companies(id)
+-- vendor           text     not null   CHECK: length(trim(vendor)) > 0
+-- payment_type     text     not null   CHECK: length(trim(payment_type)) > 0
+-- amount_cents     integer  not null   CHECK: amount_cents >= 0
+--   comment: integer cents; do NOT store dollars as float here
+-- currency         text     not null, default 'usd'
+--   CHECK: length(trim(currency)) > 0
+-- status           text     not null, default 'pending'
+--   CHECK: status = ANY ('pending','confirmed','failed')
+-- confirmed_by     uuid     nullable, FK -> users(id)
+-- confirmed_at     timestamptz nullable
+-- vendor_reference text     nullable
+-- metadata         jsonb    not null, default '{}'
+--   comment: vendor-specific detail (e.g. Polk Pay Fees line items)
+-- created_at       timestamptz not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.invoices  (RLS enabled, 0 rows)
+-- comment: Monthly company invoices. permit_fees_total_cents = confirmed
+--   vendor_payments on jobs with job_status=permit_issued and
+--   permit_issued_at in the billing period — not all confirmed vendor
+--   spend. subscription_amount_cents is a pricing placeholder (0 until
+--   priced).
+-- ---------------------------------------------------------------------
+-- id                          uuid     PK
+-- company_id                  uuid     not null, FK -> companies(id)
+-- billing_period_start        timestamptz not null
+-- billing_period_end          timestamptz not null
+-- permit_fees_total_cents     integer  not null, default 0
+--   CHECK: >= 0
+-- subscription_amount_cents   integer  not null, default 0
+--   CHECK: >= 0   comment: placeholder for future subscription pricing
+-- total_cents                 integer  GENERATED, nullable
+--   = permit_fees_total_cents + subscription_amount_cents
+-- due_date                    date     not null
+-- status                      text     not null, default 'draft'
+--   CHECK: status = ANY ('draft','sent','paid','overdue')
+-- paid_at                     timestamptz nullable
+-- stripe_invoice_id           text     nullable   comment: nullable
+--   until Stripe invoice-send/webhook integration is wired
+-- created_at                  timestamptz not null, default now()
+
+-- =====================================================================
+-- DURABLE WORKFLOW ENGINE (Trigger.dev SDK 4.x) — present but not yet
+-- the production default per standing project knowledge; the legacy
+-- automation_runs polling path (above) remains primary in production.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- public.workflows  (RLS enabled, 2 rows)
+-- ---------------------------------------------------------------------
+-- id           uuid     PK
+-- key          text     not null
+-- name         text     not null
+-- description  text     nullable
+-- version      integer  not null, default 1
+-- definition   jsonb    not null, default '{}'
+-- is_active    boolean  not null, default true
+-- created_at   timestamptz not null, default now()
+-- updated_at   timestamptz not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.workflow_runs  (RLS enabled, 0 rows)
+-- ---------------------------------------------------------------------
+-- id                 uuid     PK
+-- workflow_id        uuid     not null, FK -> workflows(id)
+-- workflow_key       text     not null
+-- workflow_version   integer  not null
+-- job_id             uuid     nullable, FK -> jobs(id)
+-- company_id         uuid     nullable, FK -> companies(id)
+-- trigger_run_id     text     nullable
+-- legacy_run_id      uuid     nullable
+-- status             text     not null, default 'queued'
+--   CHECK: status = ANY ('queued','running','paused','waiting','failed',
+--                         'cancelled','completed','compensating')
+-- current_step_key   text     nullable
+-- idempotency_key    text     not null, unique
+-- input               jsonb   not null, default '{}'
+-- output              jsonb   not null, default '{}'
+-- error_message        text  nullable
+-- error_code            text nullable
+-- pause_reason           text nullable
+-- paused_at                timestamptz nullable
+-- resume_token               text nullable
+-- started_at                   timestamptz nullable
+-- completed_at                   timestamptz nullable
+-- cancelled_at                     timestamptz nullable
+-- created_by                         uuid nullable
+-- created_at                           timestamptz not null, default now()
+-- updated_at                             timestamptz not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.workflow_steps  (RLS enabled, 0 rows)
+-- ---------------------------------------------------------------------
+-- id                uuid     PK
+-- run_id            uuid     not null, FK -> workflow_runs(id)
+-- step_key          text     not null
+-- step_name         text     not null
+-- step_type         text     not null, default 'action'
+--   CHECK: step_type = ANY ('action','wait','activity','webhook_wait',
+--                            'human_gate','compensation','notification')
+-- sequence_order    integer  not null, default 0
+-- status            text     not null, default 'pending'
+--   CHECK: status = ANY ('pending','running','waiting','paused',
+--                         'succeeded','failed','skipped','cancelled',
+--                         'compensated')
+-- attempt_count     integer  not null, default 0
+-- max_attempts      integer  not null, default 3
+-- idempotency_key   text     not null, unique
+-- input             jsonb    not null, default '{}'
+-- output            jsonb    not null, default '{}'
+-- error_message      text   nullable
+-- error_code          text  nullable
+-- timeout_ms             integer nullable
+-- started_at                timestamptz nullable
+-- completed_at                 timestamptz nullable
+-- next_retry_at                   timestamptz nullable
+-- created_at                         timestamptz not null, default now()
+-- updated_at                           timestamptz not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.workflow_step_history  (RLS enabled, 0 rows)
+-- ---------------------------------------------------------------------
+-- id               uuid     PK
+-- run_id           uuid     not null, FK -> workflow_runs(id)
+-- step_id          uuid     not null, FK -> workflow_steps(id)
+-- attempt_number   integer  not null, default 1
+-- from_status      text     nullable
+-- to_status        text     not null
+-- event_type       text     not null
+-- message          text     nullable
+-- payload          jsonb    not null, default '{}'
+-- created_at       timestamptz not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.workflow_retry_history  (RLS enabled, 0 rows)
+-- ---------------------------------------------------------------------
+-- id              uuid     PK
+-- run_id          uuid     not null, FK -> workflow_runs(id)
+-- step_id         uuid     not null, FK -> workflow_steps(id)
+-- attempt_number  integer  not null
+-- delay_ms        integer  not null, default 0
+-- error_message   text     nullable
+-- error_code      text     nullable
+-- will_retry      boolean  not null, default true
+-- created_at      timestamptz not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.workflow_events  (RLS enabled, 0 rows)
+-- ---------------------------------------------------------------------
+-- id               uuid     PK
+-- run_id           uuid     nullable, FK -> workflow_runs(id)
+-- job_id           uuid     nullable, FK -> jobs(id)
+-- company_id       uuid     nullable, FK -> companies(id)
+-- event_name       text     not null
+-- idempotency_key  text     not null, unique
+-- source           text     not null, default 'system'
+-- payload          jsonb    not null, default '{}'
+-- processed_at     timestamptz nullable
+-- created_at       timestamptz not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.workflow_artifacts  (RLS enabled, 0 rows)
+-- ---------------------------------------------------------------------
+-- id               uuid     PK
+-- run_id           uuid     not null, FK -> workflow_runs(id)
+-- step_id          uuid     nullable, FK -> workflow_steps(id)
+-- artifact_type    text     not null
+--   CHECK: artifact_type = ANY ('screenshot','html_snapshot','pdf','file',
+--                                'api_response','llm_prompt','llm_output',
+--                                'log_bundle','export','other')
+-- name             text     not null
+-- storage_bucket   text     not null, default 'job-documents'
+-- storage_path     text     nullable
+-- content_type     text     nullable
+-- size_bytes       bigint   nullable
+-- metadata         jsonb    not null, default '{}'
+-- created_at       timestamptz not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.workflow_logs  (RLS enabled, 0 rows)
+-- ---------------------------------------------------------------------
+-- id        uuid     PK
+-- run_id    uuid     not null, FK -> workflow_runs(id)
+-- step_id   uuid     nullable, FK -> workflow_steps(id)
+-- level     text     not null, default 'info'
+--   CHECK: level = ANY ('debug','info','warn','error')
+-- message   text     not null
+-- context   jsonb    not null, default '{}'
+-- created_at timestamptz not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.workflow_failures  (RLS enabled, 0 rows)
+-- ---------------------------------------------------------------------
+-- id             uuid     PK
+-- run_id         uuid     not null, FK -> workflow_runs(id)
+-- step_id        uuid     nullable, FK -> workflow_steps(id)
+-- failure_type   text     not null
+-- error_code     text     nullable
+-- error_message  text     not null
+-- stack          text     nullable
+-- is_retryable   boolean  not null, default true
+-- resolved_at    timestamptz nullable
+-- resolution     text     nullable
+-- created_at     timestamptz not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.workflow_manual_overrides  (RLS enabled, 0 rows)
+-- ---------------------------------------------------------------------
+-- id             uuid     PK
+-- run_id         uuid     not null, FK -> workflow_runs(id)
+-- step_id        uuid     nullable, FK -> workflow_steps(id)
+-- action         text     not null
+--   CHECK: action = ANY ('retry','resume','cancel','force_next_step',
+--                         'restart_from_step','pause','skip_step',
+--                         'compensate')
+-- reason         text     nullable
+-- actor_user_id  uuid     nullable
+-- payload        jsonb    not null, default '{}'
+-- created_at     timestamptz not null, default now()
+
+-- ---------------------------------------------------------------------
+-- public.workflow_activities  (RLS enabled, 0 rows)
+-- ---------------------------------------------------------------------
+-- id              uuid     PK
+-- run_id          uuid     not null, FK -> workflow_runs(id)
+-- step_id         uuid     not null, FK -> workflow_steps(id)
+-- activity_type   text     not null
+-- status          text     not null, default 'queued'
+--   CHECK: status = ANY ('queued','claimed','running','succeeded',
+--                         'failed','cancelled')
+-- idempotency_key text     not null, unique
+-- payload         jsonb    not null, default '{}'
+-- result          jsonb    not null, default '{}'
+-- legacy_run_id   uuid     nullable
+-- claimed_by      text     nullable
+-- claimed_at      timestamptz nullable
+-- started_at      timestamptz nullable
+-- completed_at    timestamptz nullable
+-- error_message   text     nullable
+-- attempt_count   integer  not null, default 0
+-- created_at      timestamptz not null, default now()
+-- updated_at      timestamptz not null, default now()
+
+-- =====================================================================
+-- END OF SNAPSHOT — 33 tables total in the public schema as of
+-- 2026-08-12. ahj_portals confirmed at 16 rows (2 live: Polk, Lee;
+-- 14 inactive backlog rows from the 2026-08-11 Accela seed).
+-- =====================================================================
