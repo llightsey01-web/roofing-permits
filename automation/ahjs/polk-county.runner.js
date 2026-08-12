@@ -396,6 +396,7 @@ function parseAddress(fullAddress) {
 async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hooks) {
   var config = portalConfig || defaultConfig
   var resolveLegalDescription = (hooks && hooks.resolveLegalDescription) || resolvePolkLegalDescription
+  var performLoginHook = hooks && typeof hooks.performLogin === 'function' ? hooks.performLogin : null
   var browserOpts = runnerOptions || {}
   var runContract = { runType: 'permit_phase_1', portalRecordNumber: null }
   var phase2Values = null
@@ -408,6 +409,10 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
         { errorCode: 'automation_paused' }
       )
     }
+    runContract = validatePolkRunContract(browserOpts.runType, browserOpts.runPayload)
+  } else if (config.id === 'hillsborough-county') {
+    // Peer Accela county: honor runType (phase_1 / resume / document_upload).
+    // permit_submit remains blocked inside validatePolkRunContract (same as Polk).
     runContract = validatePolkRunContract(browserOpts.runType, browserOpts.runPayload)
   }
 
@@ -875,6 +880,10 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
   }
 
   async function performPortalLogin() {
+    if (performLoginHook) {
+      await performLoginHook(page, credentials, config, companyId)
+      return
+    }
     await page.goto(config.portalUrl, { waitUntil: 'domcontentloaded' })
     await page.waitForTimeout(1500)
     var sessionOk = await isAccelaSessionValid(page)
@@ -1590,6 +1599,10 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
     stepNumber++
     if (!(await shouldSkipStep(runId, stepNumber))) {
     await logStep(page, runId, stepNumber, 'login', async function() {
+      if (performLoginHook) {
+        await performLoginHook(page, credentials, config, companyId)
+        return
+      }
       await page.goto(config.portalUrl, { waitUntil: 'domcontentloaded' })
       await page.waitForTimeout(1500)
       var sessionOk = await isAccelaSessionValid(page)

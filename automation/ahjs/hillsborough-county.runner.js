@@ -1,110 +1,197 @@
 /**
- * Hillsborough County Accela runner — SCAFFOLD ONLY.
+ * Hillsborough County Accela runner — peer of Polk/Lee.
  *
- * workflow_file basename (matches Polk/Lee convention stored on ahj_portals):
- *   hillsborough-county.runner.js
+ * workflow_file: hillsborough-county.runner.js
+ * Portal: https://aca-prod.accela.com/HCFL (HillsGovHub)
  *
- * Portal: https://aca-prod.accela.com/hcfl
- * Expected credential_key: HILLSBOROUGH_COUNTY
- * Session provider (planned): hillsborough_accela
+ * Architecture: Angular CommunityView login (like Lee) via hooks.performLogin +
+ * shared runAccelaPortal (Polk) for Cap flow, logStep screenshots, sessions,
+ * preflight, and handleRunError.
  *
- * Consumers: worker/runner.js and automation/runner.js switch on workflow_file.
- * Those switch cases are NOT wired yet — add loadHillsboroughRunner /
- * case 'hillsborough-county.runner.js' before flipping is_active.
+ * Logical steps (runType mapping):
+ *   login              → hooks.performLogin (Angular login-panel iframe)
+ *   create application → permit_phase_1
+ *   upload documents   → permit_document_upload (fail-closed until attachments confirmed)
+ *   submit             → permit_submit disabled (human review / no auto-pay; same as Polk)
  *
- * TODO: Real portal credentials + selector discovery required before any step
- * below can be implemented and tested. Do not run against live HCFL until then.
+ * Cannot be fully E2E-tested until HILLSBOROUGH_COUNTY vault credentials exist.
  */
 
-const path = require('path')
+const hillsboroughConfig = require('./configs/hillsborough-county.config')
+const { readLegalDescriptionFromPortal } = require('../../lib/parcels/polk-legal-description')
+const {
+  clearSession,
+  isAccelaSessionValid,
+} = require('../../lib/automation/session-store')
+const { runAccelaPortal } = require('./polk-county.runner')
 
-// Inline stub config — extract to configs/hillsborough-county.config.js once
-// login type + selectors are verified against the live HCFL Accela tenant.
-const hillsboroughConfig = {
-  id: 'hillsborough-county',
-  name: 'Hillsborough County Building Department',
-  state: 'FL',
-  portalUrl: 'https://aca-prod.accela.com/hcfl',
-  // TODO: confirm loginType (accela_legacy vs accela_angular) with real credentials
-  loginType: 'TODO_confirm_with_credentials',
-  captchaType: 'TODO_confirm_with_credentials',
-  workflowFile: 'hillsborough-county.runner.js',
-  workflowType: 'portal',
-  credentialKey: 'HILLSBOROUGH_COUNTY',
-  sessionProvider: 'hillsborough_accela',
-  permitType: 'TODO_confirm_permit_type_label',
-  version: 0,
-  lastVerified: null,
-  selectors: {
-    // TODO: fill after authenticated portal inspection
-    loginUsername: 'TODO',
-    loginPassword: 'TODO',
-    loginSubmit: 'TODO',
-  },
-}
-
-function stubNotImplemented(section) {
-  return Object.assign(
-    new Error(
-      '[hillsborough] TODO: ' +
-        section +
-        ' — needs real HCFL portal credentials to implement and test ' +
-        '(file: ' +
-        path.basename(__filename) +
-        ')'
-    ),
-    { errorCode: 'runner_scaffold_stub' }
-  )
-}
-
-// TODO: login — needs real credentials to complete and test
-async function stubLogin(_page, _credentials, _config) {
-  throw stubNotImplemented('login')
-}
-
-// TODO: create application (disclaimer → permit type → address/parcel) — needs real credentials to complete and test
-async function stubCreateApplication(_page, _jobData, _config) {
-  throw stubNotImplemented('create application')
-}
-
-// TODO: upload documents — needs real credentials to complete and test
-async function stubUploadDocuments(_page, _jobData, _config) {
-  throw stubNotImplemented('upload documents')
-}
-
-// TODO: submit — needs real credentials to complete and test
-async function stubSubmit(_page, _jobData, _config) {
-  throw stubNotImplemented('submit')
+async function loadCredentials(companyId, ahjId) {
+  try {
+    var mod = await import('../../lib/credentials/secure-credential-service.js')
+    return await mod.getCredentials(companyId, ahjId)
+  } catch (serviceErr) {
+    var { createClient } = require('@supabase/supabase-js')
+    var ws = require('ws')
+    var supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { realtime: { transport: ws } }
+    )
+    var { data, error } = await supabase
+      .from('company_ahj_credentials')
+      .select('username, portal_password, password_encrypted')
+      .eq('company_id', companyId)
+      .eq('ahj_id', ahjId)
+      .eq('is_active', true)
+      .single()
+    if (error || !data) {
+      throw Object.assign(
+        new Error('No credentials found for this company and AHJ'),
+        { errorCode: 'missing_credentials', cause: serviceErr.message }
+      )
+    }
+    var password = data.portal_password
+    if (!password && data.password_encrypted) {
+      var crypto = await import('../../lib/crypto/credential-encryption.js')
+      password = crypto.decryptCredential(data.password_encrypted)
+    }
+    if (!password) {
+      throw Object.assign(
+        new Error('Credentials exist but password is missing or unreadable'),
+        { errorCode: 'missing_credentials' }
+      )
+    }
+    return { username: data.username, password: password }
+  }
 }
 
 /**
- * Entry point expected by worker/runner.js / automation/runner.js once wired.
- * @param {object} jobData
- * @param {string} runId
- * @param {object} [runnerOptions]
+ * STEP: login
+ * Angular CommunityView iframe (publicly confirmed 2026-08-12 on HCFL Login.aspx).
+ * No reCAPTCHA on outer page (Lee-like). Session reuse via session-store.
  */
+async function loginHillsboroughAngularCommunityView(page, credentials, config, companyId) {
+  var selectors = config.selectors
+  var sessionProvider = config.sessionProvider || 'hillsborough_accela'
+
+  await page.goto(config.portalUrl, { waitUntil: 'domcontentloaded' })
+  await page.waitForTimeout(config.loginWaitMs || 3000)
+
+  var sessionOk = await isAccelaSessionValid(page)
+  if (sessionOk) {
+    console.log('[hillsborough_accela] Using saved session — skipping login ✓')
+    return
+  }
+
+  console.log('[hillsborough_accela] Session expired or missing — logging in fresh')
+  if (companyId) await clearSession(sessionProvider, companyId)
+
+  await page.goto(config.portalUrl, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(config.loginWaitMs || 3000)
+
+  var frame = page.frame({ url: selectors.loginFrameUrlPattern })
+  if (!frame) {
+    throw Object.assign(
+      new Error('Hillsborough Angular CommunityView login iframe not found'),
+      { errorCode: 'login_failed' }
+    )
+  }
+
+  await frame.locator(selectors.loginUsername).fill(credentials.username)
+  await frame.locator(selectors.loginPassword).fill(credentials.password)
+  await frame.locator(selectors.loginSubmit).click()
+
+  await page.waitForURL(selectors.loginSuccessUrl, { timeout: 15000 })
+  await page.waitForTimeout(2000)
+  console.log('[hillsborough_accela] Login complete — session will be saved for next run')
+}
+
+async function resolveHillsboroughLegalDescription(page, parcelNumber, selectors) {
+  return readLegalDescriptionFromPortal(page, selectors)
+}
+
+function hillsboroughHooks() {
+  return {
+    resolveLegalDescription: resolveHillsboroughLegalDescription,
+    performLogin: loginHillsboroughAngularCommunityView,
+  }
+}
+
+/** STEP: create application — Accela Phase 1 via shared engine */
+async function createHillsboroughApplication(jobData, runId, runnerOptions) {
+  return runAccelaPortal(
+    jobData,
+    runId,
+    Object.assign({}, runnerOptions || {}, { runType: 'permit_phase_1' }),
+    hillsboroughConfig,
+    hillsboroughHooks()
+  )
+}
+
+/**
+ * STEP: upload documents — shared permit_document_upload.
+ * Fail-closed while postSubmitAttachments.confirmedForRoofingPermit === false.
+ */
+async function uploadHillsboroughDocuments(jobData, runId, runnerOptions) {
+  return runAccelaPortal(
+    jobData,
+    runId,
+    Object.assign({}, runnerOptions || {}, {
+      runType: 'permit_document_upload',
+      runPayload: (runnerOptions && runnerOptions.runPayload) || {},
+    }),
+    hillsboroughConfig,
+    hillsboroughHooks()
+  )
+}
+
+/**
+ * STEP: submit — Polk-equivalent hard stop (no Accela payment automation).
+ */
+async function submitHillsboroughApplication(_jobData, _runId, _runnerOptions) {
+  throw Object.assign(
+    new Error(
+      'Hillsborough permit_submit is disabled; Accela submit/payment requires human approval ' +
+        '(same hard-stop policy as Polk). Complete Review in-portal after Phase 1 / document upload.'
+    ),
+    { errorCode: 'unsupported_run_type' }
+  )
+}
+
 async function runHillsboroughCounty(jobData, runId, runnerOptions) {
-  console.log('[hillsborough] Scaffold runner invoked', {
+  var opts = runnerOptions || {}
+  var runType = opts.runType || 'permit_phase_1'
+
+  console.log('[hillsborough] Starting', {
     runId: runId,
     jobId: jobData && jobData.id,
+    runType: runType,
     portalUrl: hillsboroughConfig.portalUrl,
-    runType: runnerOptions && runnerOptions.runType,
   })
 
-  // TODO: load credentials via secure-credential-service.getCredentials(companyId, ahjId)
-  // once HILLSBOROUGH_COUNTY vault rows exist. Do not hardcode credentials.
-  // TODO: launch Playwright + restore session (sessionProvider=hillsborough_accela) — needs real credentials
+  // Credentials are loaded inside runAccelaPortal; this early check fails fast
+  // with the same missing_credentials path before launching Chromium on submit-only.
+  if (runType === 'permit_submit') {
+    return submitHillsboroughApplication(jobData, runId, opts)
+  }
 
-  var page = null
-  var credentials = null
+  // Warm-path credential probe (same store as runAccelaPortal) without logging secrets
+  await loadCredentials(jobData.company_id, jobData.ahj_id)
 
-  await stubLogin(page, credentials, hillsboroughConfig)
-  await stubCreateApplication(page, jobData, hillsboroughConfig)
-  await stubUploadDocuments(page, jobData, hillsboroughConfig)
-  await stubSubmit(page, jobData, hillsboroughConfig)
+  if (runType === 'permit_document_upload') {
+    return uploadHillsboroughDocuments(jobData, runId, opts)
+  }
+  if (runType === 'permit_resume') {
+    return runAccelaPortal(jobData, runId, opts, hillsboroughConfig, hillsboroughHooks())
+  }
+  return createHillsboroughApplication(jobData, runId, opts)
 }
 
 module.exports = {
   runHillsboroughCounty,
+  loginHillsboroughAngularCommunityView,
+  createHillsboroughApplication,
+  uploadHillsboroughDocuments,
+  submitHillsboroughApplication,
   hillsboroughConfig,
 }

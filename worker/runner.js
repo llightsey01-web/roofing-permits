@@ -35,6 +35,11 @@ function loadLeeRunner() {
   return require(leeRunnerPath)
 }
 
+function loadHillsboroughRunner() {
+  var hillsboroughRunnerPath = resolveFromRoot('automation/ahjs/hillsborough-county.runner.js')
+  return require(hillsboroughRunnerPath)
+}
+
 async function loadAhjForJob(job) {
   if (!job.ahj_id) {
     throw new Error('Job ' + job.id + ' has no AHJ assigned')
@@ -80,6 +85,21 @@ async function runPermitWorkflow(job, run) {
       await runLeeCounty(job, runId)
       return
     }
+    case 'hillsborough-county.runner.js': {
+      var hillsRunType = runRecord.run_type || deriveRunType(job)
+      if (hillsRunType === 'permit_submit') {
+        throw Object.assign(
+          new Error('Hillsborough permit_submit is disabled; Accela submit/payment requires human approval'),
+          { errorCode: 'unsupported_run_type' }
+        )
+      }
+      var { runHillsboroughCounty } = loadHillsboroughRunner()
+      await runHillsboroughCounty(job, runId, {
+        runType: hillsRunType,
+        runPayload: runRecord.payload || {},
+      })
+      return
+    }
     default:
       throw new Error('No runner found for workflow file: ' + ahj.workflow_file)
   }
@@ -117,4 +137,13 @@ async function executeRun(job, run) {
   }
 }
 
-module.exports = { executeRun, loadPolkRunner, loadLeeRunner, runPermitWorkflow, verifyPolkRunnerUsesDirectTrigger, deriveRunType, PERMIT_RUN_TYPES }
+module.exports = {
+  executeRun,
+  loadPolkRunner,
+  loadLeeRunner,
+  loadHillsboroughRunner,
+  runPermitWorkflow,
+  verifyPolkRunnerUsesDirectTrigger,
+  deriveRunType,
+  PERMIT_RUN_TYPES,
+}
