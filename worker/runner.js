@@ -80,6 +80,11 @@ function loadOsceolaRunner() {
   return require(osceolaRunnerPath)
 }
 
+function loadCitrusRunner() {
+  var citrusRunnerPath = resolveFromRoot('automation/ahjs/citrus-county.runner.js')
+  return require(citrusRunnerPath)
+}
+
 async function loadAhjForJob(job) {
   if (!job.ahj_id) {
     throw new Error('Job ' + job.id + ' has no AHJ assigned')
@@ -260,6 +265,21 @@ async function runPermitWorkflow(job, run) {
       })
       return
     }
+    case 'citrus-county.runner.js': {
+      var citrusRunType = runRecord.run_type || deriveRunType(job)
+      if (citrusRunType === 'permit_submit') {
+        throw Object.assign(
+          new Error('Citrus permit_submit is disabled; Accela submit/payment requires human approval'),
+          { errorCode: 'unsupported_run_type' }
+        )
+      }
+      var { runCitrusCounty } = loadCitrusRunner()
+      await runCitrusCounty(job, runId, {
+        runType: citrusRunType,
+        runPayload: runRecord.payload || {},
+      })
+      return
+    }
     default:
       throw new Error('No runner found for workflow file: ' + ahj.workflow_file)
   }
@@ -310,6 +330,7 @@ module.exports = {
   loadManateeRunner,
   loadBrevardRunner,
   loadOsceolaRunner,
+  loadCitrusRunner,
   runPermitWorkflow,
   verifyPolkRunnerUsesDirectTrigger,
   deriveRunType,

@@ -116,6 +116,11 @@ async function runAutomation(jobId, runId) {
       await runOsceolaCounty(jobData, runId)
       break
     }
+    case 'citrus-county.runner.js': {
+      const { runCitrusCounty } = require('./ahjs/citrus-county.runner')
+      await runCitrusCounty(jobData, runId)
+      break
+    }
     default:
       throw new Error(`No runner found for workflow file: ${workflowFile}`)
   }
