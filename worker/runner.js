@@ -70,6 +70,11 @@ function loadManateeRunner() {
   return require(manateeRunnerPath)
 }
 
+function loadBrevardRunner() {
+  var brevardRunnerPath = resolveFromRoot('automation/ahjs/brevard-county.runner.js')
+  return require(brevardRunnerPath)
+}
+
 async function loadAhjForJob(job) {
   if (!job.ahj_id) {
     throw new Error('Job ' + job.id + ' has no AHJ assigned')
@@ -220,6 +225,21 @@ async function runPermitWorkflow(job, run) {
       })
       return
     }
+    case 'brevard-county.runner.js': {
+      var brevardRunType = runRecord.run_type || deriveRunType(job)
+      if (brevardRunType === 'permit_submit') {
+        throw Object.assign(
+          new Error('Brevard permit_submit is disabled; Accela submit/payment requires human approval'),
+          { errorCode: 'unsupported_run_type' }
+        )
+      }
+      var { runBrevardCounty } = loadBrevardRunner()
+      await runBrevardCounty(job, runId, {
+        runType: brevardRunType,
+        runPayload: runRecord.payload || {},
+      })
+      return
+    }
     default:
       throw new Error('No runner found for workflow file: ' + ahj.workflow_file)
   }
@@ -268,6 +288,7 @@ module.exports = {
   loadCharlotteRunner,
   loadLakeRunner,
   loadManateeRunner,
+  loadBrevardRunner,
   runPermitWorkflow,
   verifyPolkRunnerUsesDirectTrigger,
   deriveRunType,
