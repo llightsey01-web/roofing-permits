@@ -129,7 +129,7 @@ export default function ContractorSettingsPage() {
         supabase
           .from('ahj_portals')
           .select('id, name, county_or_city, portal_url')
-          .eq('is_active', true)
+          .not('workflow_file', 'is', null)
           .order('name'),
       ])
 
