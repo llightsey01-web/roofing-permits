@@ -417,7 +417,8 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
     config.id === 'sarasota-county' ||
     config.id === 'charlotte-county' ||
     config.id === 'manatee-county' ||
-    config.id === 'brevard-county'
+    config.id === 'brevard-county' ||
+    config.id === 'osceola-county'
   ) {
     // Peer Accela counties: honor runType (phase_1 / resume / document_upload).
     // permit_submit remains blocked inside validatePolkRunContract (same as Polk).

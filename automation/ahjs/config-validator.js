@@ -28,6 +28,7 @@ function validateAllConfigs() {
     require('./configs/lake-county.config.js'),
     require('./configs/manatee-county.config.js'),
     require('./configs/brevard-county.config.js'),
+    require('./configs/osceola-county.config.js'),
   ]
   configs.forEach(validateAhjConfig)
   console.log('[config-validator] All ' + configs.length + ' AHJ configs valid')
