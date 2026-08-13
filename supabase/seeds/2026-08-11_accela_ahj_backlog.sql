@@ -124,6 +124,9 @@ WHERE NOT EXISTS (
 );
 
 -- Lake County Building Department [expected_credential_key=LAKE_COUNTY]
+-- CORRECTION 2026-08-13: aca-prod.accela.com/LAKECO is Lake County CALIFORNIA Accela
+-- (legacy UI; OpenGov migration notice). Florida Lake County Building Services uses OPRS:
+-- https://mcdplus.lakecountyfl.gov/oprs_PT/ (not Accela). Do not treat as Accela peer.
 INSERT INTO public.ahj_portals (
   name, county_or_city, state, is_active, workflow_type, workflow_file,
   credential_key, portal_url, notes
@@ -136,8 +139,8 @@ SELECT
   'portal'::workflow_type,
   NULL,
   NULL,
-  'https://aca-prod.accela.com/LAKECO',
-  'platform=accela; hosting=accela-hosted; agency_code=LAKECO; verification=verified; backlog=2026-08-11.'
+  'https://mcdplus.lakecountyfl.gov/oprs_PT/',
+  'platform=oprs; hosting=county-hosted; agency_code=N/A; verification=corrected-2026-08-13; backlog=2026-08-11. Seed originally pointed at CA Accela LAKECO — wrong jurisdiction.'
 WHERE NOT EXISTS (
   SELECT 1 FROM public.ahj_portals p
   WHERE lower(p.name) = lower('Lake County Building Department')

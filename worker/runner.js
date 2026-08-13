@@ -60,6 +60,11 @@ function loadCharlotteRunner() {
   return require(charlotteRunnerPath)
 }
 
+function loadLakeRunner() {
+  var lakeRunnerPath = resolveFromRoot('automation/ahjs/lake-county.runner.js')
+  return require(lakeRunnerPath)
+}
+
 async function loadAhjForJob(job) {
   if (!job.ahj_id) {
     throw new Error('Job ' + job.id + ' has no AHJ assigned')
@@ -180,6 +185,21 @@ async function runPermitWorkflow(job, run) {
       })
       return
     }
+    case 'lake-county.runner.js': {
+      var lakeRunType = runRecord.run_type || deriveRunType(job)
+      if (lakeRunType === 'permit_submit') {
+        throw Object.assign(
+          new Error('Lake County permit_submit is disabled; OPRS submit is not automated'),
+          { errorCode: 'unsupported_run_type' }
+        )
+      }
+      var { runLakeCounty } = loadLakeRunner()
+      await runLakeCounty(job, runId, {
+        runType: lakeRunType,
+        runPayload: runRecord.payload || {},
+      })
+      return
+    }
     default:
       throw new Error('No runner found for workflow file: ' + ahj.workflow_file)
   }
@@ -226,6 +246,7 @@ module.exports = {
   loadPascoRunner,
   loadSarasotaRunner,
   loadCharlotteRunner,
+  loadLakeRunner,
   runPermitWorkflow,
   verifyPolkRunnerUsesDirectTrigger,
   deriveRunType,

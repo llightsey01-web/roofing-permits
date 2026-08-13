@@ -25,6 +25,7 @@ function validateAllConfigs() {
     require('./configs/pasco-county.config.js'),
     require('./configs/sarasota-county.config.js'),
     require('./configs/charlotte-county.config.js'),
+    require('./configs/lake-county.config.js'),
   ]
   configs.forEach(validateAhjConfig)
   console.log('[config-validator] All ' + configs.length + ' AHJ configs valid')
