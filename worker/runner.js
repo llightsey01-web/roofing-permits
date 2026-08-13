@@ -65,6 +65,11 @@ function loadLakeRunner() {
   return require(lakeRunnerPath)
 }
 
+function loadManateeRunner() {
+  var manateeRunnerPath = resolveFromRoot('automation/ahjs/manatee-county.runner.js')
+  return require(manateeRunnerPath)
+}
+
 async function loadAhjForJob(job) {
   if (!job.ahj_id) {
     throw new Error('Job ' + job.id + ' has no AHJ assigned')
@@ -200,6 +205,21 @@ async function runPermitWorkflow(job, run) {
       })
       return
     }
+    case 'manatee-county.runner.js': {
+      var manateeRunType = runRecord.run_type || deriveRunType(job)
+      if (manateeRunType === 'permit_submit') {
+        throw Object.assign(
+          new Error('Manatee permit_submit is disabled; Accela submit/payment requires human approval'),
+          { errorCode: 'unsupported_run_type' }
+        )
+      }
+      var { runManateeCounty } = loadManateeRunner()
+      await runManateeCounty(job, runId, {
+        runType: manateeRunType,
+        runPayload: runRecord.payload || {},
+      })
+      return
+    }
     default:
       throw new Error('No runner found for workflow file: ' + ahj.workflow_file)
   }
@@ -247,6 +267,7 @@ module.exports = {
   loadSarasotaRunner,
   loadCharlotteRunner,
   loadLakeRunner,
+  loadManateeRunner,
   runPermitWorkflow,
   verifyPolkRunnerUsesDirectTrigger,
   deriveRunType,

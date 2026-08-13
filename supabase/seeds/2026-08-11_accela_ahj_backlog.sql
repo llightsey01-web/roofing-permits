@@ -166,7 +166,9 @@ WHERE NOT EXISTS (
   WHERE lower(p.name) = lower('Brevard County Building Department')
 );
 
--- Manatee County Building Department (tenant code unconfirmed) [expected_credential_key=MANATEE_COUNTY]
+-- Manatee County Building Department [expected_credential_key=MANATEE_COUNTY]
+-- 2026-08-13: agency_code=MANATEE confirmed. County CMS mymanatee.org Accela Online Services
+-- 301-redirects to https://aca-prod.accela.com/MANATEE/Default.aspx (not Accela-hosted on custom domain).
 INSERT INTO public.ahj_portals (
   name, county_or_city, state, is_active, workflow_type, workflow_file,
   credential_key, portal_url, notes
@@ -179,8 +181,8 @@ SELECT
   'portal'::workflow_type,
   NULL,
   NULL,
-  'https://www.mymanatee.org',
-  'platform=accela; hosting=custom-domain; agency_code=TBD; verification=verified-platform, tenant-code-unconfirmed; backlog=2026-08-11. Accela Online Services behind county domain; confirm tenant code before automation.'
+  'https://aca-prod.accela.com/MANATEE',
+  'platform=accela; hosting=accela-hosted; agency_code=MANATEE; verification=confirmed-2026-08-11/13; backlog=2026-08-11. County CMS entry https://www.mymanatee.org/.../accela-online-services redirects to aca-prod MANATEE.'
 WHERE NOT EXISTS (
   SELECT 1 FROM public.ahj_portals p
   WHERE lower(p.name) = lower('Manatee County Building Department')
