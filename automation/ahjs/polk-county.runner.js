@@ -410,9 +410,15 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
       )
     }
     runContract = validatePolkRunContract(browserOpts.runType, browserOpts.runPayload)
-  } else if (config.id === 'hillsborough-county') {
-    // Peer Accela county: honor runType (phase_1 / resume / document_upload).
+  } else if (
+    config.id === 'hillsborough-county' ||
+    config.id === 'pinellas-county' ||
+    config.id === 'pasco-county' ||
+    config.id === 'sarasota-county'
+  ) {
+    // Peer Accela counties: honor runType (phase_1 / resume / document_upload).
     // permit_submit remains blocked inside validatePolkRunContract (same as Polk).
+    // Polk's own branch above is unchanged and always preferred when config.id === 'polk-county'.
     runContract = validatePolkRunContract(browserOpts.runType, browserOpts.runPayload)
   }
 

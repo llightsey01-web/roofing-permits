@@ -76,6 +76,11 @@ async function runAutomation(jobId, runId) {
       await runHillsboroughCounty(jobData, runId)
       break
     }
+    case 'pinellas-county.runner.js': {
+      const { runPinellasCounty } = require('./ahjs/pinellas-county.runner')
+      await runPinellasCounty(jobData, runId)
+      break
+    }
     default:
       throw new Error(`No runner found for workflow file: ${workflowFile}`)
   }

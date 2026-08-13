@@ -40,6 +40,11 @@ function loadHillsboroughRunner() {
   return require(hillsboroughRunnerPath)
 }
 
+function loadPinellasRunner() {
+  var pinellasRunnerPath = resolveFromRoot('automation/ahjs/pinellas-county.runner.js')
+  return require(pinellasRunnerPath)
+}
+
 async function loadAhjForJob(job) {
   if (!job.ahj_id) {
     throw new Error('Job ' + job.id + ' has no AHJ assigned')
@@ -100,6 +105,21 @@ async function runPermitWorkflow(job, run) {
       })
       return
     }
+    case 'pinellas-county.runner.js': {
+      var pinellasRunType = runRecord.run_type || deriveRunType(job)
+      if (pinellasRunType === 'permit_submit') {
+        throw Object.assign(
+          new Error('Pinellas permit_submit is disabled; Accela submit/payment requires human approval'),
+          { errorCode: 'unsupported_run_type' }
+        )
+      }
+      var { runPinellasCounty } = loadPinellasRunner()
+      await runPinellasCounty(job, runId, {
+        runType: pinellasRunType,
+        runPayload: runRecord.payload || {},
+      })
+      return
+    }
     default:
       throw new Error('No runner found for workflow file: ' + ahj.workflow_file)
   }
@@ -142,6 +162,7 @@ module.exports = {
   loadPolkRunner,
   loadLeeRunner,
   loadHillsboroughRunner,
+  loadPinellasRunner,
   runPermitWorkflow,
   verifyPolkRunnerUsesDirectTrigger,
   deriveRunType,
