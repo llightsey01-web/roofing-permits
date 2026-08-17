@@ -10,6 +10,7 @@ import {
   contractorPrimaryButtonStyle,
   contractorInputStyle,
 } from '../../../lib/ui/contractor-theme'
+import { fetchContractorCredentialAhjs } from '../../../lib/ahj/contractor-credential-ahjs'
 
 const MS_DAY = 24 * 60 * 60 * 1000
 
@@ -126,11 +127,7 @@ export default function ContractorSettingsPage() {
         fetch('/api/contractor/company', { headers: { Authorization: 'Bearer ' + token } }),
         fetch('/api/contractor/credentials', { headers: { Authorization: 'Bearer ' + token } }),
         fetch('/api/contractor/company/review-gates', { headers: { Authorization: 'Bearer ' + token } }),
-        supabase
-          .from('ahj_portals')
-          .select('id, name, county_or_city, portal_url')
-          .not('workflow_file', 'is', null)
-          .order('name'),
+        fetchContractorCredentialAhjs(supabase),
       ])
 
       const companyData = await companyRes.json()
