@@ -5,14 +5,22 @@ const { createClient } = require('@supabase/supabase-js')
 const ws = require('ws')
 const { getProjectRoot, resolveFromRoot } = require('./project-root')
 const { verifyPolkRunnerUsesDirectTrigger } = require('./verify-noc-trigger')
+var {
+  PERMIT_RUN_TYPES,
+  isPermitWorkerRunType,
+} = require(resolveFromRoot('lib/automation/permit-run-types.js'))
+var {
+  dispatchByWorkflowType,
+} = require(resolveFromRoot('lib/automation/workflow-type-dispatch.js'))
+var {
+  runPermitPacketSkeleton,
+} = require(resolveFromRoot('lib/automation/permit-packet.js'))
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
   { realtime: { transport: ws } }
 )
-
-var PERMIT_RUN_TYPES = ['permit_phase_1', 'permit_resume', 'permit_submit', 'permit_document_upload']
 
 var verifiedPaths = verifyPolkRunnerUsesDirectTrigger()
 console.log('[worker] Project root:', getProjectRoot())
@@ -103,18 +111,7 @@ async function loadAhjForJob(job) {
   return ahj
 }
 
-async function runPermitWorkflow(job, run) {
-  var runId = run && typeof run === 'object' ? run.id : run
-  var runRecord = run && typeof run === 'object' ? run : { id: runId, run_type: null, payload: {} }
-  var ahj = await loadAhjForJob(job)
-  console.log('[worker] AHJ:', ahj.name, 'workflow:', ahj.workflow_file)
-
-  // ZIG-6 defensive gate: non-retryable terminal failure if readiness fails after claim.
-  var readinessMod = require(resolveFromRoot('lib/ahj/ahj-readiness.js'))
-  if (!readinessMod.workerCanExecuteAhj(ahj)) {
-    throw readinessMod.ahjNotExecutableError(ahj)
-  }
-
+async function runPortalWorkflowByFile(ahj, job, runRecord, runId) {
   switch (ahj.workflow_file) {
     case 'polk-county.runner.js': {
       var polkRunType = runRecord.run_type || deriveRunType(job)
@@ -291,6 +288,43 @@ async function runPermitWorkflow(job, run) {
   }
 }
 
+/**
+ * Type-first dispatch after ZIG-6 readiness.
+ * deps optional for unit tests (inject portal/packet handlers).
+ */
+async function dispatchPermitExecution(ahj, job, runRecord, runId, deps) {
+  return dispatchByWorkflowType(ahj, job, runRecord, runId, {
+    runPortalWorkflowByFile:
+      deps && deps.runPortalWorkflowByFile
+        ? deps.runPortalWorkflowByFile
+        : runPortalWorkflowByFile,
+    runPermitPacketSkeleton:
+      deps && deps.runPermitPacketSkeleton
+        ? deps.runPermitPacketSkeleton
+        : function (j, r) { return runPermitPacketSkeleton(supabase, j, r) },
+  })
+}
+
+async function runPermitWorkflow(job, run, deps) {
+  var runId = run && typeof run === 'object' ? run.id : run
+  var runRecord = run && typeof run === 'object' ? run : { id: runId, run_type: null, payload: {} }
+  var ahj = await loadAhjForJob(job)
+  console.log(
+    '[worker] AHJ:', ahj.name,
+    'workflow_type:', ahj.workflow_type,
+    'workflow_file:', ahj.workflow_file
+  )
+
+  // ZIG-6 defensive gate: non-retryable terminal failure if readiness fails after claim.
+  var readinessMod = require(resolveFromRoot('lib/ahj/ahj-readiness.js'))
+  if (!readinessMod.workerCanExecuteAhj(ahj)) {
+    throw readinessMod.ahjNotExecutableError(ahj)
+  }
+
+  // ZIG-8: type-first family select — pdf_packet never enters portal/Playwright switch.
+  return dispatchPermitExecution(ahj, job, runRecord, runId, deps)
+}
+
 async function releaseRunToQueue(runId) {
   await supabase.from('automation_runs').update({
     run_status: 'queued',
@@ -306,7 +340,7 @@ async function executeRun(job, run) {
     var runType = runRecord.run_type || deriveRunType(job)
     console.log('[worker] Executing run:', runId, 'run_type:', runType, 'job:', job.property_address)
 
-    if (PERMIT_RUN_TYPES.indexOf(runType) < 0) {
+    if (!isPermitWorkerRunType(runType)) {
       console.log('[worker] Skipping run ' + runId + ' — run_type=' + runType + ' (Worker 2 handles this)')
       await releaseRunToQueue(runId)
       return
@@ -338,6 +372,8 @@ module.exports = {
   loadOsceolaRunner,
   loadCitrusRunner,
   runPermitWorkflow,
+  runPortalWorkflowByFile,
+  dispatchPermitExecution,
   verifyPolkRunnerUsesDirectTrigger,
   deriveRunType,
   PERMIT_RUN_TYPES,
