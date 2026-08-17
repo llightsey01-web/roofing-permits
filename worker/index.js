@@ -33,6 +33,11 @@ const {
   workerCanExecuteAhj,
   ahjNotExecutableError,
 } = requireLib('lib/ahj/ahj-readiness.js')
+const {
+  PERMIT_RUN_TYPES,
+  PERMIT_RUN_TYPE_FILTER,
+  PERMIT_STUCK_RUN_FILTER,
+} = requireLib('lib/automation/permit-run-types.js')
 
 validateEnvironment()
 console.log('[worker] Environment:', getEnvironment())
@@ -40,10 +45,6 @@ console.log('[worker] Environment:', getEnvironment())
 const POLL_INTERVAL_MS = 30000
 const PROOF_POLL_INTERVAL_MS = 30 * 60 * 1000
 const PROOF_POLL_START_DELAY_MS = 5 * 60 * 1000
-
-const PERMIT_RUN_TYPES = ['permit_phase_1', 'permit_resume', 'permit_submit', 'permit_document_upload']
-const PERMIT_RUN_TYPE_FILTER = 'run_type.in.(permit_phase_1,permit_resume,permit_submit,permit_document_upload),run_type.is.null'
-const PERMIT_STUCK_RUN_FILTER = 'run_type.in.(permit_phase_1,permit_resume,permit_submit,permit_document_upload),run_type.is.null'
 
 async function recoverStuckRuns() {
   console.log('[worker] Checking for stuck running permit runs...')
@@ -297,6 +298,7 @@ async function pollProofCompletions() {
 }
 
 console.log('[worker] Starting AHJ-iQ permit portal worker (Worker 1)')
+console.log('[worker] Claimed run types:', PERMIT_RUN_TYPES.join(', '), '+ null')
 console.log('[worker] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'MISSING')
 console.log('[worker] Service key:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'MISSING')
 
