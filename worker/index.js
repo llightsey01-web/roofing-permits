@@ -29,6 +29,10 @@ const { validateEnvironment, getEnvironment } = requireLib('lib/env/environment.
 const { sendAlert } = requireMonitoring('lib/monitoring/alert-service')
 const { recordWorkerPoll } = requireMonitoring('lib/monitoring/worker-heartbeat')
 const { isAutomationEnabled } = requireLib('lib/automation/automation-gate.js')
+const {
+  workerCanExecuteAhj,
+  ahjNotExecutableError,
+} = requireLib('lib/ahj/ahj-readiness.js')
 
 validateEnvironment()
 console.log('[worker] Environment:', getEnvironment())
@@ -98,6 +102,61 @@ async function claimAndRun() {
   const run = runs[0]
   console.log('[worker] Found queued run:', run.id, 'job:', run.job_id, 'run_type:', run.run_type || '(null)')
 
+  const { data: job, error: jobError } = await supabase
+    .from('jobs').select('*').eq('id', run.job_id).single()
+
+  if (jobError || !job) {
+    console.error('[worker] Job not found:', run.job_id)
+    await supabase.from('automation_runs').update({
+      run_status: 'error',
+      error_message: 'Job not found: ' + run.job_id,
+      completed_at: new Date().toISOString(),
+    }).eq('id', run.id).eq('run_status', 'queued')
+    return
+  }
+
+  // ZIG-6 primary gate: fail closed before claim (terminal error, never requeue).
+  if (job.ahj_id) {
+    const { data: ahjRow, error: ahjErr } = await supabase
+      .from('ahj_portals')
+      .select('id, name, is_active, lifecycle_state, operational_health, workflow_type, workflow_file, credential_key')
+      .eq('id', job.ahj_id)
+      .maybeSingle()
+
+    if (ahjErr) {
+      console.error('[worker] AHJ readiness lookup failed:', ahjErr.message)
+      await supabase.from('automation_runs').update({
+        run_status: 'error',
+        error_message: 'AHJ readiness lookup failed: ' + ahjErr.message,
+        completed_at: new Date().toISOString(),
+      }).eq('id', run.id).eq('run_status', 'queued')
+      await supabase.from('jobs').update({ job_status: 'needs_correction' }).eq('id', job.id)
+      return
+    }
+
+    if (!workerCanExecuteAhj(ahjRow)) {
+      const gateErr = ahjNotExecutableError(ahjRow || { name: job.ahj_id })
+      console.error('[worker] Pre-claim readiness gate:', gateErr.message)
+      await supabase.from('automation_runs').update({
+        run_status: 'error',
+        error_message: gateErr.message + ' [' + gateErr.errorCode + ']',
+        completed_at: new Date().toISOString(),
+      }).eq('id', run.id).eq('run_status', 'queued')
+      await supabase.from('jobs').update({ job_status: 'needs_correction' }).eq('id', job.id)
+      return
+    }
+  } else {
+    const gateErr = ahjNotExecutableError({ name: '(no ahj_id)' })
+    console.error('[worker] Pre-claim readiness gate: job has no AHJ')
+    await supabase.from('automation_runs').update({
+      run_status: 'error',
+      error_message: gateErr.message + ' [' + gateErr.errorCode + ']',
+      completed_at: new Date().toISOString(),
+    }).eq('id', run.id).eq('run_status', 'queued')
+    await supabase.from('jobs').update({ job_status: 'needs_correction' }).eq('id', job.id)
+    return
+  }
+
   const { error: claimError } = await supabase
     .from('automation_runs')
     .update({
@@ -114,14 +173,6 @@ async function claimAndRun() {
   }
 
   console.log('[worker] Claimed run:', run.id)
-
-  const { data: job, error: jobError } = await supabase
-    .from('jobs').select('*').eq('id', run.job_id).single()
-
-  if (jobError || !job) {
-    console.error('[worker] Job not found:', run.job_id)
-    return
-  }
 
   const { data: documents } = await supabase
     .from('job_documents').select('*').eq('job_id', run.job_id)

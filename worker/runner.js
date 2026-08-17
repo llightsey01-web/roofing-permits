@@ -92,7 +92,7 @@ async function loadAhjForJob(job) {
 
   var { data: ahj, error } = await supabase
     .from('ahj_portals')
-    .select('id, name, workflow_file, credential_key')
+    .select('id, name, workflow_file, credential_key, is_active, lifecycle_state, operational_health, workflow_type')
     .eq('id', job.ahj_id)
     .single()
 
@@ -108,6 +108,12 @@ async function runPermitWorkflow(job, run) {
   var runRecord = run && typeof run === 'object' ? run : { id: runId, run_type: null, payload: {} }
   var ahj = await loadAhjForJob(job)
   console.log('[worker] AHJ:', ahj.name, 'workflow:', ahj.workflow_file)
+
+  // ZIG-6 defensive gate: non-retryable terminal failure if readiness fails after claim.
+  var readinessMod = require(resolveFromRoot('lib/ahj/ahj-readiness.js'))
+  if (!readinessMod.workerCanExecuteAhj(ahj)) {
+    throw readinessMod.ahjNotExecutableError(ahj)
+  }
 
   switch (ahj.workflow_file) {
     case 'polk-county.runner.js': {
