@@ -1,55 +1,94 @@
 // tests/unit/contractor-credential-ahjs.test.js
-// ZIG-5: contractor credential-entry AHJ list must require is_active AND workflow_file.
+// ZIG-5 + ZIG-6: contractor credential-entry AHJ list pushdown filters.
 'use strict'
 
 const {
   fetchContractorCredentialAhjs,
   isVisibleForCredentialEntry,
+  contractorCanSeeAhj,
 } = require('../../lib/ahj/contractor-credential-ahjs.js')
 
+function base(overrides) {
+  return Object.assign({
+    is_active: true,
+    lifecycle_state: 'production',
+    operational_health: 'healthy',
+    workflow_type: 'portal',
+    workflow_file: 'x.runner.js',
+  }, overrides || {})
+}
+
 const FIXTURES = [
-  {
+  base({
     id: 'active-populated',
     name: 'Polk County Building Department',
-    is_active: true,
+    lifecycle_state: 'production',
     workflow_file: 'polk-county.runner.js',
-  },
-  {
+  }),
+  base({
     id: 'active-null',
     name: 'Active Missing Runner',
-    is_active: true,
     workflow_file: null,
-  },
-  {
+  }),
+  base({
     id: 'inactive-populated',
     name: 'Hillsborough County Building Department',
     is_active: false,
+    lifecycle_state: 'validation_ready',
     workflow_file: 'hillsborough-county.runner.js',
-  },
-  {
+  }),
+  base({
     id: 'inactive-null',
     name: 'Inactive Missing Runner',
     is_active: false,
+    lifecycle_state: 'planned',
     workflow_file: null,
-  },
-  {
+  }),
+  base({
     id: 'lee-active-populated',
     name: 'Lee County Building Department',
-    is_active: true,
+    lifecycle_state: 'pilot',
     workflow_file: 'lee-county.runner.js',
-  },
+  }),
+  base({
+    id: 'validation-ready-active',
+    name: 'Charlotte County Building Department',
+    is_active: true,
+    lifecycle_state: 'validation_ready',
+    workflow_file: 'charlotte-county.runner.js',
+  }),
+  base({
+    id: 'unavailable-polk-shape',
+    name: 'Unavailable AHJ',
+    lifecycle_state: 'production',
+    operational_health: 'unavailable',
+    workflow_file: 'polk-county.runner.js',
+  }),
 ]
 
+function rowMatchesQueryState(row, state) {
+  if (state.requireActive && row.is_active !== true) return false
+  if (state.lifecycleIn && state.lifecycleIn.indexOf(row.lifecycle_state) < 0) return false
+  if (state.healthNeq && row.operational_health === state.healthNeq) return false
+  if (state.portalOr) {
+    var nonPortal = row.workflow_type != null && row.workflow_type !== 'portal'
+    var hasFile = row.workflow_file != null
+    if (!nonPortal && !hasFile) return false
+  }
+  return true
+}
+
 /**
- * Minimal thenable query builder that applies the same filter semantics
- * as the production Supabase chain when filters are recorded.
+ * Minimal thenable query builder mirroring ZIG-6 pushdown filters.
  */
 function createMockSupabase(rows) {
   const state = {
     table: null,
     selectCols: null,
     requireActive: false,
-    requireWorkflowFile: false,
+    lifecycleIn: null,
+    healthNeq: null,
+    portalOr: false,
     orderCol: null,
   }
 
@@ -62,12 +101,21 @@ function createMockSupabase(rows) {
       if (col === 'is_active' && val === true) state.requireActive = true
       return chain
     }),
-    not: jest.fn(function (col, op, val) {
-      if (col === 'workflow_file' && op === 'is' && val === null) {
-        state.requireWorkflowFile = true
+    in: jest.fn(function (col, vals) {
+      if (col === 'lifecycle_state') state.lifecycleIn = vals.slice()
+      return chain
+    }),
+    neq: jest.fn(function (col, val) {
+      if (col === 'operational_health') state.healthNeq = val
+      return chain
+    }),
+    or: jest.fn(function (expr) {
+      if (expr === 'workflow_type.neq.portal,workflow_file.not.is.null') {
+        state.portalOr = true
       }
       return chain
     }),
+    not: jest.fn(function () { return chain }),
     order: jest.fn(function (col) {
       state.orderCol = col
       return chain.then(function (result) {
@@ -76,9 +124,7 @@ function createMockSupabase(rows) {
     }),
     then: function (onFulfilled, onRejected) {
       var filtered = rows.filter(function (row) {
-        if (state.requireActive && row.is_active !== true) return false
-        if (state.requireWorkflowFile && row.workflow_file == null) return false
-        return true
+        return rowMatchesQueryState(row, state)
       })
       if (state.orderCol === 'name') {
         filtered = filtered.slice().sort(function (a, b) {
@@ -99,65 +145,66 @@ function createMockSupabase(rows) {
   }
 }
 
-describe('contractor credential-entry AHJ visibility (ZIG-5)', function () {
-  test('isVisibleForCredentialEntry covers all is_active x workflow_file combinations', function () {
-    expect(isVisibleForCredentialEntry(FIXTURES[0])).toBe(true) // active + populated
-    expect(isVisibleForCredentialEntry(FIXTURES[1])).toBe(false) // active + null
-    expect(isVisibleForCredentialEntry(FIXTURES[2])).toBe(false) // inactive + populated (exposed-data shape)
-    expect(isVisibleForCredentialEntry(FIXTURES[3])).toBe(false) // inactive + null
+describe('contractor credential-entry AHJ visibility (ZIG-5 + ZIG-6)', function () {
+  test('isVisibleForCredentialEntry aliases contractorCanSeeAhj', function () {
+    FIXTURES.forEach(function (f) {
+      expect(isVisibleForCredentialEntry(f)).toBe(contractorCanSeeAhj(f))
+    })
   })
 
-  test('fetch applies is_active=true and workflow_file IS NOT NULL', async function () {
+  test('policy: inactive + populated excluded; Polk/Lee shapes included', function () {
+    expect(isVisibleForCredentialEntry(FIXTURES[0])).toBe(true)
+    expect(isVisibleForCredentialEntry(FIXTURES[1])).toBe(false)
+    expect(isVisibleForCredentialEntry(FIXTURES[2])).toBe(false)
+    expect(isVisibleForCredentialEntry(FIXTURES[3])).toBe(false)
+    expect(isVisibleForCredentialEntry(FIXTURES[4])).toBe(true)
+    expect(isVisibleForCredentialEntry(FIXTURES[5])).toBe(false)
+    expect(isVisibleForCredentialEntry(FIXTURES[6])).toBe(false)
+  })
+
+  test('fetch pushes ZIG-6 filters (no broad client filter)', async function () {
     const mock = createMockSupabase(FIXTURES)
     const result = await fetchContractorCredentialAhjs(mock)
 
     expect(mock.from).toHaveBeenCalledWith('ahj_portals')
     expect(mock.chain.select).toHaveBeenCalledWith('id, name, county_or_city, portal_url')
     expect(mock.chain.eq).toHaveBeenCalledWith('is_active', true)
-    expect(mock.chain.not).toHaveBeenCalledWith('workflow_file', 'is', null)
+    expect(mock.chain.in).toHaveBeenCalledWith('lifecycle_state', ['pilot', 'production'])
+    expect(mock.chain.neq).toHaveBeenCalledWith('operational_health', 'unavailable')
+    expect(mock.chain.or).toHaveBeenCalledWith('workflow_type.neq.portal,workflow_file.not.is.null')
     expect(mock.chain.order).toHaveBeenCalledWith('name')
-    expect(mock.state.requireActive).toBe(true)
-    expect(mock.state.requireWorkflowFile).toBe(true)
 
     const ids = (result.data || []).map(function (r) { return r.id }).sort()
     expect(ids).toEqual(['active-populated', 'lee-active-populated'])
+  })
+
+  test('query ↔ policy equivalence over fixtures', async function () {
+    const mock = createMockSupabase(FIXTURES)
+    const result = await fetchContractorCredentialAhjs(mock)
+    const queryIds = (result.data || []).map(function (r) { return r.id }).sort()
+    const policyIds = FIXTURES.filter(contractorCanSeeAhj).map(function (r) { return r.id }).sort()
+    expect(queryIds).toEqual(policyIds)
   })
 
   test('regression: is_active=false + populated workflow_file is excluded', async function () {
     const mock = createMockSupabase(FIXTURES)
     const result = await fetchContractorCredentialAhjs(mock)
     const ids = (result.data || []).map(function (r) { return r.id })
-
     expect(ids).not.toContain('inactive-populated')
-    expect(
-      (result.data || []).some(function (r) {
-        return r.is_active === false && r.workflow_file != null
-      })
-    ).toBe(false)
   })
 
-  test('non-regression: active + populated AHJs (Polk/Lee shape) remain included', async function () {
+  test('non-regression: Polk/Lee remain included', async function () {
     const mock = createMockSupabase(FIXTURES)
     const result = await fetchContractorCredentialAhjs(mock)
     const ids = (result.data || []).map(function (r) { return r.id })
-
     expect(ids).toContain('active-populated')
     expect(ids).toContain('lee-active-populated')
     expect(result.data).toHaveLength(2)
   })
 
-  test('pre-fix query (workflow_file only) would incorrectly include inactive+populated', async function () {
-    // Documents that the old 13a60fa filter alone fails the ZIG-5 gate.
-    const unsafeIds = FIXTURES.filter(function (row) {
-      return row.workflow_file != null
-    }).map(function (r) { return r.id })
-
-    expect(unsafeIds).toContain('inactive-populated')
-    expect(unsafeIds).toContain('active-populated')
-
+  test('validation_ready with runner is not contractor-visible', async function () {
     const mock = createMockSupabase(FIXTURES)
     const result = await fetchContractorCredentialAhjs(mock)
-    const safeIds = (result.data || []).map(function (r) { return r.id })
-    expect(safeIds).not.toContain('inactive-populated')
+    expect((result.data || []).map(function (r) { return r.id })).not.toContain('validation-ready-active')
   })
 })
