@@ -65,8 +65,8 @@ export default async function AdminAhjsPage() {
   )
 
   const credentialScopeNote = companyId
-    ? 'Credential columns use company scope for the signed-in admin user company.'
-    : 'Credential columns use platform scope (any company). Detail API refresh is also platform-scoped.'
+    ? "Credential columns in this list use company scope for your account's company. Opening a row's detail always shows platform scope (any company) — the two can differ."
+    : 'Credential columns use platform scope (any company). Detail API is also platform-scoped.'
 
   return (
     <AhjDashboardClient
