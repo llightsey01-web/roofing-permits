@@ -41,6 +41,7 @@ const navSections = [
     label: 'SYSTEM',
     items: [
       { href: '/admin/ahj-requirements', label: 'AHJ Requirements', match: (p) => p.startsWith('/admin/ahj-requirements') },
+      { href: '/admin/ahjs', label: 'AHJ Readiness', match: (p) => p === '/admin/ahjs' || p.startsWith('/admin/ahjs/') },
       { href: '/admin/system', label: 'System', match: (p) => p.startsWith('/admin/system') },
       { href: '/dashboard', label: 'Ops Queue', match: (p) => p === '/dashboard' || (p.startsWith('/jobs/') && !p.startsWith('/admin/')) },
     ],
@@ -57,10 +58,6 @@ export default function AdminLayout({ children }) {
   useEffect(() => {
     applyPortalTheme(getPortalTheme())
   }, [])
-
-  useEffect(() => {
-    setMobileMenuOpen(false)
-  }, [pathname])
 
   useEffect(() => {
     async function checkAuth() {
