@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
-import { createClient } from '../../../../lib/supabase'
+import { createClient } from '../../../lib/supabase'
 import { filterRows } from './lib/dashboard-view-model.js'
 import AhjSummaryCards from './components/AhjSummaryCards.jsx'
 import AhjTable from './components/AhjTable.jsx'
