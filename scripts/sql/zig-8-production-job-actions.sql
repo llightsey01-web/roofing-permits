@@ -1,14 +1,41 @@
 -- ZIG-8 PRODUCTION SQL — FOR LOGAN MANUAL REVIEW AND EXECUTION ONLY
 -- Do not run via agent. Apply only after staging validation passes.
--- Required order: this DDL → then Railway application deploy.
 --
 -- Project: production (yhxzwjoouiurxrmhjslg)
--- Equivalent to:
+-- Equivalent intent to:
 --   supabase/migrations/20260817191500_job_status_ready_for_physical_submission.sql
 --   supabase/migrations/20260817191600_job_actions_and_permit_packet_rpc.sql
+--   supabase/migrations/20260818001000_job_status_ready_for_physical_submission_enum_safe.sql
 --
--- NOTE: jobs.job_status is TEXT (not a Postgres enum). No ALTER TYPE is required.
--- New coarse value used by application + RPC: 'ready_for_physical_submission'
+-- VERIFIED PRODUCTION FACT (Logan preflight):
+--   jobs.job_status is USER-DEFINED enum public.job_status (NOT text).
+--   ready_for_physical_submission is currently ABSENT from the enum.
+--
+-- Staging drift note:
+--   dart-iq-staging currently stores jobs.job_status as plain text and has
+--   NO public.job_status enum type. The forward migration
+--   20260818001000_job_status_ready_for_physical_submission_enum_safe.sql
+--   no-ops on text and adds the enum label only when enum-backed.
+--
+-- REQUIRED EXECUTION ORDER (Postgres-safe):
+--   PART 1 must be run and COMMITTED before PART 2.
+--   PostgreSQL docs: if ALTER TYPE ... ADD VALUE runs inside a transaction,
+--   the new enum value cannot be used until after that transaction commits.
+--   Therefore PART 1 is intentionally OUTSIDE the PART 2 BEGIN/COMMIT block.
+--   Do NOT wrap PART 1 + PART 2 in a single transaction.
+
+-- ============================================================================
+-- PART 1 — add enum value (own statement / own commit; run FIRST)
+-- ============================================================================
+-- Run this alone and confirm it succeeds before PART 2.
+-- Safe to re-run: IF NOT EXISTS.
+
+ALTER TYPE public.job_status ADD VALUE IF NOT EXISTS 'ready_for_physical_submission';
+
+-- ============================================================================
+-- PART 2 — job_actions + RLS + atomic RPC (single transaction; run SECOND)
+-- ============================================================================
+-- Only after PART 1 has committed.
 
 BEGIN;
 
@@ -202,3 +229,13 @@ REVOKE ALL ON FUNCTION public.complete_permit_packet_skeleton(uuid) FROM authent
 GRANT EXECUTE ON FUNCTION public.complete_permit_packet_skeleton(uuid) TO service_role;
 
 COMMIT;
+
+-- Post-apply verification (optional, run after PART 2 commits):
+--   SELECT enumlabel FROM pg_enum e
+--   JOIN pg_type t ON t.oid = e.enumtypid
+--   JOIN pg_namespace n ON n.oid = t.typnamespace
+--   WHERE n.nspname = 'public' AND t.typname = 'job_status'
+--   ORDER BY e.enumsortorder;
+-- Expect ready_for_physical_submission present.
+--   SELECT to_regclass('public.job_actions');
+--   SELECT to_regprocedure('public.complete_permit_packet_skeleton(uuid)');
