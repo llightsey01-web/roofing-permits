@@ -23,3 +23,22 @@ jobs:
           PROOF_EMAIL: ${{ secrets.PROOF_EMAIL }}
           PROOF_PASSWORD: ${{ secrets.PROOF_PASSWORD }}
           TWOCAPTCHA_API_KEY: ${{ secrets.TWOCAPTCHA_API_KEY }}
+
+  # Production-equivalent Next.js web build (ZIG-15).
+  # Node 22 matches Railway roofing-permits Railpack policy: no engines/.nvmrc
+  # pin in-repo, so Railpack defaults to Node LTS; production deploy meta shows
+  # requestedVersion/resolvedVersion 22.x. No real runtime secrets here.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key

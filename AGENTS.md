@@ -222,7 +222,7 @@ A change is complete only when the relevant subset is true:
 
 - `npm run lint` passes or existing unrelated lint debt is documented.
 - `npm run test:unit` passes or lack/failure of tracked tests is documented.
-- `npm run build` passes for web-impacting changes.
+- `npm run build` passes for web-impacting changes. The production-equivalent web build (`npm run build`) is enforced by the GitHub Actions `build` job on PRs/pushes to `main` (ZIG-15); do not treat a green unit-test job alone as sufficient for web routes/components. A root `npm run build` still does not validate worker Docker images.
 - Worker-impacting changes have appropriate static checks and, when practical, Docker/service-specific build validation.
 - `node --check` is run on changed CommonJS worker/automation files where no better test exists.
 - AHJ config changes run `node -e "require('./automation/ahjs/config-validator.js').validateAllConfigs()"`.
