@@ -13,12 +13,33 @@ const {
   PERMIT_PACKET_RUN_TYPE,
 } = require('../../lib/automation/permit-packet.js')
 
+function defaultPacketRequirements() {
+  return [
+    {
+      id: 'req-1',
+      ahj_id: 'ahj-1',
+      document_role: 'product_approval',
+      display_name: 'Product Approval',
+      required: true,
+      include_in_submission_packet: true,
+      source_type: 'contractor_uploaded',
+      template_storage_path: null,
+      field_map: null,
+      sort_order: 10,
+    },
+  ]
+}
+
 function mockSupabase(opts) {
   var options = opts || {}
   var rpcCalls = []
   var runUpdates = []
   var jobUpdates = []
   var actionInserts = []
+  var requirementRows =
+    options.requirementRows !== undefined
+      ? options.requirementRows
+      : defaultPacketRequirements()
 
   return {
     rpcCalls: rpcCalls,
@@ -43,6 +64,26 @@ function mockSupabase(opts) {
         }
       },
       from: function (table) {
+        if (table === 'ahj_document_requirements') {
+          var chain = {
+            select: function () {
+              return chain
+            },
+            eq: function () {
+              return chain
+            },
+            order: function () {
+              return chain
+            },
+            then: function (resolve, reject) {
+              return Promise.resolve({ data: requirementRows, error: null }).then(
+                resolve,
+                reject
+              )
+            },
+          }
+          return chain
+        }
         return {
           update: function (payload) {
             if (table === 'automation_runs') runUpdates.push(payload)
@@ -63,12 +104,19 @@ function mockSupabase(opts) {
   }
 }
 
+function sampleJob(overrides) {
+  return Object.assign(
+    { id: 'job-1', company_id: 'company-a', ahj_id: 'ahj-1' },
+    overrides || {}
+  )
+}
+
 describe('permit-packet skeleton (ZIG-8)', function () {
   test('successful skeleton uses single atomic RPC (job status + pending action together)', async function () {
     var mock = mockSupabase()
     var result = await runPermitPacketSkeleton(
       mock.client,
-      { id: 'job-1', company_id: 'company-a' },
+      sampleJob(),
       { id: 'run-1', run_type: PERMIT_PACKET_RUN_TYPE }
     )
 
@@ -121,7 +169,7 @@ describe('permit-packet skeleton (ZIG-8)', function () {
     await expect(
       runPermitPacketSkeleton(
         mock.client,
-        { id: 'job-1', company_id: 'company-a' },
+        sampleJob(),
         { id: 'run-1' }
       )
     ).rejects.toThrow(/atomic transition failed/)
@@ -149,7 +197,7 @@ describe('permit-packet skeleton (ZIG-8)', function () {
     var mock = mockSupabase()
     var result = await runPermitPacketSkeleton(
       mock.client,
-      { id: 'job-1', company_id: 'company-a' },
+      sampleJob(),
       { id: 'run-1' }
     )
     expect(result.completedBy).toBeNull()
@@ -158,12 +206,12 @@ describe('permit-packet skeleton (ZIG-8)', function () {
   test('company_id must come from job (server-derived), never invented by packet module args', async function () {
     var mock = mockSupabase()
     await expect(
-      runPermitPacketSkeleton(mock.client, { id: 'job-1' }, { id: 'run-1' })
+      runPermitPacketSkeleton(mock.client, { id: 'job-1', ahj_id: 'ahj-1' }, { id: 'run-1' })
     ).rejects.toThrow(/company_id is required/)
     // RPC only receives job id — company_id derived inside SQL from jobs
     await runPermitPacketSkeleton(
       mock.client,
-      { id: 'job-1', company_id: 'company-a' },
+      sampleJob(),
       { id: 'run-1' }
     )
     expect(mock.rpcCalls[0].args).toEqual({ p_job_id: 'job-1' })
