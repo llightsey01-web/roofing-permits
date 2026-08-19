@@ -63,6 +63,12 @@ var WRITER_DOCUMENT_TYPES = {
     'signed_contract',
   ],
   'lib/documents/affidavit-generate.js': ['owners_affidavit'],
+  'lib/documents/upsert-canonical-job-document.js': [
+    'notice_of_commencement',
+    'noc_uploaded_signed',
+    'noc_uploaded_notarized',
+    'noc_uploaded_recorded',
+  ],
 }
 
 describe('job_documents canonical schema (ZIG-11)', function () {
@@ -178,14 +184,13 @@ describe('job_documents canonical schema (ZIG-11)', function () {
       })
     })
 
-    // upload-noc builds noc_uploaded_{signed|notarized|recorded}
+    // upload-noc indexes noc_uploaded_{signed|notarized|recorded} via shared helper
     var uploadNoc = fs.readFileSync(
       path.join(__dirname, '../../app/api/contractor/jobs/[id]/upload-noc/route.js'),
       'utf8'
     )
-    expect(uploadNoc).toMatch(
-      /document_type:\s*'noc_uploaded_' \+ nocOption\.replace\('upload_', ''\)/
-    )
+    expect(uploadNoc).toMatch(/persistUploadedNocDocument/)
+    expect(uploadNoc).toMatch(/nocOption\.replace\('upload_', ''\)/)
     ;['signed', 'notarized', 'recorded'].forEach(function (suffix) {
       expect(CANONICAL_LABELS).toContain('noc_uploaded_' + suffix)
     })

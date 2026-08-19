@@ -56,7 +56,44 @@ jest.mock('@supabase/supabase-js', function () {
             }
           }),
         },
-        from: jest.fn(function () {
+        from: jest.fn(function (table) {
+          if (table === 'job_documents') {
+            return {
+              select: function () {
+                return {
+                  eq: function () {
+                    return {
+                      eq: function () {
+                        return {
+                          order: async function () {
+                            return { data: [], error: null }
+                          },
+                        }
+                      },
+                    }
+                  },
+                }
+              },
+              insert: function () {
+                return {
+                  select: function () {
+                    return {
+                      single: async function () {
+                        return { data: { id: 'noc-doc-1' }, error: null }
+                      },
+                    }
+                  },
+                }
+              },
+              update: function () {
+                return {
+                  eq: function () {
+                    return { eq: async function () { return { error: null } } }
+                  },
+                }
+              },
+            }
+          }
           return {
             update: jest.fn(function () {
               return { eq: jest.fn(async function () { return { error: null } }) }
@@ -167,5 +204,96 @@ describe('noc-generation', function () {
     const { pdfBytes } = await generateNOC('test-job-id-4', sampleJob, sampleCompany)
     const legalDescription = await readPdfField(pdfBytes, NOC_FIELDS.LEGAL_DESCRIPTION)
     expect(legalDescription).toContain('LOT 5 BLK 2 SUNNY ACRES')
+  })
+
+  test('successful generation writes notice_of_commencement and reuses the row', async function () {
+    var stored = []
+    var jobUpdates = []
+    var supabase = {
+      storage: {
+        from: function () {
+          return {
+            download: async function () {
+              return {
+                data: {
+                  arrayBuffer: async function () {
+                    return mockTemplateBytes.buffer.slice(
+                      mockTemplateBytes.byteOffset,
+                      mockTemplateBytes.byteOffset + mockTemplateBytes.byteLength
+                    )
+                  },
+                },
+                error: null,
+              }
+            },
+            upload: async function () {
+              return { error: null }
+            },
+          }
+        },
+      },
+      from: function (table) {
+        if (table === 'job_documents') {
+          return {
+            select: function () {
+              return {
+                eq: function () {
+                  return {
+                    eq: function () {
+                      return {
+                        order: async function () {
+                          return { data: stored.map(function (r) { return { id: r.id } }), error: null }
+                        },
+                      }
+                    },
+                  }
+                },
+              }
+            },
+            insert: function (row) {
+              stored.push(Object.assign({ id: 'noc-' + (stored.length + 1) }, row))
+              return {
+                select: function () {
+                  return {
+                    single: async function () {
+                      return { data: { id: stored[stored.length - 1].id }, error: null }
+                    },
+                  }
+                },
+              }
+            },
+            update: function (payload) {
+              stored.forEach(function (row) {
+                Object.assign(row, payload)
+              })
+              return {
+                eq: function () {
+                  return { eq: async function () { return { error: null } } }
+                },
+              }
+            },
+          }
+        }
+        return {
+          update: function (payload) {
+            jobUpdates.push(payload)
+            return { eq: async function () { return { error: null } } }
+          },
+        }
+      },
+    }
+
+    var first = await generateNOC('job-canonical', sampleJob, sampleCompany, { supabase: supabase })
+    expect(first.filePath).toBe('jobs/job-canonical/generated/noc-filled.pdf')
+    expect(stored).toHaveLength(1)
+    expect(stored[0].document_type).toBe('notice_of_commencement')
+    expect(stored[0].file_path).toBe(first.filePath)
+    expect(jobUpdates[0].noc_file_path).toBe(first.filePath)
+
+    var second = await generateNOC('job-canonical', sampleJob, sampleCompany, { supabase: supabase })
+    expect(second.filePath).toBe(first.filePath)
+    expect(stored).toHaveLength(1)
+    expect(stored[0].id).toBe('noc-1')
+    expect(stored[0].file_path).toBe(first.filePath)
   })
 })
