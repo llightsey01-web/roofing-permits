@@ -7,7 +7,6 @@ const { PDFDocument } = require('pdf-lib')
 const {
   NOC_FIELDS,
   NOC_TEXT_FIELDS,
-  NOC_PRODUCTION_FIELD_NAMES,
 } = require('../../lib/noc/noc-field-map')
 
 let mockTemplateBytes
@@ -119,17 +118,26 @@ describe('noc-generation', function () {
 
   const fullAddress = '123 Main St, Lakeland, FL 33801'
 
-  test('production template contains every canonical NOC field', async function () {
+  test('production template contains every canonical NOC field with the correct field type', async function () {
     const templatePath = path.join(__dirname, '..', '..', 'templates', 'noc-template.pdf')
     expect(fs.existsSync(templatePath)).toBe(true)
+
     const doc = await PDFDocument.load(fs.readFileSync(templatePath))
     const form = doc.getForm()
-    const present = {}
-    form.getFields().forEach(function (field) {
-      present[field.getName()] = true
+
+    NOC_TEXT_FIELDS.forEach(function (name) {
+      expect(function () {
+        form.getTextField(name)
+      }).not.toThrow()
     })
-    NOC_PRODUCTION_FIELD_NAMES.forEach(function (name) {
-      expect(present[name]).toBe(true)
+
+    ;[
+      NOC_FIELDS.NOTARY_PHYSICAL_PRESENCE_CHECKBOX,
+      NOC_FIELDS.NOTARY_ONLINE_CHECKBOX,
+    ].forEach(function (name) {
+      expect(function () {
+        form.getCheckBox(name)
+      }).not.toThrow()
     })
   })
 
