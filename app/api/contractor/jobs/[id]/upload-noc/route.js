@@ -95,6 +95,18 @@ export async function POST(request, { params }) {
       return Response.json({ error: 'Upload failed: ' + uploadError.message }, { status: 500 })
     }
 
+    // Canonical index: noc_uploaded_{signed|notarized|recorded} before jobs.update
+    // so a persist failure cannot advance NOC status.
+    await persistUploadedNocDocument(
+      supabase,
+      id,
+      nocOption.replace('upload_', ''),
+      file.name || 'noc-uploaded.pdf',
+      storagePath,
+      buffer.length,
+      context.user?.id || null
+    )
+
     const update = buildJobUpdateForUploadedNoc(job, nocOption, storagePath)
     const { data: updated, error: updateError } = await supabase
       .from('jobs')
@@ -106,17 +118,6 @@ export async function POST(request, { params }) {
     if (updateError) {
       return Response.json({ error: updateError.message }, { status: 500 })
     }
-
-    // Canonical index: noc_uploaded_{signed|notarized|recorded}
-    await persistUploadedNocDocument(
-      supabase,
-      id,
-      nocOption.replace('upload_', ''),
-      file.name || 'noc-uploaded.pdf',
-      storagePath,
-      buffer.length,
-      context.user?.id || null
-    )
 
     // If permit already issued, re-evaluate combined packet now that a required doc may have landed
     let packetMerge = null
