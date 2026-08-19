@@ -9,12 +9,14 @@ const {
   persistNotarizedNocDocument,
   persistRecordedNocDocument,
   persistUploadedNocDocument,
+  isUniqueViolation,
 } = require('../../lib/documents/upsert-canonical-job-document')
 
 function createClient(opts) {
   var options = opts || {}
-  var existingRows = options.existingRows !== undefined ? options.existingRows : []
+  var existingRows = options.existingRows !== undefined ? options.existingRows.slice() : []
   var insertError = options.insertError || null
+  var winningRowsAfterUniqueInsert = options.winningRowsAfterUniqueInsert || null
   var calls = {
     selects: 0,
     inserts: 0,
@@ -54,7 +56,12 @@ function createClient(opts) {
             select: function () {
               return {
                 single: async function () {
-                  if (insertError) return { data: null, error: insertError }
+                  if (insertError) {
+                    if (winningRowsAfterUniqueInsert) {
+                      existingRows = winningRowsAfterUniqueInsert.slice()
+                    }
+                    return { data: null, error: insertError }
+                  }
                   existingRows = [{ id: 'doc-new' }]
                   return { data: { id: 'doc-new' }, error: null }
                 },
@@ -129,39 +136,26 @@ describe('upsertCanonicalJobDocument', function () {
     expect(client.calls.lastUpdate.file_size_bytes).toBe(1300)
   })
 
-  test('replay after concurrent insert realigns matching rows', async function () {
+  test('isUniqueViolation recognizes Postgres 23505 only as uniqueness', function () {
+    expect(isUniqueViolation({ code: '23505', message: 'duplicate key value violates unique constraint "job_documents_job_id_noc_document_type_uidx"' })).toBe(true)
+    expect(isUniqueViolation({
+      code: '409',
+      message: 'duplicate key value violates unique constraint "job_documents_job_id_noc_document_type_uidx"',
+    })).toBe(true)
+    expect(isUniqueViolation({ code: '23503', message: 'insert or update on table violates foreign key constraint' })).toBe(false)
+    expect(isUniqueViolation({ code: 'PGRST204', message: 'Could not find the table' })).toBe(false)
+    expect(isUniqueViolation({ message: 'boom' })).toBe(false)
+  })
+
+  test('simulated unique_violation triggers re-query and reuses one row', async function () {
     var client = createClient({
       existingRows: [],
-      insertError: { message: 'duplicate or race' },
+      insertError: {
+        code: '23505',
+        message: 'duplicate key value violates unique constraint "job_documents_job_id_noc_document_type_uidx"',
+      },
+      winningRowsAfterUniqueInsert: [{ id: 'doc-raced' }],
     })
-    client.calls.selects = 0
-    var originalFrom = client.from.bind(client)
-    var selectCount = 0
-    client.from = function (table) {
-      var chain = originalFrom(table)
-      var origSelect = chain.select
-      chain.select = function () {
-        var sel = origSelect()
-        var origEq = sel.eq
-        sel.eq = function () {
-          var eq1 = origEq()
-          var origEq2 = eq1.eq
-          eq1.eq = function () {
-            var eq2 = origEq2()
-            var origOrder = eq2.order
-            eq2.order = async function () {
-              selectCount += 1
-              if (selectCount === 1) return { data: [], error: null }
-              return { data: [{ id: 'doc-raced' }], error: null }
-            }
-            return eq2
-          }
-          return eq1
-        }
-        return sel
-      }
-      return chain
-    }
 
     var result = await persistNotarizedNocDocument(
       client,
@@ -169,10 +163,28 @@ describe('upsertCanonicalJobDocument', function () {
       'jobs/job-2/notarized/noc-notarized.pdf',
       900
     )
+    expect(result.id).toBe('doc-raced')
     expect(result.reused).toBe(true)
     expect(result.raced).toBe(true)
+    expect(result.alignedRows).toBe(1)
+    expect(client.calls.selects).toBe(2)
+    expect(client.calls.inserts).toBe(1)
     expect(client.calls.updates).toBe(1)
     expect(client.calls.lastUpdate.file_path).toBe('jobs/job-2/notarized/noc-notarized.pdf')
+  })
+
+  test('non-unique insert errors do not enter the reuse path', async function () {
+    var client = createClient({
+      existingRows: [],
+      insertError: { code: '23503', message: 'insert or update on table violates foreign key constraint' },
+    })
+    await expect(
+      persistGeneratedNocDocument(client, 'job-3', 'jobs/job-3/generated/noc-filled.pdf', 10)
+    ).rejects.toMatchObject({
+      errorCode: 'canonical_document_write_failed',
+      message: expect.stringMatching(/insert failed/),
+    })
+    expect(client.calls.updates).toBe(0)
   })
 
   test('persist wrappers use existing enum labels', async function () {
