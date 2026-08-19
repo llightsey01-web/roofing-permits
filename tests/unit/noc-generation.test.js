@@ -1,7 +1,13 @@
 // tests/unit/noc-generation.test.js — no real network calls
 'use strict'
 
+const fs = require('fs')
+const path = require('path')
 const { PDFDocument } = require('pdf-lib')
+const {
+  NOC_FIELDS,
+  NOC_TEXT_FIELDS,
+} = require('../../lib/noc/noc-field-map')
 
 let mockTemplateBytes
 let originalFlatten
@@ -9,18 +15,12 @@ let originalFlatten
 async function buildNocTemplatePdf() {
   const doc = await PDFDocument.create()
   const form = doc.getForm()
-  const fields = [
-    'Tax Folio No',
-    '1',
-    'General description of improvement',
-    'Name and address',
-    'Interest in property',
-    'Contractor Name and Address',
-    'Contractors phone number',
-  ]
-  fields.forEach(function (name) {
+  NOC_TEXT_FIELDS.forEach(function (name) {
     form.createTextField(name)
   })
+  // Checkboxes referenced by fillNocForm (not in NOC_TEXT_FIELDS)
+  form.createCheckBox(NOC_FIELDS.NOTARY_PHYSICAL_PRESENCE_CHECKBOX)
+  form.createCheckBox(NOC_FIELDS.NOTARY_ONLINE_CHECKBOX)
   return Buffer.from(await doc.save())
 }
 
@@ -118,6 +118,29 @@ describe('noc-generation', function () {
 
   const fullAddress = '123 Main St, Lakeland, FL 33801'
 
+  test('production template contains every canonical NOC field with the correct field type', async function () {
+    const templatePath = path.join(__dirname, '..', '..', 'templates', 'noc-template.pdf')
+    expect(fs.existsSync(templatePath)).toBe(true)
+
+    const doc = await PDFDocument.load(fs.readFileSync(templatePath))
+    const form = doc.getForm()
+
+    NOC_TEXT_FIELDS.forEach(function (name) {
+      expect(function () {
+        form.getTextField(name)
+      }).not.toThrow()
+    })
+
+    ;[
+      NOC_FIELDS.NOTARY_PHYSICAL_PRESENCE_CHECKBOX,
+      NOC_FIELDS.NOTARY_ONLINE_CHECKBOX,
+    ].forEach(function (name) {
+      expect(function () {
+        form.getCheckBox(name)
+      }).not.toThrow()
+    })
+  })
+
   test('generateNOC completes without error', async function () {
     const result = await generateNOC('test-job-id', sampleJob, sampleCompany)
     expect(result.filePath).toMatch(/noc-filled\.pdf$/)
@@ -128,21 +151,21 @@ describe('noc-generation', function () {
 
   test('NOC contains correct owner name', async function () {
     const { pdfBytes } = await generateNOC('test-job-id-2', sampleJob, sampleCompany)
-    const nameAndAddress = await readPdfField(pdfBytes, 'Name and address')
+    const nameAndAddress = await readPdfField(pdfBytes, NOC_FIELDS.OWNER_NAME_AND_ADDRESS)
     expect(nameAndAddress).toContain('Jane Homeowner')
     expect(nameAndAddress).toContain(fullAddress)
   })
 
   test('NOC contains correct property address', async function () {
     const { pdfBytes } = await generateNOC('test-job-id-3', sampleJob, sampleCompany)
-    const propertyDesc = await readPdfField(pdfBytes, '1')
-    expect(propertyDesc).toContain('123 Main St')
-    expect(propertyDesc).toContain('Lakeland')
+    const streetAddress = await readPdfField(pdfBytes, NOC_FIELDS.STREET_ADDRESS)
+    expect(streetAddress).toContain('123 Main St')
+    expect(streetAddress).toContain('Lakeland')
   })
 
   test('NOC contains correct legal description', async function () {
     const { pdfBytes } = await generateNOC('test-job-id-4', sampleJob, sampleCompany)
-    const propertyDesc = await readPdfField(pdfBytes, '1')
-    expect(propertyDesc).toContain('LOT 5 BLK 2 SUNNY ACRES')
+    const legalDescription = await readPdfField(pdfBytes, NOC_FIELDS.LEGAL_DESCRIPTION)
+    expect(legalDescription).toContain('LOT 5 BLK 2 SUNNY ACRES')
   })
 })
