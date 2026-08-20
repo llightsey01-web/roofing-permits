@@ -255,8 +255,8 @@ SELECT pg_temp.zig17_pr4_ensure_unique_index(
   $c$
     CREATE UNIQUE INDEX automation_runs_one_active_permit_packet_uidx
       ON public.automation_runs (job_id)
-      WHERE run_type::text = 'permit_packet'
-        AND run_status::text IN ('queued', 'running');
+      WHERE run_type = 'permit_packet'
+        AND run_status IN ('queued', 'running');
   $c$,
   false
 );

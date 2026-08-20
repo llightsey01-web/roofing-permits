@@ -116,10 +116,18 @@ describe('ZIG-17 PR 4 Phase A physical-submission handoff schema', function () {
   })
 
   test('active permit_packet unique-index keys and predicate', function () {
+    var indexCreate =
+      /CREATE UNIQUE INDEX automation_runs_one_active_permit_packet_uidx\s+ON public\.automation_runs \(job_id\)\s+WHERE run_type = 'permit_packet'\s+AND run_status IN \('queued', 'running'\);/
     expect(migration).toMatch(/automation_runs_one_active_permit_packet_uidx/)
     expect(migration).toMatch(/ON public\.automation_runs \(job_id\)/)
-    expect(migration).toMatch(/WHERE run_type::text = 'permit_packet'/)
-    expect(migration).toMatch(/run_status::text IN \('queued', 'running'\)/)
+    expect(migration).toMatch(indexCreate)
+    expect(prod).toMatch(indexCreate)
+    expect(migration).not.toMatch(
+      /CREATE UNIQUE INDEX automation_runs_one_active_permit_packet_uidx[\s\S]*?run_status::text/
+    )
+    expect(prod).not.toMatch(
+      /CREATE UNIQUE INDEX automation_runs_one_active_permit_packet_uidx[\s\S]*?run_status::text/
+    )
     expect(migration).toMatch(/p_pred_kind = 'active_permit_packet'/)
     expect(migration).toMatch(/ARRAY\['permit_packet', 'queued', 'running'\]/)
     expect(migration).not.toMatch(
