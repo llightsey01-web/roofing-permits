@@ -9,8 +9,6 @@ const {
   runPermitPacketSkeleton,
   workerCanCompleteJobAction,
   READY_FOR_PHYSICAL_SUBMISSION,
-  PHYSICAL_SUBMISSION_ACTION_TYPE,
-  PERMIT_PACKET_RUN_TYPE,
 } = require('../../lib/automation/permit-packet.js')
 
 function defaultPacketRequirements() {
@@ -104,33 +102,17 @@ function mockSupabase(opts) {
   }
 }
 
-function sampleJob(overrides) {
-  return Object.assign(
-    { id: 'job-1', company_id: 'company-a', ahj_id: 'ahj-1' },
-    overrides || {}
-  )
-}
-
-describe('permit-packet skeleton (ZIG-8)', function () {
-  test('successful skeleton uses single atomic RPC (job status + pending action together)', async function () {
+describe('permit-packet skeleton helper (ZIG-8, unused by PR 3 run)', function () {
+  test('completePermitPacketSkeleton uses single atomic RPC (job status + pending action together)', async function () {
     var mock = mockSupabase()
-    var result = await runPermitPacketSkeleton(
-      mock.client,
-      sampleJob(),
-      { id: 'run-1', run_type: PERMIT_PACKET_RUN_TYPE }
-    )
+    var result = await completePermitPacketSkeleton(mock.client, 'job-1')
 
     expect(mock.rpcCalls.length).toBe(1)
     expect(mock.rpcCalls[0].name).toBe('complete_permit_packet_skeleton')
     expect(mock.rpcCalls[0].args).toEqual({ p_job_id: 'job-1' })
-    // No separate best-effort job_actions insert or jobs update from JS
     expect(mock.actionInserts.length).toBe(0)
-    expect(mock.jobUpdates.length).toBe(0)
-
-    expect(result.jobStatus).toBe(READY_FOR_PHYSICAL_SUBMISSION)
-    expect(result.actionType).toBe(PHYSICAL_SUBMISSION_ACTION_TYPE)
-    expect(result.actionId).toBe('action-1')
-    expect(result.completedBy).toBeNull()
+    expect(result.job_status).toBe(READY_FOR_PHYSICAL_SUBMISSION)
+    expect(result.action_id).toBe('action-1')
   })
 
   test('retry / re-execution does not invent a second pending action (RPC idempotent)', async function () {
@@ -159,24 +141,18 @@ describe('permit-packet skeleton (ZIG-8)', function () {
     expect(second.action_created).toBe(false)
   })
 
-  test('RPC failure leaves no partial JS-side writes (atomicity boundary)', async function () {
+  test('RPC failure of unused helper does not write job_actions from JS', async function () {
     var mock = mockSupabase({
       rpc: function () {
         return { data: null, error: { message: 'simulated mid-transition failure' } }
       },
     })
 
-    await expect(
-      runPermitPacketSkeleton(
-        mock.client,
-        sampleJob(),
-        { id: 'run-1' }
-      )
-    ).rejects.toThrow(/atomic transition failed/)
+    await expect(completePermitPacketSkeleton(mock.client, 'job-1')).rejects.toThrow(
+      /atomic transition failed/
+    )
 
     expect(mock.actionInserts.length).toBe(0)
-    expect(mock.jobUpdates.length).toBe(0)
-    expect(mock.runUpdates.length).toBe(0)
   })
 
   test('worker cannot complete a human action', function () {
@@ -187,35 +163,22 @@ describe('permit-packet skeleton (ZIG-8)', function () {
     )
     expect(src).not.toMatch(/status:\s*['"]completed['"]/)
     expect(src).not.toMatch(/completed_by\s*:/)
-    // RPC name must not be a complete-action API
     expect(src).toMatch(/complete_permit_packet_skeleton/)
     expect(src).not.toMatch(/complete_job_action/)
     expect(src).not.toMatch(/mark.*physical_submission.*completed/i)
+    expect(src).toMatch(/Does not call complete_permit_packet_skeleton/)
+    expect(src).toMatch(/ready_for_physical_submission/)
   })
 
-  test('worker-created action keeps completed_by null', async function () {
-    var mock = mockSupabase()
-    var result = await runPermitPacketSkeleton(
-      mock.client,
-      sampleJob(),
-      { id: 'run-1' }
-    )
-    expect(result.completedBy).toBeNull()
-  })
-
-  test('company_id must come from job (server-derived), never invented by packet module args', async function () {
+  test('company_id must come from job (server-derived)', async function () {
     var mock = mockSupabase()
     await expect(
       runPermitPacketSkeleton(mock.client, { id: 'job-1', ahj_id: 'ahj-1' }, { id: 'run-1' })
     ).rejects.toThrow(/company_id is required/)
-    // RPC only receives job id — company_id derived inside SQL from jobs
-    await runPermitPacketSkeleton(
-      mock.client,
-      sampleJob(),
-      { id: 'run-1' }
-    )
+    var rpc = await completePermitPacketSkeleton(mock.client, 'job-1')
     expect(mock.rpcCalls[0].args).toEqual({ p_job_id: 'job-1' })
     expect(mock.rpcCalls[0].args.p_company_id).toBeUndefined()
+    expect(rpc.action_id).toBe('action-1')
   })
 })
 

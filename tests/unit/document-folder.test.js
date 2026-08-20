@@ -268,4 +268,67 @@ describe('combined packet merge gating', function () {
     expect(result.merged).toBe(true)
     expect(result.filePath).toMatch(/combined-packet\.pdf$/)
   })
+
+  test('corrupt PDF merge failure throws from maybeMergeCombinedPacket (pre-PR-3 semantics)', async function () {
+    var requirements = [
+      { document_role: 'approved_permit', required: true, sort_order: 1 },
+    ]
+    var documents = [
+      { id: '2', document_type: 'approved_permit', file_path: 'permit.pdf' },
+    ]
+    await expect(
+      maybeMergeCombinedPacket(
+        mockSupabase({
+          requirements: requirements,
+          documents: documents,
+          downloads: { 'permit.pdf': Buffer.from('not-a-pdf') },
+        }),
+        { id: 'j1', job_status: 'permit_issued', ahj_id: 'ahj1' },
+        { requirements: requirements, force: true }
+      )
+    ).rejects.toThrow()
+  })
+
+  test('tryPacketMergeForJob still converts merge throws to merged:false', async function () {
+    const { tryPacketMergeForJob } = require('../../lib/documents/try-packet-merge')
+    var requirements = [
+      { document_role: 'approved_permit', required: true, sort_order: 1 },
+    ]
+    var documents = [
+      { id: '2', document_type: 'approved_permit', file_path: 'permit.pdf' },
+    ]
+    var supabase = mockSupabase({
+      requirements: requirements,
+      documents: documents,
+      downloads: { 'permit.pdf': Buffer.from('not-a-pdf') },
+    })
+    var originalFrom = supabase.from
+    supabase.from = function (table) {
+      if (table === 'jobs') {
+        return {
+          select: function () {
+            return {
+              eq: function () {
+                return {
+                  single: async function () {
+                    return {
+                      data: { id: 'j1', job_status: 'permit_issued', ahj_id: 'ahj1' },
+                      error: null,
+                    }
+                  },
+                }
+              },
+            }
+          },
+        }
+      }
+      return originalFrom(table)
+    }
+    var result = await tryPacketMergeForJob(supabase, 'j1', {
+      requirements: requirements,
+      force: true,
+    })
+    expect(result.merged).toBe(false)
+    expect(result.reason).toBeTruthy()
+  })
 })

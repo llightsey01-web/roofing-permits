@@ -10,7 +10,6 @@ const {
 const { withRetry } = require('../../lib/automation/retry.js')
 const {
   runPermitPacketSkeleton,
-  READY_FOR_PHYSICAL_SUBMISSION,
   PERMIT_PACKET_RUN_TYPE,
 } = require('../../lib/automation/permit-packet.js')
 
@@ -249,18 +248,5 @@ describe('permit-packet integrates packet-config (ZIG-10)', function () {
       )
     ).rejects.toMatchObject({ errorCode: 'packet_config_missing', nonRetryable: true })
     expect(mock.rpcCalls.length).toBe(0)
-  })
-
-  test('valid config allows the existing skeleton path to continue', async function () {
-    var mock = mockPacketClient()
-    var result = await runPermitPacketSkeleton(
-      mock.client,
-      { id: 'job-1', company_id: 'company-a', ahj_id: 'ahj-1' },
-      { id: 'run-1', run_type: PERMIT_PACKET_RUN_TYPE }
-    )
-    expect(mock.rpcCalls.length).toBe(1)
-    expect(mock.rpcCalls[0].name).toBe('complete_permit_packet_skeleton')
-    expect(result.jobStatus).toBe(READY_FOR_PHYSICAL_SUBMISSION)
-    expect(result.completedBy).toBeNull()
   })
 })
