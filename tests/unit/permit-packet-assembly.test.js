@@ -13,8 +13,15 @@ const { PDFDocument } = require('pdf-lib')
 const { isPacketConfigValid } = require('../../lib/ahj/packet-config.js')
 const {
   runPermitPacket,
+  completePermitPacket,
+  isStalePacketRebuild,
   RUN_STATUS_COMPLETE,
   RUN_STATUS_NEEDS_REVIEW,
+  JOB_STATUS_NEEDS_REVIEW,
+  JOB_STATUS_NEEDS_CORRECTION,
+  REBUILD_REASON_PACKET_STALE,
+  SKIPPED_READY_INPUT_CHANGED,
+  READY_FINGERPRINT_MISMATCH,
 } = require('../../lib/automation/permit-packet.js')
 const {
   persistRequirementBackedJobDocument,
@@ -25,7 +32,14 @@ const {
 const { mergePdfBuffers } = require('../../lib/documents/packet-merge.js')
 const { mergePacketJobSpecs } = require('../../lib/permits/packet-job-specs.js')
 const { PACKET_INCOMPLETE_REVIEW_TYPE } = require('../../lib/permits/packet-review.js')
+const { persistAssembledSubmissionPacket } = require('../../lib/permits/packet-assembly.js')
+const freshness = require('../../lib/permits/packet-freshness.js')
 const { selectExecutionFamily } = require('../../lib/automation/workflow-type-dispatch.js')
+const { buildStoredFingerprint } = require('../../lib/permits/packet-fingerprint.js')
+const {
+  resolvedValuesFromFieldValues,
+  toOrderedEntry,
+} = require('../../lib/permits/packet-fingerprint-adapter.js')
 
 const TEXT_FIELD = 'ApplicantName'
 
@@ -73,10 +87,19 @@ async function makePdf(options) {
   for (var i = 0; i < pages; i++) {
     doc.addPage([width, 280])
   }
-  if (opts.fieldName) {
+  var fieldNames = opts.fieldNames
+  if (!fieldNames && opts.fieldName) fieldNames = [opts.fieldName]
+  if (fieldNames && fieldNames.length) {
     var form = doc.getForm()
-    var field = form.createTextField(opts.fieldName)
-    field.addToPage(doc.getPages()[0], { x: 20, y: 200, width: 160, height: 18 })
+    for (var fi = 0; fi < fieldNames.length; fi++) {
+      var field = form.createTextField(fieldNames[fi])
+      field.addToPage(doc.getPages()[0], {
+        x: 20,
+        y: 200 - fi * 24,
+        width: 160,
+        height: 18,
+      })
+    }
   }
   return Buffer.from(await doc.save())
 }
@@ -98,11 +121,14 @@ function createPacketClient(opts) {
     jobSpecs: options.jobSpecs || { proof: { transaction_id: 'keep-me' }, squares: 24 },
     reviews: (options.reviews || []).slice(),
     storage: Object.assign({}, options.storage || {}),
+    liveJob: options.liveJob ? Object.assign({}, options.liveJob) : sampleJob(),
     rpcCalls: [],
     runUpdates: [],
     jobUpdates: [],
     reviewInserts: [],
     reviewUpdates: [],
+    actionInserts: [],
+    actionUpdates: [],
     documentInserts: [],
     documentUpdates: [],
     uploads: [],
@@ -141,7 +167,13 @@ function createPacketClient(opts) {
         rows = state.company && matchesFilters(state.company, filters) ? [state.company] : []
         if (!filters.id && state.company) rows = [state.company]
       } else if (table === 'jobs') {
-        rows = [{ id: 'job-1', job_specs: state.jobSpecs }]
+        rows = [
+          Object.assign({}, state.liveJob, {
+            id: 'job-1',
+            company_id: state.liveJob.company_id || 'company-a',
+            job_specs: state.jobSpecs,
+          }),
+        ]
       } else if (table === 'review_requests') {
         rows = state.reviews.filter(function (row) {
           return matchesFilters(row, filters)
@@ -182,6 +214,10 @@ function createPacketClient(opts) {
         state.reviewInserts.push(review)
         return { data: { id: reviewId }, error: null }
       }
+      if (table === 'job_actions') {
+        state.actionInserts.push(payload)
+        return { data: { id: 'action-ins-1' }, error: null }
+      }
       return { data: { id: 'ins-1' }, error: null }
     }
 
@@ -201,6 +237,8 @@ function createPacketClient(opts) {
         state.reviews.forEach(function (row) {
           if (matchesFilters(row, filters)) Object.assign(row, payload)
         })
+      } else if (table === 'job_actions') {
+        state.actionUpdates.push({ filters: Object.assign({}, filters), payload: payload })
       }
       return { data: null, error: null }
     }
@@ -229,6 +267,11 @@ function createPacketClient(opts) {
         ctx.filters[col] = val
         return chain
       },
+      in: function (col, vals) {
+        ctx.inFilters = ctx.inFilters || {}
+        ctx.inFilters[col] = vals
+        return chain
+      },
       order: function (col, opts) {
         ctx.orders.push({ col: col, ascending: !(opts && opts.ascending === false) })
         return chain
@@ -253,7 +296,23 @@ function createPacketClient(opts) {
     client: {
       rpc: async function (name, args) {
         state.rpcCalls.push({ name: name, args: args })
-        return { data: null, error: { message: 'RPC should not be called in PR 3' } }
+        if (typeof options.rpc === 'function') {
+          return options.rpc(name, args, state.rpcCalls.length)
+        }
+        if (name === 'complete_permit_packet') {
+          return {
+            data: {
+              ok: true,
+              job_id: args.p_job_id,
+              company_id: 'company-a',
+              action_id: 'action-1',
+              action_created: true,
+              job_status: 'ready_for_physical_submission',
+            },
+            error: null,
+          }
+        }
+        return { data: null, error: { message: 'unexpected rpc ' + name } }
       },
       from: function (table) {
         return chainFor(table)
@@ -306,15 +365,22 @@ describe('permit-packet assembly (ZIG-17 PR 3)', function () {
     var result = await runPermitPacket(mock.client, sampleJob(), { id: 'run-1' })
 
     expect(result.complete).toBe(true)
+    expect(result.ready).toBe(true)
+    expect(result.jobStatus).toBe('ready_for_physical_submission')
     expect(result.submissionPacketDocumentId).toBeTruthy()
     expect(result.filePath).toBe('jobs/job-1/generated/submission-packet.pdf')
-    expect(mock.state.rpcCalls.length).toBe(0)
+    expect(mock.state.rpcCalls.length).toBe(1)
+    expect(mock.state.rpcCalls[0].name).toBe('complete_permit_packet')
+    expect(mock.state.rpcCalls[0].args.p_job_id).toBe('job-1')
+    expect(mock.state.rpcCalls[0].args.p_fingerprint).toEqual(result.fingerprint)
     expect(mock.state.runUpdates[0].run_status).toBe(RUN_STATUS_COMPLETE)
     expect(mock.state.runUpdates[0].completed_at).toBeTruthy()
-    expect(mock.state.runUpdates[0].checkpoint_data).toEqual({
+    expect(mock.state.runUpdates[0].checkpoint_data).toMatchObject({
       packet_assembled: true,
       document_id: result.submissionPacketDocumentId,
       file_path: result.filePath,
+      ready: true,
+      skipped_ready_reason: null,
     })
     expect(mock.state.jobUpdates[0].job_status).toBeUndefined()
     expect(mock.state.jobUpdates[0].job_specs.proof.transaction_id).toBe('keep-me')
@@ -341,8 +407,9 @@ describe('permit-packet assembly (ZIG-17 PR 3)', function () {
 
     expect(result.complete).toBe(false)
     expect(result.submissionPacketDocumentId).toBeNull()
+    expect(result.jobStatus).toBe(JOB_STATUS_NEEDS_REVIEW)
     expect(mock.state.runUpdates[0].run_status).toBe(RUN_STATUS_NEEDS_REVIEW)
-    expect(mock.state.jobUpdates[0].job_status).toBe('needs_review')
+    expect(mock.state.jobUpdates[0].job_status).toBe(JOB_STATUS_NEEDS_REVIEW)
     expect(mock.state.jobUpdates[0].job_specs.packet.complete).toBe(false)
     expect(mock.state.jobUpdates[0].job_specs.packet.problems[0].code).toBe(
       'required_document_missing'
@@ -350,6 +417,160 @@ describe('permit-packet assembly (ZIG-17 PR 3)', function () {
     expect(mock.state.reviewInserts[0].review_type).toBe(PACKET_INCOMPLETE_REVIEW_TYPE)
     expect(mock.state.reviewInserts[0].review_status).toBe('pending')
     expect(mock.state.documentInserts.length).toBe(0)
+    expect(mock.state.rpcCalls.length).toBe(0)
+  })
+
+  test('isStalePacketRebuild uses payload or durable stale, never job_status alone', function () {
+    var staleSpecs = { packet: { stale: { reason: 'input_changed' } } }
+    expect(isStalePacketRebuild({ payload: { rebuild_reason: REBUILD_REASON_PACKET_STALE } }, {})).toBe(true)
+    expect(isStalePacketRebuild({ id: 'run-1' }, staleSpecs)).toBe(true)
+    expect(
+      isStalePacketRebuild(
+        { payload: { rebuild_reason: REBUILD_REASON_PACKET_STALE } },
+        staleSpecs
+      )
+    ).toBe(true)
+    expect(isStalePacketRebuild({ payload: {} }, { packet: { complete: false } })).toBe(false)
+    expect(isStalePacketRebuild({ payload: { rebuild_reason: 'manual' } }, {})).toBe(false)
+    expect(isStalePacketRebuild({ payload: { rebuild_reason: REBUILD_REASON_PACKET_STALE } }, null)).toBe(true)
+    expect(isStalePacketRebuild({ id: 'run-1' }, { packet: { stale: null } })).toBe(false)
+  })
+
+  test('stale-origin incomplete via payload keeps needs_correction and packet_incomplete', async function () {
+    var mock = createPacketClient({
+      documents: [],
+      liveJob: sampleJob({ job_status: JOB_STATUS_NEEDS_CORRECTION }),
+    })
+    var result = await runPermitPacket(mock.client, sampleJob({ job_status: JOB_STATUS_NEEDS_CORRECTION }), {
+      id: 'run-stale-payload',
+      payload: {
+        rebuild_reason: REBUILD_REASON_PACKET_STALE,
+        rebuild_for_input_fingerprint: 'b'.repeat(64),
+      },
+    })
+
+    expect(result.complete).toBe(false)
+    expect(result.ready).toBe(false)
+    expect(result.jobStatus).toBe(JOB_STATUS_NEEDS_CORRECTION)
+    expect(mock.state.runUpdates[0].run_status).toBe(RUN_STATUS_NEEDS_REVIEW)
+    expect(mock.state.jobUpdates[0].job_status).toBe(JOB_STATUS_NEEDS_CORRECTION)
+    expect(mock.state.jobUpdates[0].job_specs.packet.complete).toBe(false)
+    expect(mock.state.reviewInserts[0].review_type).toBe(PACKET_INCOMPLETE_REVIEW_TYPE)
+    expect(mock.state.reviewInserts[0].review_status).toBe('pending')
+    expect(mock.state.documentInserts.length).toBe(0)
+    expect(mock.state.rpcCalls.length).toBe(0)
+    expect(mock.state.actionInserts.length).toBe(0)
+    expect(mock.state.actionUpdates.length).toBe(0)
+  })
+
+  test('stale-origin incomplete via durable packet.stale keeps needs_correction', async function () {
+    var fingerprintB = {
+      version: 1,
+      input_fingerprint: 'b'.repeat(64),
+      content_fingerprint: 'c'.repeat(64),
+      computed_at: '2026-08-01T00:00:00.000Z',
+      artifacts: [],
+    }
+    var history = [
+      {
+        version: 1,
+        input_fingerprint: 'a'.repeat(64),
+        content_fingerprint: 'd'.repeat(64),
+        computed_at: '2026-07-01T00:00:00.000Z',
+        artifacts: [],
+      },
+    ]
+    var stale = {
+      reason: 'input_changed',
+      observed_input_fingerprint: 'e'.repeat(64),
+      observed_at: '2026-08-19T12:00:00.000Z',
+    }
+    var mock = createPacketClient({
+      documents: [],
+      liveJob: sampleJob({ job_status: JOB_STATUS_NEEDS_CORRECTION }),
+      jobSpecs: {
+        proof: { transaction_id: 'keep-me' },
+        squares: 24,
+        packet: {
+          fingerprint: fingerprintB,
+          fingerprint_history: history,
+          stale: stale,
+          complete: true,
+        },
+      },
+    })
+    var result = await runPermitPacket(mock.client, sampleJob({ job_status: JOB_STATUS_NEEDS_CORRECTION }), {
+      id: 'run-stale-marker',
+    })
+
+    expect(result.complete).toBe(false)
+    expect(result.jobStatus).toBe(JOB_STATUS_NEEDS_CORRECTION)
+    expect(mock.state.runUpdates[0].run_status).toBe(RUN_STATUS_NEEDS_REVIEW)
+    expect(mock.state.jobUpdates[0].job_status).toBe(JOB_STATUS_NEEDS_CORRECTION)
+    expect(mock.state.jobUpdates[0].job_specs.packet.complete).toBe(false)
+    expect(mock.state.jobUpdates[0].job_specs.packet.fingerprint).toEqual(fingerprintB)
+    expect(mock.state.jobUpdates[0].job_specs.packet.fingerprint_history).toEqual(history)
+    expect(mock.state.jobUpdates[0].job_specs.packet.stale).toEqual(stale)
+    expect(mock.state.jobUpdates[0].job_specs.proof.transaction_id).toBe('keep-me')
+    expect(mock.state.reviewInserts[0].review_type).toBe(PACKET_INCOMPLETE_REVIEW_TYPE)
+    expect(mock.state.reviewInserts[0].review_status).toBe('pending')
+    expect(mock.state.documentInserts.length).toBe(0)
+    expect(mock.state.rpcCalls.length).toBe(0)
+    expect(mock.state.actionInserts.length).toBe(0)
+    expect(mock.state.actionUpdates.length).toBe(0)
+  })
+
+  test('both stale signals still yield one needs_correction incomplete outcome', async function () {
+    var fingerprintB = {
+      version: 1,
+      input_fingerprint: 'b'.repeat(64),
+      content_fingerprint: 'c'.repeat(64),
+      computed_at: '2026-08-01T00:00:00.000Z',
+      artifacts: [],
+    }
+    var stale = { reason: 'input_changed', observed_at: '2026-08-19T12:00:00.000Z' }
+    var mock = createPacketClient({
+      documents: [],
+      jobSpecs: {
+        packet: {
+          fingerprint: fingerprintB,
+          fingerprint_history: [],
+          stale: stale,
+        },
+      },
+    })
+    var result = await runPermitPacket(mock.client, sampleJob(), {
+      id: 'run-both',
+      payload: {
+        rebuild_reason: REBUILD_REASON_PACKET_STALE,
+        rebuild_for_input_fingerprint: fingerprintB.input_fingerprint,
+      },
+    })
+
+    expect(result.jobStatus).toBe(JOB_STATUS_NEEDS_CORRECTION)
+    expect(mock.state.jobUpdates[0].job_status).toBe(JOB_STATUS_NEEDS_CORRECTION)
+    expect(mock.state.runUpdates[0].run_status).toBe(RUN_STATUS_NEEDS_REVIEW)
+    expect(mock.state.reviewInserts.length).toBe(1)
+    expect(mock.state.reviewInserts[0].review_type).toBe(PACKET_INCOMPLETE_REVIEW_TYPE)
+    expect(mock.state.rpcCalls.length).toBe(0)
+  })
+
+  test('unrelated needs_correction without stale signals keeps first-time incomplete review', async function () {
+    var mock = createPacketClient({
+      documents: [],
+      liveJob: sampleJob({ job_status: JOB_STATUS_NEEDS_CORRECTION }),
+      jobSpecs: { proof: { transaction_id: 'keep-me' }, squares: 24 },
+    })
+    var result = await runPermitPacket(
+      mock.client,
+      sampleJob({ job_status: JOB_STATUS_NEEDS_CORRECTION }),
+      { id: 'run-unrelated' }
+    )
+
+    expect(result.jobStatus).toBe(JOB_STATUS_NEEDS_REVIEW)
+    expect(mock.state.jobUpdates[0].job_status).toBe(JOB_STATUS_NEEDS_REVIEW)
+    expect(mock.state.runUpdates[0].run_status).toBe(RUN_STATUS_NEEDS_REVIEW)
+    expect(mock.state.reviewInserts[0].review_type).toBe(PACKET_INCOMPLETE_REVIEW_TYPE)
     expect(mock.state.rpcCalls.length).toBe(0)
   })
 
@@ -624,6 +845,8 @@ describe('permit-packet assembly (ZIG-17 PR 3)', function () {
     expect(result.jobSpecsPacket.problems[0].code).toBe('required_source_missing')
     expect(mock.state.runUpdates[0].run_status).toBe(RUN_STATUS_NEEDS_REVIEW)
     expect(mock.state.documentInserts.length).toBe(0)
+    expect(mock.state.rpcCalls.length).toBe(0)
+    expect(result.fingerprint).toBeNull()
   })
 
   test('invalid required PDF prevents packet', async function () {
@@ -806,6 +1029,7 @@ describe('permit-packet assembly (ZIG-17 PR 3)', function () {
     })
     expect(mock.state.uploads.length).toBeGreaterThan(0)
     expect(mock.state.runUpdates.length).toBe(0)
+    expect(mock.state.rpcCalls.length).toBe(0)
   })
 
   test('23505 reuses the winning canonical row', async function () {
@@ -988,6 +1212,7 @@ describe('permit-packet assembly (ZIG-17 PR 3)', function () {
     expect(mock.state.uploads.length).toBe(0)
     expect(mock.state.documentInserts.length).toBe(0)
     expect(mock.state.runUpdates.length).toBe(0)
+    expect(mock.state.rpcCalls.length).toBe(0)
   })
 
   test('generated-output upload failure remains packet_document_write_failed', async function () {
@@ -1023,6 +1248,7 @@ describe('permit-packet assembly (ZIG-17 PR 3)', function () {
     }
     expect(mock.state.documentInserts.length).toBe(0)
     expect(mock.state.runUpdates.length).toBe(0)
+    expect(mock.state.rpcCalls.length).toBe(0)
   })
 
   test('empty mergeBytes is incomplete empty_packet even when ZIG-10 is bypassed', async function () {
@@ -1047,6 +1273,8 @@ describe('permit-packet assembly (ZIG-17 PR 3)', function () {
     expect(mock.state.runUpdates[0].run_status).toBe(RUN_STATUS_NEEDS_REVIEW)
     expect(mock.state.uploads.length).toBe(0)
     expect(mock.state.documentInserts.length).toBe(0)
+    expect(mock.state.rpcCalls.length).toBe(0)
+    expect(result.fingerprint).toBeNull()
   })
 
   test('submission_packet upsert is idempotent on retry', async function () {
@@ -1095,14 +1323,65 @@ describe('permit-packet assembly (ZIG-17 PR 3)', function () {
     expect(doc.getPage(2).getSize().width).toBe(101)
   })
 
-  test('job_specs merge preserves unrelated keys', function () {
+  test('job_specs merge preserves unrelated keys and last-ready fingerprint', function () {
+    var fingerprintB = {
+      version: 1,
+      input_fingerprint: 'b'.repeat(64),
+      content_fingerprint: 'c'.repeat(64),
+      computed_at: '2026-08-01T00:00:00.000Z',
+      artifacts: [],
+    }
+    var history = [
+      {
+        version: 1,
+        input_fingerprint: 'a'.repeat(64),
+        content_fingerprint: 'd'.repeat(64),
+        computed_at: '2026-07-01T00:00:00.000Z',
+        artifacts: [],
+      },
+    ]
+    var stale = {
+      reason: 'input_changed',
+      observed_input_fingerprint: 'e'.repeat(64),
+    }
     var merged = mergePacketJobSpecs(
-      { proof: { transaction_id: 'abc' }, erecord: { provider: 'epn' } },
-      { version: 1, complete: true }
+      {
+        proof: { transaction_id: 'abc' },
+        erecord: { provider: 'epn' },
+        packet: {
+          fingerprint: fingerprintB,
+          fingerprint_history: history,
+          stale: stale,
+          complete: true,
+        },
+      },
+      {
+        version: 1,
+        complete: true,
+        evaluated_at: '2026-08-20T00:00:00.000Z',
+        ahj_id: 'ahj-1',
+        included_requirement_ids: ['req-1'],
+        problems: [],
+        artifacts: { generated: [], submission_packet: { document_id: 'new-packet' } },
+        fingerprint: {
+          version: 1,
+          input_fingerprint: 'a'.repeat(64),
+          content_fingerprint: 'f'.repeat(64),
+          computed_at: '2026-08-20T00:00:00.000Z',
+          artifacts: [],
+        },
+        fingerprint_history: [],
+        stale: null,
+      }
     )
     expect(merged.proof.transaction_id).toBe('abc')
     expect(merged.erecord.provider).toBe('epn')
     expect(merged.packet.complete).toBe(true)
+    expect(merged.packet.evaluated_at).toBe('2026-08-20T00:00:00.000Z')
+    expect(merged.packet.artifacts.submission_packet.document_id).toBe('new-packet')
+    expect(merged.packet.fingerprint).toEqual(fingerprintB)
+    expect(merged.packet.fingerprint_history).toEqual(history)
+    expect(merged.packet.stale).toEqual(stale)
   })
 
   test('legacy resolver is fail-closed on ambiguity', function () {
@@ -1112,5 +1391,649 @@ describe('permit-packet assembly (ZIG-17 PR 3)', function () {
     ])
     expect(result.kind).toBe('ambiguous')
     expect(result.problem.candidate_document_ids).toEqual(['a', 'b'])
+  })
+
+  test('resolvedValuesFromFieldValues maps source paths and missing to null', function () {
+    expect(resolvedValuesFromFieldValues(null)).toEqual({})
+    expect(
+      resolvedValuesFromFieldValues([
+        { source: 'job.owner_name', hasValue: true, value: 'Ada' },
+        { source: 'job.property_city', hasValue: false, value: null },
+        { source: 'job.owner_name', hasValue: true, value: 'Ignored duplicate' },
+      ])
+    ).toEqual({
+      'job.owner_name': 'Ada',
+      'job.property_city': null,
+    })
+  })
+
+  test('toOrderedEntry keeps bytes by reference and does not invent resolvedValues', function () {
+    var bytesA = Buffer.from('first')
+    var bytesB = Buffer.from('second')
+    var first = toOrderedEntry(
+      sampleJob(),
+      requirementRow({ id: 'req-b', sort_order: 20, document_role: 'site_plan' }),
+      {
+        bytes: bytesA,
+        document: {
+          id: 'doc-b',
+          document_type: 'site_plan',
+          file_path: 'jobs/job-1/b.pdf',
+        },
+      }
+    )
+    var second = toOrderedEntry(
+      sampleJob(),
+      requirementRow({
+        id: 'req-a',
+        sort_order: 10,
+        source_type: 'dart_generated',
+        field_map: { fields: [{ source: 'job.owner_name' }] },
+      }),
+      {
+        bytes: bytesB,
+        parsedFieldMap: {
+          fields: [{ pdfField: TEXT_FIELD, source: 'job.owner_name', type: 'text' }],
+        },
+        fieldValues: [{ source: 'job.owner_name', hasValue: true, value: 'Ada Owner' }],
+        document: {
+          id: 'doc-a',
+          document_type: 'permit_application',
+          file_path: 'jobs/job-1/a.pdf',
+        },
+      }
+    )
+    var ordered = [first, second]
+    expect(ordered[0].artifact.bytes).toBe(bytesA)
+    expect(ordered[1].artifact.bytes).toBe(bytesB)
+    expect(ordered.map(function (row) { return row.requirement.id })).toEqual([
+      'req-b',
+      'req-a',
+    ])
+    expect(first.resolvedValues).toEqual({})
+    expect(second.resolvedValues).toEqual({ 'job.owner_name': 'Ada Owner' })
+  })
+
+  test('complete packet orderedEntries match mergeBytes and call complete_permit_packet', async function () {
+    var first = await makePdf({ pages: 1, width: 120 })
+    var second = await makePdf({ pages: 1, width: 340 })
+    var mock = createPacketClient({
+      requirements: [
+        requirementRow({
+          id: 'req-b',
+          document_role: 'site_plan',
+          display_name: 'Site Plan',
+          sort_order: 20,
+        }),
+        requirementRow({
+          id: 'req-a',
+          document_role: 'product_approval',
+          sort_order: 10,
+        }),
+      ],
+      documents: [
+        {
+          id: 'doc-a',
+          job_id: 'job-1',
+          document_type: 'product_approval',
+          file_path: 'jobs/job-1/a.pdf',
+          ahj_document_requirement_id: 'req-a',
+        },
+        {
+          id: 'doc-b',
+          job_id: 'job-1',
+          document_type: 'site_plan',
+          file_path: 'jobs/job-1/b.pdf',
+          ahj_document_requirement_id: 'req-b',
+        },
+      ],
+      storage: {
+        'jobs/job-1/a.pdf': first,
+        'jobs/job-1/b.pdf': second,
+      },
+    })
+    var result = await runPermitPacket(mock.client, sampleJob(), { id: 'run-1' })
+    expect(result.ready).toBe(true)
+    expect(result.orderedEntries.map(function (row) {
+      return row.requirement.id
+    })).toEqual(['req-a', 'req-b'])
+    expect(result.orderedEntries[0].artifact.bytes.equals(first)).toBe(true)
+    expect(result.orderedEntries[1].artifact.bytes.equals(second)).toBe(true)
+    expect(result.orderedEntries[0].resolvedValues).toEqual({})
+    var rebuilt = buildStoredFingerprint({
+      orderedEntries: result.orderedEntries,
+      submissionPacketBytes: mock.state.storage['jobs/job-1/generated/submission-packet.pdf'],
+      computedAt: result.fingerprint.computed_at,
+    })
+    expect(result.fingerprint.input_fingerprint).toBe(rebuilt.input_fingerprint)
+    expect(result.fingerprint.content_fingerprint).toBe(rebuilt.content_fingerprint)
+    expect(mock.state.rpcCalls[0].name).toBe('complete_permit_packet')
+    expect(mock.state.rpcCalls[0].args.p_fingerprint).toEqual(result.fingerprint)
+    expect(mock.state.rpcCalls.some(function (call) {
+      return call.name === 'complete_permit_packet_skeleton'
+    })).toBe(false)
+    expect(mock.state.jobUpdates[0].job_specs.packet.fingerprint).toBeUndefined()
+  })
+
+  test('dart_generated resolvedValues use the same field-map fill values', async function () {
+    var template = await makePdf({ fieldNames: [TEXT_FIELD, 'City'] })
+    var job = sampleJob({ owner_name: 'Ada Owner', property_city: null })
+    var mock = createPacketClient({
+      liveJob: job,
+      requirements: [
+        requirementRow({
+          id: 'req-app',
+          document_role: 'permit_application',
+          display_name: 'Permit Application',
+          source_type: 'dart_generated',
+          template_storage_path: 'templates/app.pdf',
+          field_map: {
+            fields: [
+              {
+                pdfField: TEXT_FIELD,
+                source: 'job.owner_name',
+                type: 'text',
+                required: true,
+              },
+              {
+                pdfField: 'City',
+                source: 'job.property_city',
+                type: 'text',
+                required: false,
+              },
+            ],
+          },
+        }),
+      ],
+      storage: { 'templates/app.pdf': template },
+    })
+    var result = await runPermitPacket(mock.client, job, { id: 'run-1' })
+    expect(result.ready).toBe(true)
+    expect(result.orderedEntries[0].resolvedValues).toEqual({
+      'job.owner_name': 'Ada Owner',
+      'job.property_city': null,
+    })
+  })
+
+  test('same-fingerprint retry preserves stored B through diagnostics', async function () {
+    var pdf = await makePdf()
+    var documents = [
+      {
+        id: 'doc-bound',
+        job_id: 'job-1',
+        document_type: 'product_approval',
+        file_path: 'jobs/job-1/product.pdf',
+        ahj_document_requirement_id: 'req-1',
+      },
+    ]
+    var storage = { 'jobs/job-1/product.pdf': pdf }
+    var first = await runPermitPacket(
+      createPacketClient({ documents: documents, storage: storage }).client,
+      sampleJob(),
+      { id: 'run-learn' }
+    )
+    var fingerprintB = first.fingerprint
+    var history = [
+      {
+        version: 1,
+        input_fingerprint: 'a'.repeat(64),
+        content_fingerprint: 'd'.repeat(64),
+        computed_at: '2026-07-01T00:00:00.000Z',
+        artifacts: [],
+      },
+    ]
+    var stale = {
+      reason: 'input_changed',
+      observed_input_fingerprint: 'e'.repeat(64),
+      observed_at: '2026-08-19T12:00:00.000Z',
+    }
+    var mock = createPacketClient({
+      documents: documents,
+      storage: storage,
+      jobSpecs: {
+        proof: { transaction_id: 'keep-me' },
+        erecord: { provider: 'epn' },
+        squares: 24,
+        packet: {
+          fingerprint: fingerprintB,
+          fingerprint_history: history,
+          stale: stale,
+          complete: true,
+        },
+      },
+      rpc: function (name, args) {
+        expect(name).toBe('complete_permit_packet')
+        expect(mock.state.jobSpecs.packet.fingerprint).toEqual(fingerprintB)
+        expect(mock.state.jobSpecs.packet.fingerprint_history).toEqual(history)
+        expect(mock.state.jobSpecs.packet.stale).toEqual(stale)
+        expect(args.p_fingerprint.input_fingerprint).toBe(fingerprintB.input_fingerprint)
+        expect(args.p_fingerprint.content_fingerprint).toBe(fingerprintB.content_fingerprint)
+        return {
+          data: {
+            ok: true,
+            job_id: args.p_job_id,
+            action_id: 'action-reused',
+            action_created: false,
+            job_status: 'ready_for_physical_submission',
+          },
+          error: null,
+        }
+      },
+    })
+    var result = await runPermitPacket(mock.client, sampleJob(), {
+      id: 'run-1',
+      payload: {
+        rebuild_reason: REBUILD_REASON_PACKET_STALE,
+        rebuild_for_input_fingerprint: fingerprintB.input_fingerprint,
+      },
+    })
+    expect(result.ready).toBe(true)
+    expect(result.jobStatus).toBe('ready_for_physical_submission')
+    expect(result.actionId).toBe('action-reused')
+    expect(result.actionCreated).toBe(false)
+    expect(result.skippedReadyReason).toBeNull()
+    expect(mock.state.jobUpdates.length).toBe(1)
+    expect(mock.state.jobUpdates[0].job_specs.packet.fingerprint).toEqual(fingerprintB)
+    expect(mock.state.jobSpecs.packet.fingerprint).toEqual(fingerprintB)
+  })
+
+  test('ready_fingerprint_mismatch preserves stored B and does not claim this run won', async function () {
+    var pdf = await makePdf()
+    var fingerprintB = {
+      version: 1,
+      input_fingerprint: 'b'.repeat(64),
+      content_fingerprint: 'c'.repeat(64),
+      computed_at: '2026-08-01T00:00:00.000Z',
+      artifacts: [{ document_id: 'packet-b' }],
+    }
+    var history = [
+      {
+        version: 1,
+        input_fingerprint: 'a'.repeat(64),
+        content_fingerprint: 'd'.repeat(64),
+        computed_at: '2026-07-01T00:00:00.000Z',
+        artifacts: [],
+      },
+    ]
+    var stale = {
+      reason: 'input_changed',
+      observed_input_fingerprint: 'e'.repeat(64),
+      observed_at: '2026-08-19T12:00:00.000Z',
+    }
+    var mock = createPacketClient({
+      documents: [
+        {
+          id: 'doc-bound',
+          job_id: 'job-1',
+          document_type: 'product_approval',
+          file_path: 'jobs/job-1/product.pdf',
+          ahj_document_requirement_id: 'req-1',
+        },
+      ],
+      storage: { 'jobs/job-1/product.pdf': pdf },
+      jobSpecs: {
+        proof: { transaction_id: 'keep-me' },
+        erecord: { provider: 'epn' },
+        squares: 24,
+        packet: {
+          fingerprint: fingerprintB,
+          fingerprint_history: history,
+          stale: stale,
+          complete: true,
+        },
+      },
+      rpc: function (name, args) {
+        expect(name).toBe('complete_permit_packet')
+        expect(mock.state.jobSpecs.packet.fingerprint).toEqual(fingerprintB)
+        expect(mock.state.jobSpecs.packet.fingerprint_history).toEqual(history)
+        expect(mock.state.jobSpecs.packet.stale).toEqual(stale)
+        expect(mock.state.jobSpecs.proof.transaction_id).toBe('keep-me')
+        expect(mock.state.jobSpecs.erecord.provider).toBe('epn')
+        expect(mock.state.jobSpecs.packet.complete).toBe(true)
+        expect(args.p_fingerprint.input_fingerprint).not.toBe(fingerprintB.input_fingerprint)
+        return {
+          data: {
+            ok: true,
+            job_id: args.p_job_id,
+            action_id: 'action-prior',
+            action_created: false,
+            job_status: 'ready_for_physical_submission',
+            noop_reason: READY_FINGERPRINT_MISMATCH,
+          },
+          error: null,
+        }
+      },
+    })
+    var result = await runPermitPacket(mock.client, sampleJob(), { id: 'run-1' })
+    expect(result.complete).toBe(true)
+    expect(result.ready).toBe(false)
+    expect(result.actionId).toBeNull()
+    expect(result.noopReason).toBe(READY_FINGERPRINT_MISMATCH)
+    expect(result.skippedReadyReason).toBe(READY_FINGERPRINT_MISMATCH)
+    expect(mock.state.runUpdates[0].checkpoint_data.ready).toBe(false)
+    expect(mock.state.jobUpdates.length).toBe(1)
+    expect(mock.state.jobUpdates[0].job_status).toBeUndefined()
+    expect(mock.state.jobUpdates[0].job_specs.packet.fingerprint).toEqual(fingerprintB)
+    expect(mock.state.jobUpdates[0].job_specs.packet.fingerprint_history).toEqual(history)
+    expect(mock.state.jobUpdates[0].job_specs.packet.stale).toEqual(stale)
+    expect(mock.state.jobUpdates[0].job_specs.proof.transaction_id).toBe('keep-me')
+    expect(mock.state.jobUpdates[0].job_specs.erecord.provider).toBe('epn')
+    expect(mock.state.jobSpecs.packet.fingerprint).toEqual(fingerprintB)
+    expect(result.fingerprint.input_fingerprint).not.toBe(fingerprintB.input_fingerprint)
+  })
+
+  test('live input mismatch skips ready RPC (Phase C seam, no rebuild enqueue)', async function () {
+    var template = await makePdf({ fieldName: TEXT_FIELD })
+    var fingerprintB = {
+      version: 1,
+      input_fingerprint: 'b'.repeat(64),
+      content_fingerprint: 'c'.repeat(64),
+      computed_at: '2026-08-01T00:00:00.000Z',
+      artifacts: [],
+    }
+    var mock = createPacketClient({
+      liveJob: sampleJob({
+        owner_name: 'Changed Owner',
+        job_status: JOB_STATUS_NEEDS_CORRECTION,
+      }),
+      jobSpecs: {
+        proof: { transaction_id: 'keep-me' },
+        squares: 24,
+        packet: { fingerprint: fingerprintB, stale: { reason: 'input_changed' } },
+      },
+      requirements: [
+        requirementRow({
+          id: 'req-app',
+          document_role: 'permit_application',
+          display_name: 'Permit Application',
+          source_type: 'dart_generated',
+          template_storage_path: 'templates/app.pdf',
+          field_map: {
+            fields: [
+              {
+                pdfField: TEXT_FIELD,
+                source: 'job.owner_name',
+                type: 'text',
+                required: true,
+              },
+            ],
+          },
+        }),
+      ],
+      storage: { 'templates/app.pdf': template },
+    })
+    var result = await runPermitPacket(
+      mock.client,
+      sampleJob({ owner_name: 'Ada Owner', job_status: JOB_STATUS_NEEDS_CORRECTION }),
+      {
+        id: 'run-1',
+        payload: {
+          rebuild_reason: REBUILD_REASON_PACKET_STALE,
+          rebuild_for_input_fingerprint: fingerprintB.input_fingerprint,
+        },
+      }
+    )
+    expect(result.complete).toBe(true)
+    expect(result.ready).toBe(false)
+    expect(result.skippedReadyReason).toBe(SKIPPED_READY_INPUT_CHANGED)
+    expect(mock.state.rpcCalls.length).toBe(0)
+    expect(mock.state.runUpdates[0].run_status).toBe(RUN_STATUS_NEEDS_REVIEW)
+    expect(mock.state.jobUpdates[0].job_status).toBeUndefined()
+    expect(mock.state.liveJob.job_status).toBe(JOB_STATUS_NEEDS_CORRECTION)
+    expect(mock.state.jobSpecs.packet.fingerprint).toEqual(fingerprintB)
+    expect(mock.state.jobSpecs.packet.stale).toEqual({ reason: 'input_changed' })
+    expect(mock.state.documentInserts.some(function (row) {
+      return row.document_type === 'submission_packet'
+    })).toBe(true)
+  })
+
+  test('completePermitPacket helper never calls the skeleton', async function () {
+    var rpcCalls = []
+    var client = {
+      rpc: async function (name, args) {
+        rpcCalls.push({ name: name, args: args })
+        return {
+          data: {
+            ok: true,
+            job_status: 'ready_for_physical_submission',
+            action_id: 'action-1',
+            action_created: true,
+          },
+          error: null,
+        }
+      },
+    }
+    var payload = await completePermitPacket(client, 'job-1', {
+      version: 1,
+      input_fingerprint: 'a'.repeat(64),
+      content_fingerprint: 'b'.repeat(64),
+      computed_at: '2026-08-20T00:00:00.000Z',
+      artifacts: [],
+    })
+    expect(rpcCalls).toEqual([
+      {
+        name: 'complete_permit_packet',
+        args: {
+          p_job_id: 'job-1',
+          p_fingerprint: {
+            version: 1,
+            input_fingerprint: 'a'.repeat(64),
+            content_fingerprint: 'b'.repeat(64),
+            computed_at: '2026-08-20T00:00:00.000Z',
+            artifacts: [],
+          },
+        },
+      },
+    ])
+    expect(payload.action_id).toBe('action-1')
+  })
+})
+
+describe('Phase F packet freshness mutation hooks', function () {
+  afterEach(function () {
+    if (freshness.evaluatePacketFreshness.mockRestore) {
+      freshness.evaluatePacketFreshness.mockRestore()
+    }
+    if (freshness.reportProvenStaleInvalidationFailure.mockRestore) {
+      freshness.reportProvenStaleInvalidationFailure.mockRestore()
+    }
+  })
+
+  test('default requirement persist invokes the evaluator', async function () {
+    var spy = jest.spyOn(freshness, 'evaluatePacketFreshness').mockResolvedValue({
+      evaluated: false,
+      fresh: null,
+      invalidated: false,
+      noop_reason: 'not_ready',
+    })
+    var mock = createPacketClient({ documents: [] })
+    var result = await persistRequirementBackedJobDocument(mock.client, {
+      jobId: 'job-1',
+      requirementId: 'req-app',
+      documentType: 'permit_application',
+      fileName: 'Permit Application.pdf',
+      filePath: 'jobs/job-1/generated/req-app/permit_application.pdf',
+    })
+    expect(result.id).toBeTruthy()
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy.mock.calls[0][0]).toBe('job-1')
+  })
+
+  test('skipPacketFreshness=true skips requirement persist evaluation', async function () {
+    var spy = jest.spyOn(freshness, 'evaluatePacketFreshness').mockResolvedValue({
+      evaluated: false,
+      fresh: null,
+      invalidated: false,
+      noop_reason: 'not_ready',
+    })
+    var mock = createPacketClient({ documents: [] })
+    await persistRequirementBackedJobDocument(mock.client, {
+      jobId: 'job-1',
+      requirementId: 'req-app',
+      documentType: 'permit_application',
+      fileName: 'Permit Application.pdf',
+      filePath: 'jobs/job-1/generated/req-app/permit_application.pdf',
+      skipPacketFreshness: true,
+    })
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  test('default submission_packet overwrite invokes the evaluator', async function () {
+    var spy = jest.spyOn(freshness, 'evaluatePacketFreshness').mockResolvedValue({
+      evaluated: true,
+      fresh: false,
+      invalidated: true,
+      reason: 'packet_content_changed',
+    })
+    var mock = createPacketClient({
+      liveJob: sampleJob({ job_status: 'ready_for_physical_submission' }),
+      documents: [
+        {
+          id: 'packet-1',
+          job_id: 'job-1',
+          document_type: 'submission_packet',
+          file_path: 'jobs/job-1/generated/submission-packet.pdf',
+        },
+      ],
+    })
+    await persistSubmissionPacketDocument(mock.client, {
+      jobId: 'job-1',
+      fileName: 'Submission Packet.pdf',
+      filePath: 'jobs/job-1/generated/submission-packet.pdf',
+      fileSizeBytes: 42,
+    })
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy.mock.calls[0][0]).toBe('job-1')
+  })
+
+  test('worker assembly suppresses submission_packet freshness evaluation', async function () {
+    var spy = jest.spyOn(freshness, 'evaluatePacketFreshness').mockResolvedValue({
+      evaluated: false,
+      fresh: null,
+      invalidated: false,
+      noop_reason: 'not_ready',
+    })
+    var mock = createPacketClient({
+      liveJob: sampleJob({ job_status: 'ready_for_physical_submission' }),
+    })
+    var first = await makePdf({ pages: 1, width: 120 })
+    await persistAssembledSubmissionPacket(mock.client, sampleJob(), [first])
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  test("worker's generated-document + submission-packet writes produce zero evaluations", async function () {
+    var spy = jest.spyOn(freshness, 'evaluatePacketFreshness').mockResolvedValue({
+      evaluated: true,
+      fresh: true,
+      invalidated: false,
+    })
+    var template = await makePdf({ fieldNames: [TEXT_FIELD] })
+    var job = sampleJob({
+      job_status: 'ready_for_physical_submission',
+      owner_name: 'Ada Owner',
+    })
+    var mock = createPacketClient({
+      liveJob: job,
+      requirements: [
+        requirementRow({
+          id: 'req-app',
+          document_role: 'permit_application',
+          display_name: 'Permit Application',
+          source_type: 'dart_generated',
+          template_storage_path: 'templates/app.pdf',
+          field_map: {
+            fields: [
+              {
+                pdfField: TEXT_FIELD,
+                source: 'job.owner_name',
+                type: 'text',
+                required: true,
+              },
+            ],
+          },
+        }),
+      ],
+      storage: { 'templates/app.pdf': template },
+    })
+    var result = await runPermitPacket(mock.client, job, { id: 'run-1' })
+    expect(result.ready).toBe(true)
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  test('external ready document mutation produces exactly one evaluation', async function () {
+    var spy = jest.spyOn(freshness, 'evaluatePacketFreshness').mockResolvedValue({
+      evaluated: true,
+      fresh: false,
+      invalidated: true,
+    })
+    var mock = createPacketClient({
+      liveJob: sampleJob({ job_status: 'ready_for_physical_submission' }),
+      documents: [],
+    })
+    await persistRequirementBackedJobDocument(mock.client, {
+      jobId: 'job-1',
+      requirementId: 'req-1',
+      documentType: 'product_approval',
+      fileName: 'Product Approval.pdf',
+      filePath: 'jobs/job-1/product.pdf',
+    })
+    expect(spy).toHaveBeenCalledTimes(1)
+  })
+
+  test('transient freshness failure after successful persist does not fail the write', async function () {
+    var spy = jest.spyOn(freshness, 'evaluatePacketFreshness').mockRejectedValue(
+      Object.assign(new Error('packet_freshness_storage_failed: timeout'), {
+        errorCode: freshness.STORAGE_FAILED,
+        retryable: true,
+      })
+    )
+    var warn = jest.spyOn(console, 'warn').mockImplementation(function () {})
+    var mock = createPacketClient({ documents: [] })
+    var result = await persistRequirementBackedJobDocument(mock.client, {
+      jobId: 'job-1',
+      requirementId: 'req-app',
+      documentType: 'permit_application',
+      fileName: 'Permit Application.pdf',
+      filePath: 'jobs/job-1/generated/req-app/permit_application.pdf',
+    })
+    expect(result.id).toBeTruthy()
+    expect(result.freshness.ok).toBe(false)
+    expect(result.freshness.retryable).toBe(true)
+    expect(result.freshness.side_effect_failed).toBe(false)
+    expect(result.freshness.status).toBe('transient_failure')
+    expect(result.freshness.job_id).toBe('job-1')
+    expect(result.freshness.errorCode).toBe(freshness.STORAGE_FAILED)
+    expect(spy).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  test('proven stale invalidation failure after persist is side_effect_failed, write succeeds', async function () {
+    jest.spyOn(freshness, 'reportProvenStaleInvalidationFailure').mockResolvedValue({ persisted: false })
+    var spy = jest.spyOn(freshness, 'evaluatePacketFreshness').mockRejectedValue(
+      Object.assign(new Error('invalidate_permit_packet_readiness failed'), {
+        errorCode: 'permit_packet_invalidation_failed',
+        sideEffectFailed: true,
+        jobId: 'job-1',
+        staleReason: 'packet_inputs_changed',
+      })
+    )
+    var logged = jest.spyOn(console, 'error').mockImplementation(function () {})
+    var mock = createPacketClient({ documents: [] })
+    var result = await persistRequirementBackedJobDocument(mock.client, {
+      jobId: 'job-1',
+      requirementId: 'req-app',
+      documentType: 'permit_application',
+      fileName: 'Permit Application.pdf',
+      filePath: 'jobs/job-1/generated/req-app/permit_application.pdf',
+    })
+    expect(result.id).toBeTruthy()
+    expect(result.freshness.ok).toBe(false)
+    expect(result.freshness.side_effect_failed).toBe(true)
+    expect(result.freshness.job_id).toBe('job-1')
+    expect(result.freshness.errorCode).toBe('permit_packet_invalidation_failed')
+    expect(result.freshness.status).toBe('side_effect_failed')
+    expect(freshness.reportProvenStaleInvalidationFailure).toHaveBeenCalled()
+    expect(spy).toHaveBeenCalled()
+    logged.mockRestore()
   })
 })

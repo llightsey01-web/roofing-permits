@@ -45,6 +45,7 @@ export default function DashboardPage() {
     permit_issued:      { bg: '#14532d', text: '#86efac', label: 'Issued' },
     on_hold:            { bg: '#450a0a', text: '#fca5a5', label: 'On hold' },
     cancelled:          { bg: '#1e293b', text: '#64748b', label: 'Cancelled' },
+    ready_for_physical_submission: { bg: '#422006', text: '#fcd34d', label: 'Ready for physical submission' },
   }
 
   const nocStatusConfig = {

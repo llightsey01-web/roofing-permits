@@ -616,3 +616,49 @@ describe('packet-field-map', function () {
     expect(err.nonRetryable).toBe(true)
   })
 })
+
+describe('packet-relevant company field-map columns', function () {
+  const {
+    ALLOWED_SOURCE_PATHS,
+    PACKET_RELEVANT_COMPANY_COLUMNS,
+    packetRelevantCompanyFieldsChanged,
+  } = require('../../lib/permits/packet-field-map.js')
+
+  test('columns are derived from the field-map allowlist, including virtual full_address', function () {
+    expect(PACKET_RELEVANT_COMPANY_COLUMNS).toEqual(
+      [
+        'address',
+        'city',
+        'dba_name',
+        'license_number',
+        'name',
+        'phone',
+        'primary_email',
+        'qualifier_license',
+        'qualifier_name',
+        'state',
+        'zip',
+      ]
+    )
+    expect(ALLOWED_SOURCE_PATHS).toContain('company.full_address')
+    expect(PACKET_RELEVANT_COMPANY_COLUMNS).not.toContain('full_address')
+    expect(PACKET_RELEVANT_COMPANY_COLUMNS).not.toContain('subscription_status')
+    expect(PACKET_RELEVANT_COMPANY_COLUMNS).not.toContain('notes')
+  })
+
+  test('packetRelevantCompanyFieldsChanged uses the shared allowlist', function () {
+    expect(packetRelevantCompanyFieldsChanged({ name: 'Acme' })).toBe(true)
+    expect(packetRelevantCompanyFieldsChanged({ license_number: 'CCC1' })).toBe(true)
+    expect(packetRelevantCompanyFieldsChanged({ zip: '33601' })).toBe(true)
+    expect(packetRelevantCompanyFieldsChanged({ qualifer_name: 'Pat' })).toBe(true)
+    expect(packetRelevantCompanyFieldsChanged({ updated_at: '2026-08-20T00:00:00.000Z' })).toBe(false)
+    expect(packetRelevantCompanyFieldsChanged({
+      subscription_plan: 'pro',
+      subscription_status: 'active',
+      onboarding_status: 'approved',
+      is_active: false,
+      notes: 'x',
+      review_gates: {},
+    })).toBe(false)
+  })
+})
