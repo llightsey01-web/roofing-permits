@@ -69,11 +69,18 @@ function createBridgeClient(store) {
         select: function () {
           return {
             eq: function () {
-              return {
+              var node = {
                 single: async function () {
                   return { data: store.job, error: null }
                 },
+                maybeSingle: async function () {
+                  return { data: store.job, error: null }
+                },
+                eq: function () {
+                  return node
+                },
               }
+              return node
             },
           }
         },

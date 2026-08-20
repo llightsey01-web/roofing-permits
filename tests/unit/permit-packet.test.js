@@ -164,9 +164,10 @@ describe('permit-packet skeleton helper (ZIG-8, unused by PR 3 run)', function (
     expect(src).not.toMatch(/status:\s*['"]completed['"]/)
     expect(src).not.toMatch(/completed_by\s*:/)
     expect(src).toMatch(/complete_permit_packet_skeleton/)
+    expect(src).toMatch(/complete_permit_packet/)
     expect(src).not.toMatch(/complete_job_action/)
     expect(src).not.toMatch(/mark.*physical_submission.*completed/i)
-    expect(src).toMatch(/Does not call complete_permit_packet_skeleton/)
+    expect(src).toMatch(/Live input TOCTOU skip is a Phase C seam/)
     expect(src).toMatch(/ready_for_physical_submission/)
   })
 

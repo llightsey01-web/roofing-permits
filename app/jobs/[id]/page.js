@@ -240,6 +240,11 @@ export default function JobDetailPage({ params }) {
     permit_issued:      { bg: '#bbf7d0', text: '#14532d' },
     on_hold:            { bg: '#fee2e2', text: '#b91c1c' },
     cancelled:          { bg: '#f1f5f9', text: '#64748b' },
+    ready_for_physical_submission: {
+      bg: '#fef3c7',
+      text: '#92400e',
+      label: 'Ready for physical submission',
+    },
   }
 
   const documentTypes = [
@@ -421,7 +426,7 @@ export default function JobDetailPage({ params }) {
             fontSize: '12px', fontWeight: '500', padding: '4px 12px',
             borderRadius: '20px', backgroundColor: status.bg, color: status.text,
           }}>
-            {job.job_status.replace(/_/g, ' ')}
+            {status.label || job.job_status.replace(/_/g, ' ')}
           </span>
           {job.job_status === 'draft' && (
             <button

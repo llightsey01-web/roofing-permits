@@ -1,4 +1,10 @@
 import { authenticateRequest, requireSuperAdmin } from '../../../../../lib/auth/session.js'
+import { createRequire } from 'module'
+
+const require = createRequire(import.meta.url)
+const {
+  maybeEvaluateCompanyPacketFreshness,
+} = require('../../../../../lib/permits/packet-freshness.js')
 
 const CREDENTIAL_META_SELECT =
   'id, provider, credential_type, is_active, ahj_id, created_at, updated_at, encrypted_username, encrypted_password'
@@ -102,6 +108,8 @@ export async function PATCH(request, { params }) {
     if (error) {
       return Response.json({ error: error.message }, { status: 500 })
     }
+
+    await maybeEvaluateCompanyPacketFreshness(id, updates, context.supabase)
 
     return Response.json({ company: data })
   } catch (err) {

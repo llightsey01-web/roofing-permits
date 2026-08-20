@@ -1,4 +1,10 @@
 import { authenticateRequest, requireCompanyUser } from '../../../../lib/auth/session.js'
+import { createRequire } from 'module'
+
+const require = createRequire(import.meta.url)
+const {
+  maybeEvaluateCompanyPacketFreshness,
+} = require('../../../../lib/permits/packet-freshness.js')
 
 const COMPANY_FIELDS = [
   'name',
@@ -136,6 +142,14 @@ async function updateCompany(request) {
   if (error) {
     return Response.json({ error: error.message }, { status: 500 })
   }
+
+  // Packet freshness is a post-commit side effect. Do not 5xx / retry the
+  // already-applied company write if evaluation hits Storage or RPC trouble.
+  await maybeEvaluateCompanyPacketFreshness(
+    context.companyId,
+    updates,
+    context.supabase
+  )
 
   return Response.json({
     company,

@@ -1,6 +1,18 @@
 // tests/unit/upsert-canonical-job-document.test.js
 'use strict'
 
+jest.mock('../../lib/permits/packet-freshness.js', function () {
+  return {
+    evaluatePacketFreshnessAfterMutation: jest.fn(function (jobId, supabase, options) {
+      if (options && options.skipPacketFreshness === true) {
+        return Promise.resolve({ ok: true, skipped: true })
+      }
+      return Promise.resolve({ ok: true, skipped: false })
+    }),
+    STORAGE_FAILED: 'packet_freshness_storage_failed',
+  }
+})
+
 const fs = require('fs')
 const path = require('path')
 const {
@@ -11,6 +23,7 @@ const {
   persistUploadedNocDocument,
   isUniqueViolation,
 } = require('../../lib/documents/upsert-canonical-job-document')
+const freshness = require('../../lib/permits/packet-freshness')
 
 function createClient(opts) {
   var options = opts || {}
@@ -88,6 +101,9 @@ function createClient(opts) {
 }
 
 describe('upsertCanonicalJobDocument', function () {
+  beforeEach(function () {
+    freshness.evaluatePacketFreshnessAfterMutation.mockClear()
+  })
   test('programmer error when supabase or identity fields are missing', async function () {
     await expect(upsertCanonicalJobDocument(null, {})).rejects.toMatchObject({
       errorCode: 'canonical_document_programmer_error',
@@ -211,6 +227,54 @@ describe('upsertCanonicalJobDocument', function () {
       errorCode: 'canonical_document_write_failed',
       message: expect.stringMatching(/lookup failed/),
     })
+  })
+
+  test('normal ready-state external upsert invokes evaluator', async function () {
+    var client = createClient({ existingRows: [] })
+    await persistGeneratedNocDocument(client, 'job-1', 'jobs/job-1/generated/noc-filled.pdf', 10)
+    expect(freshness.evaluatePacketFreshnessAfterMutation).toHaveBeenCalledTimes(1)
+    expect(freshness.evaluatePacketFreshnessAfterMutation.mock.calls[0][0]).toBe('job-1')
+    expect(freshness.evaluatePacketFreshnessAfterMutation.mock.calls[0][2]).toEqual({
+      skipPacketFreshness: false,
+    })
+  })
+
+  test('suppressed internal write does not evaluate live freshness', async function () {
+    var client = createClient({ existingRows: [] })
+    var result = await persistGeneratedNocDocument(
+      client,
+      'job-1',
+      'jobs/job-1/generated/noc-filled.pdf',
+      10,
+      { skipPacketFreshness: true }
+    )
+    expect(result.id).toBe('doc-new')
+    expect(result.freshness).toEqual({ ok: true, skipped: true })
+    expect(freshness.evaluatePacketFreshnessAfterMutation).toHaveBeenCalledWith(
+      'job-1',
+      client,
+      { skipPacketFreshness: true }
+    )
+  })
+
+  test('transient freshness failure after successful persist does not fail the write', async function () {
+    freshness.evaluatePacketFreshnessAfterMutation.mockResolvedValueOnce({
+      ok: false,
+      skipped: false,
+      retryable: true,
+      errorCode: 'packet_freshness_storage_failed',
+    })
+    var client = createClient({ existingRows: [] })
+    var result = await persistGeneratedNocDocument(
+      client,
+      'job-1',
+      'jobs/job-1/generated/noc-filled.pdf',
+      10
+    )
+    expect(result.id).toBe('doc-new')
+    expect(result.reused).toBe(false)
+    expect(result.freshness.retryable).toBe(true)
+    expect(client.calls.inserts).toBe(1)
   })
 })
 
