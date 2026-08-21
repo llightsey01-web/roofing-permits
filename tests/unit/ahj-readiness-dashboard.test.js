@@ -307,8 +307,8 @@ describe('ahj-readiness-dashboard (PR A)', function () {
     expect(result.pilot_ready).toBe(true)
   })
 
-  test('success statuses: complete, completed, and needs_review count as success', function () {
-    expect(SUCCESS_STATUSES.has('needs_review')).toBe(true)
+  test('success statuses: complete and completed count as success; needs_review does not', function () {
+    expect(SUCCESS_STATUSES.has('needs_review')).toBe(false)
     expect(SUCCESS_STATUSES.has('complete')).toBe(true)
     expect(SUCCESS_STATUSES.has('completed')).toBe(true)
 
@@ -331,10 +331,12 @@ describe('ahj-readiness-dashboard (PR A)', function () {
       },
       { run_status: 'failed', started_at: '2026-07-29T00:00:00Z' },
     ])
-    expect(metrics.success_count).toBe(3)
+    expect(metrics.success_count).toBe(2)
+    expect(metrics.intervention_count).toBe(1)
     expect(metrics.failure_count).toBe(1)
     expect(metrics.relevant_run_count).toBe(5)
     expect(metrics.last_success_at).toBe('2026-08-03T01:00:00Z')
+    expect(metrics.last_intervention_at).toBe('2026-08-01T01:00:00Z')
     expect(metrics.recent_failure_streak).toBe(0)
   })
 
@@ -677,8 +679,36 @@ describe('ahj-readiness-dashboard batch aggregation', function () {
     expect(row.credential_scope).toBe('platform')
   })
 
-  test('FAILURE_STATUSES includes failed and error', function () {
+  test('FAILURE_STATUSES includes failed and error, not needs_review', function () {
     expect(FAILURE_STATUSES.has('failed')).toBe(true)
     expect(FAILURE_STATUSES.has('error')).toBe(true)
+    expect(FAILURE_STATUSES.has('needs_review')).toBe(false)
+    expect(SUCCESS_STATUSES.has('needs_review')).toBe(false)
+  })
+
+  test('needs_review is intervention and does not raise success or failure scores', function () {
+    var metrics = aggregateRunMetrics([
+      {
+        run_status: 'needs_review',
+        started_at: '2026-08-03T00:00:00Z',
+        completed_at: '2026-08-03T01:00:00Z',
+      },
+      { run_status: 'error', started_at: '2026-08-02T00:00:00Z' },
+    ])
+    expect(metrics.success_count).toBe(0)
+    expect(metrics.intervention_count).toBe(1)
+    expect(metrics.failure_count).toBe(1)
+    expect(metrics.recent_failure_streak).toBe(0)
+    var row = buildAhjDashboardRow(
+      portalAhj(),
+      metrics,
+      'configured',
+      { status: 'not_applicable' }
+    )
+    expect(row.all_blockers).toContain('no_successful_validation')
+    var info = row.pilot_checklist.find(function (i) {
+      return i.label === 'successful validation exists'
+    })
+    expect(info.passed).toBe(false)
   })
 })

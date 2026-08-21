@@ -142,6 +142,7 @@ export default function AdminSystemPage() {
           </p>
           <p style={{ margin: '4px 0 0', fontSize: '11px', color: adminTheme.textDim, fontFamily: adminTheme.fontMono }}>
             {overall ? (overall.success + '/' + overall.total) : ''}
+            {overall && overall.intervention ? ' · ' + overall.intervention + ' review' : ''}
           </p>
         </div>
         <div style={adminStatCardStyle('#f59e0b')}>
@@ -288,6 +289,7 @@ export default function AdminSystemPage() {
                   textAlign: 'right',
                 }}>
                   {overall ? (overall.success + '/' + overall.total) : ''}
+                  {overall && overall.intervention ? ' · ' + overall.intervention + ' review' : ''}
                 </td>
               </tr>
             </tbody>
