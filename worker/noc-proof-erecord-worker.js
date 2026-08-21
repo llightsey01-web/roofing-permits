@@ -30,6 +30,12 @@ const { validateEnvironment, getEnvironment } = requireLib('lib/env/environment.
 const { sendAlert } = requireMonitoring('lib/monitoring/alert-service')
 const { recordWorkerPoll } = requireMonitoring('lib/monitoring/worker-heartbeat')
 const { isAutomationEnabled } = requireLib('lib/automation/automation-gate.js')
+const {
+  RUN_STATUS_QUEUED,
+  RUN_STATUS_RUNNING,
+  RUN_STATUS_COMPLETE,
+  RUN_STATUS_ERROR,
+} = requireLib('lib/automation/run-status.js')
 
 validateEnvironment()
 console.log('[noc-worker] Environment:', getEnvironment())
@@ -50,7 +56,7 @@ function resolveLib(relativePath) {
 
 async function markRunComplete(runId, extra) {
   var update = Object.assign({
-    run_status: 'complete',
+    run_status: RUN_STATUS_COMPLETE,
     completed_at: new Date().toISOString(),
   }, extra || {})
   await supabase.from('automation_runs').update(update).eq('id', runId)
@@ -66,7 +72,7 @@ async function markRunError(runId, jobId, err) {
     raw_error: err.stack || '',
   })
   await supabase.from('automation_runs').update({
-    run_status: 'error',
+    run_status: RUN_STATUS_ERROR,
     error_message: err.message,
     completed_at: new Date().toISOString(),
   }).eq('id', runId)
@@ -77,7 +83,7 @@ async function markRunError(runId, jobId, err) {
 
 async function requeueRun(runId, attempts) {
   await supabase.from('automation_runs').update({
-    run_status: 'queued',
+    run_status: RUN_STATUS_QUEUED,
     attempts: (attempts || 0) + 1,
     started_at: new Date().toISOString(),
   }).eq('id', runId)
@@ -88,7 +94,7 @@ async function recoverStuckRuns() {
   var { data: stuckRuns, error } = await supabase
     .from('automation_runs')
     .select('id, job_id, run_type')
-    .eq('run_status', 'running')
+    .eq('run_status', RUN_STATUS_RUNNING)
     .in('run_type', HANDLED_RUN_TYPES)
 
   if (error) {
@@ -108,11 +114,11 @@ async function recoverStuckRuns() {
     await supabase
       .from('automation_runs')
       .update({
-        run_status: 'queued',
+        run_status: RUN_STATUS_QUEUED,
         started_at: new Date().toISOString(),
       })
       .eq('id', run.id)
-      .eq('run_status', 'running')
+      .eq('run_status', RUN_STATUS_RUNNING)
     console.log('[noc-worker] Reset stuck run:', run.id, 'type:', run.run_type)
   }
 }
@@ -188,7 +194,7 @@ async function claimAndRun() {
   var { data: runs, error } = await supabase
     .from('automation_runs')
     .select('id, job_id, run_status, run_type, payload, dependency_run_id, attempts')
-    .eq('run_status', 'queued')
+    .eq('run_status', RUN_STATUS_QUEUED)
     .in('run_type', HANDLED_RUN_TYPES)
     .order('started_at', { ascending: true })
     .limit(1)
@@ -209,12 +215,12 @@ async function claimAndRun() {
   var { error: claimError } = await supabase
     .from('automation_runs')
     .update({
-      run_status: 'running',
+      run_status: RUN_STATUS_RUNNING,
       started_at: new Date().toISOString(),
       attempts: (run.attempts || 0) + 1,
     })
     .eq('id', run.id)
-    .eq('run_status', 'queued')
+    .eq('run_status', RUN_STATUS_QUEUED)
 
   if (claimError) {
     console.error('[noc-worker] Claim error:', claimError.message)

@@ -73,6 +73,12 @@ const { createDailyMetricsScheduler } = requireMonitoring('lib/monitoring/platfo
 const { createProductApprovalsSyncScheduler } = requireProductApprovalsSync()
 const { createAhjFormsScrapeScheduler } = requireAhjFormsScrape()
 const { isAutomationEnabled } = requireLib('lib/automation/automation-gate.js')
+const {
+  RUN_STATUS_QUEUED,
+  RUN_STATUS_RUNNING,
+  RUN_STATUS_COMPLETE,
+  RUN_STATUS_ERROR,
+} = requireLib('lib/automation/run-status.js')
 
 validateEnvironment()
 console.log('[ops-worker] Environment:', getEnvironment())
@@ -90,7 +96,7 @@ const HANDLED_RUN_TYPES = [
 
 async function markRunComplete(runId, extra) {
   var update = Object.assign({
-    run_status: 'complete',
+    run_status: RUN_STATUS_COMPLETE,
     completed_at: new Date().toISOString(),
   }, extra || {})
   await supabase.from('automation_runs').update(update).eq('id', runId)
@@ -106,7 +112,7 @@ async function markRunError(runId, err) {
     raw_error: err.stack || '',
   })
   await supabase.from('automation_runs').update({
-    run_status: 'error',
+    run_status: RUN_STATUS_ERROR,
     error_message: err.message,
     completed_at: new Date().toISOString(),
   }).eq('id', runId)
@@ -149,7 +155,7 @@ async function claimAndRun() {
   var { data: runs, error } = await supabase
     .from('automation_runs')
     .select('id, job_id, run_status, run_type, payload, dependency_run_id, attempts')
-    .eq('run_status', 'queued')
+    .eq('run_status', RUN_STATUS_QUEUED)
     .in('run_type', HANDLED_RUN_TYPES)
     .order('started_at', { ascending: true })
     .limit(1)
@@ -169,9 +175,9 @@ async function claimAndRun() {
 
   var { error: claimError } = await supabase
     .from('automation_runs')
-    .update({ run_status: 'running', started_at: new Date().toISOString() })
+    .update({ run_status: RUN_STATUS_RUNNING, started_at: new Date().toISOString() })
     .eq('id', run.id)
-    .eq('run_status', 'queued')
+    .eq('run_status', RUN_STATUS_QUEUED)
 
   if (claimError) {
     console.error('[ops-worker] Claim error:', claimError.message)
