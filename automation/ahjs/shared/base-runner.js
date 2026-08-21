@@ -10,6 +10,7 @@ const { handleRunError } = require('../../shared/errors')
 const { shouldSkipStep } = require('../../shared/checkpoint')
 const { logRecoveryStart } = require('../../shared/recovery')
 const { validateAhjConfig } = require('../config-validator')
+const { RUN_STATUS_COMPLETE } = require('../../../lib/automation/run-status.js')
 
 function getSupabase() {
   const ws = require('ws')
@@ -87,6 +88,29 @@ async function launchBrowser(runnerOptions) {
 }
 
 /**
+ * Authoritative success terminalization for runAutomationLifecycle.
+ * Writes complete exactly once after executeSteps returns. Callers of this
+ * lifecycle (CitizenServe / custom / Accela scaffold wrappers) must not also
+ * write run_status on success. Accela production runners do not use this path.
+ */
+async function finalizeSuccessfulLifecycleRun(runId, supabaseClient) {
+  var supabase = supabaseClient || getSupabase()
+  var completedAt = new Date().toISOString()
+  var result = await supabase.from('automation_runs').update({
+    run_status: RUN_STATUS_COMPLETE,
+    completed_at: completedAt,
+  }).eq('id', runId)
+  if (result.error) {
+    throw Object.assign(
+      new Error('Mark lifecycle complete failed: ' + result.error.message),
+      { errorCode: 'database_error', supabaseError: result.error }
+    )
+  }
+  console.log('[base-runner] Run ' + runId + ' marked ' + RUN_STATUS_COMPLETE)
+  return { run_status: RUN_STATUS_COMPLETE, completed_at: completedAt }
+}
+
+/**
  * Run a single step with checkpoint skip guard + logStep (screenshot + DB log).
  */
 async function runStep(ctx, stepNumber, stepName, fn, checkpointData) {
@@ -160,6 +184,7 @@ async function runAutomationLifecycle(options) {
     }
 
     await executeSteps(ctx)
+    await finalizeSuccessfulLifecycleRun(runId)
   } catch (err) {
     if (!err.phase1Handled) {
       await handleRunError(runId, jobData.id, err)
@@ -182,6 +207,7 @@ module.exports = {
   runPreflight,
   loadCredentials,
   launchBrowser,
+  finalizeSuccessfulLifecycleRun,
   runAutomationLifecycle,
   getSupabase,
 }

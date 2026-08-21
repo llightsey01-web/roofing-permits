@@ -1,6 +1,7 @@
 // automation/shared/errors.js
 // Classifies errors and updates the automation run record
 const { createClient } = require('@supabase/supabase-js')
+const { RUN_STATUS_ERROR } = require('../../lib/automation/run-status.js')
 
 function getSupabase() {
   const ws = require('ws')
@@ -26,7 +27,7 @@ async function handleRunError(runId, jobId, err) {
   const errorCode = classifyError(err)
   await supabase.from('automation_runs')
     .update({
-      run_status: 'error',
+      run_status: RUN_STATUS_ERROR,
       error_code: errorCode,
       error_message: err.message,
       completed_at: new Date().toISOString(),
@@ -38,19 +39,4 @@ async function handleRunError(runId, jobId, err) {
   console.log(`Run ${runId} failed: ${errorCode} — ${err.message}`)
 }
 
-async function handleRunSuccess(runId, jobId, workflowVersion) {
-  const supabase = getSupabase()
-  await supabase.from('automation_runs')
-    .update({
-      run_status: 'needs_review',
-      ahj_workflow_version: workflowVersion,
-      completed_at: new Date().toISOString(),
-    })
-    .eq('id', runId)
-  await supabase.from('jobs')
-    .update({ job_status: 'needs_review' })
-    .eq('id', jobId)
-  console.log(`Run ${runId} completed — awaiting human review`)
-}
-
-module.exports = { classifyError, handleRunError, handleRunSuccess }
+module.exports = { classifyError, handleRunError }
