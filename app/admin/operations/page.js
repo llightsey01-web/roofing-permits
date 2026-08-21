@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '../../../lib/supabase'
 import { adminTheme, adminPanelStyle, adminStatCardStyle } from '../../../lib/ui/admin-theme'
 
+const { getRunStatusPresentation } = require('../../../lib/automation/run-status.js')
+
 function formatElapsed(ms) {
   if (!ms || ms < 0) return '—'
   const s = Math.floor(ms / 1000)
@@ -14,10 +16,26 @@ function formatElapsed(ms) {
 }
 
 function statusIcon(runStatus) {
-  if (runStatus === 'complete') return { emoji: '🟢', color: adminTheme.success, label: 'Success' }
-  if (runStatus === 'running') return { emoji: '🟡', color: adminTheme.warning, label: 'Running' }
-  if (runStatus === 'error' || runStatus === 'needs_review') return { emoji: '🔴', color: adminTheme.danger, label: 'Failed' }
-  return { emoji: '⚪', color: adminTheme.textDim, label: 'Queued' }
+  const presentation = getRunStatusPresentation(runStatus)
+  if (presentation.kind === 'success') {
+    return { emoji: '🟢', color: adminTheme.success, label: presentation.label }
+  }
+  if (presentation.kind === 'running') {
+    return { emoji: '🟡', color: adminTheme.warning, label: presentation.label }
+  }
+  if (presentation.kind === 'intervention') {
+    return { emoji: '🟠', color: adminTheme.warning, label: presentation.label }
+  }
+  if (presentation.kind === 'failure') {
+    return { emoji: '🔴', color: adminTheme.danger, label: presentation.label }
+  }
+  if (presentation.kind === 'cancelled') {
+    return { emoji: '⚪', color: adminTheme.textMuted, label: presentation.label }
+  }
+  if (presentation.kind === 'queued') {
+    return { emoji: '⚪', color: adminTheme.textDim, label: presentation.label }
+  }
+  return { emoji: '⚪', color: adminTheme.textDim, label: presentation.label }
 }
 
 function circuitBadge(state) {
@@ -157,7 +175,8 @@ export default function AdminOperationsPage() {
   ]
 
   const activeRuns = (data?.activeRuns || []).filter(function (r) {
-    return r.run_status === 'running' || r.run_status === 'error' || r.run_status === 'queued'
+    const kind = getRunStatusPresentation(r.run_status).kind
+    return kind === 'running' || kind === 'failure' || kind === 'queued' || kind === 'intervention'
   })
 
   return (
@@ -291,6 +310,10 @@ export default function AdminOperationsPage() {
           <p style={{ margin: 0, fontSize: '10px', color: adminTheme.textDim }}>COMPLETED TODAY</p>
           <p style={{ margin: '6px 0 0', fontSize: '22px', fontWeight: 700 }}>{data?.today?.completedRuns ?? 0}</p>
         </div>
+        <div style={adminStatCardStyle('#f59e0b')}>
+          <p style={{ margin: 0, fontSize: '10px', color: adminTheme.textDim }}>NEEDS REVIEW TODAY</p>
+          <p style={{ margin: '6px 0 0', fontSize: '22px', fontWeight: 700 }}>{data?.today?.needsReviewRuns ?? 0}</p>
+        </div>
         <div style={adminStatCardStyle('#f87171')}>
           <p style={{ margin: 0, fontSize: '10px', color: adminTheme.textDim }}>FAILED TODAY</p>
           <p style={{ margin: '6px 0 0', fontSize: '22px', fontWeight: 700 }}>{data?.today?.failedRuns ?? 0}</p>
@@ -302,7 +325,7 @@ export default function AdminOperationsPage() {
           COMPLETED TODAY
         </p>
         <p style={{ margin: 0, fontSize: '13px', color: adminTheme.text }}>
-          ✓ {data?.today?.permitsSubmitted ?? 0} permits submitted · ✓ {data?.today?.nocsGenerated ?? 0} NOCs generated · ✗ {data?.today?.failedRuns ?? 0} failed
+          ✓ {data?.today?.permitsSubmitted ?? 0} permits submitted · ✓ {data?.today?.nocsGenerated ?? 0} NOCs generated · 🟠 {data?.today?.needsReviewRuns ?? 0} needs review · ✗ {data?.today?.failedRuns ?? 0} failed
         </p>
       </div>
 

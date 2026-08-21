@@ -13,6 +13,10 @@ export const waitForActivity = task({
   maxDuration: 60 * 60,
   run: async (payload) => {
     const { createWorkflowEngine } = require('../../../lib/workflow')
+    const {
+      isTerminalRunStatus,
+      isTerminalWorkflowActivityStatus,
+    } = require('../../../lib/automation/run-status.js')
     const engine = createWorkflowEngine()
     const supabase = engine.state.supabase
 
@@ -29,7 +33,7 @@ export const waitForActivity = task({
           .select('id, status, error_message, result')
           .eq('id', activityId)
           .maybeSingle()
-        if (activity && (activity.status === 'succeeded' || activity.status === 'failed')) {
+        if (activity && isTerminalWorkflowActivityStatus(activity.status)) {
           return {
             done: true,
             source: 'workflow_activity',
@@ -46,7 +50,7 @@ export const waitForActivity = task({
           .select('id, run_status, error_message')
           .eq('id', legacyRunId)
           .maybeSingle()
-        if (legacy && (legacy.run_status === 'complete' || legacy.run_status === 'error' || legacy.run_status === 'needs_review')) {
+        if (legacy && isTerminalRunStatus(legacy.run_status)) {
           return {
             done: true,
             source: 'automation_runs',

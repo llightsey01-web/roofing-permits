@@ -3,6 +3,16 @@ import { createRequire } from 'module'
 
 const require = createRequire(import.meta.url)
 const circuit = require('../../../../lib/automation/circuit-breaker.js')
+const {
+  SUCCESS_READ_STATUSES,
+  FAILURE_READ_STATUSES,
+  INTERVENTION_READ_STATUSES,
+  RUN_STATUS_QUEUED,
+  RUN_STATUS_RUNNING,
+  RUN_STATUS_ERROR,
+  RUN_STATUS_NEEDS_REVIEW,
+  HISTORICAL_FAILURE_ALIAS,
+} = require('../../../../lib/automation/run-status.js')
 
 function startOfTodayIso() {
   const d = new Date()
@@ -28,12 +38,19 @@ export async function GET(request) {
       queuedOpsRes,
       completedTodayRes,
       failedTodayRes,
+      needsReviewTodayRes,
       heartbeatsRes,
     ] = await Promise.all([
       supabase
         .from('automation_runs')
         .select('id, job_id, run_type, run_status, attempts, error_message, started_at, payload, created_at')
-        .in('run_status', ['running', 'error', 'queued'])
+        .in('run_status', [
+          RUN_STATUS_RUNNING,
+          RUN_STATUS_ERROR,
+          RUN_STATUS_QUEUED,
+          RUN_STATUS_NEEDS_REVIEW,
+          HISTORICAL_FAILURE_ALIAS,
+        ])
         .order('started_at', { ascending: false })
         .limit(50),
       supabase
@@ -54,12 +71,17 @@ export async function GET(request) {
       supabase
         .from('automation_runs')
         .select('id', { count: 'exact', head: true })
-        .eq('run_status', 'complete')
+        .in('run_status', SUCCESS_READ_STATUSES.slice())
         .gte('completed_at', today),
       supabase
         .from('automation_runs')
         .select('id', { count: 'exact', head: true })
-        .eq('run_status', 'error')
+        .in('run_status', FAILURE_READ_STATUSES.slice())
+        .gte('completed_at', today),
+      supabase
+        .from('automation_runs')
+        .select('id', { count: 'exact', head: true })
+        .in('run_status', INTERVENTION_READ_STATUSES.slice())
         .gte('completed_at', today),
       supabase
         .from('worker_heartbeats')
@@ -129,7 +151,7 @@ export async function GET(request) {
     const { data: todayComplete } = await supabase
       .from('automation_runs')
       .select('run_type')
-      .eq('run_status', 'complete')
+      .in('run_status', SUCCESS_READ_STATUSES.slice())
       .gte('completed_at', today)
       .limit(500)
 
@@ -152,6 +174,7 @@ export async function GET(request) {
       today: {
         completedRuns: completedTodayRes.count || 0,
         failedRuns: failedTodayRes.count || 0,
+        needsReviewRuns: needsReviewTodayRes.count || 0,
         permitsSubmitted: permitsSubmitted,
         nocsGenerated: nocsGenerated,
       },
