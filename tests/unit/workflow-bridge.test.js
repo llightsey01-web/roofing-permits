@@ -60,6 +60,19 @@ describe('workflow bridge run-status readers (ZIG-13 PR 4)', function () {
     expect(update.status).toBe('failed')
     expect(update.completed_at).toBeTruthy()
     expect(update.result.legacy_run_status).toBe('needs_review')
+    expect(update.result.outcome).toBe('intervention')
+  })
+
+  test('complete activity result records success outcome', async function () {
+    var update = await sync('complete')
+    expect(update.result.legacy_run_status).toBe('complete')
+    expect(update.result.outcome).toBe('success')
+  })
+
+  test('error activity result records failure outcome', async function () {
+    var update = await sync('error')
+    expect(update.result.legacy_run_status).toBe('error')
+    expect(update.result.outcome).toBe('failure')
   })
 
   test('error maps to failed', async function () {
