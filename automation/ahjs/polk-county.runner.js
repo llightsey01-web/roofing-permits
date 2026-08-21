@@ -13,6 +13,11 @@ const { saveCheckpoint, shouldSkipStep } = require('../shared/checkpoint.js')
 const { logRecoveryStart } = require('../shared/recovery.js')
 const { preflightCheckSelectors } = require('./shared/selector-preflight.js')
 const { isAutomationEnabled } = require('../../lib/automation/automation-gate.js')
+const {
+  RUN_STATUS_COMPLETE,
+  RUN_STATUS_NEEDS_REVIEW,
+  RUN_STATUS_ERROR,
+} = require('../../lib/automation/run-status.js')
 const { logRunAction } = require('../../lib/audit/run-logger.js')
 const {
   loadSession,
@@ -45,11 +50,13 @@ function assertSupabaseOk(result, label) {
   }
 }
 
-// Valid automation_runs.run_status values: queued, running, error, needs_review, cancelled
-var RUN_STATUS_PHASE1_SUCCESS = 'needs_review'
-var RUN_STATUS_PHASE1_FAILURE = 'error'
-var RUN_STATUS_PHASE2_REVIEW = 'needs_review'
-var RUN_STATUS_DOCUMENT_UPLOAD = 'needs_review'
+// Canonical automation_runs.run_status writers: queued, running, complete,
+// needs_review, error, cancelled. Proven Accela success uses complete.
+// Genuine intervention stays needs_review. Portal save failure stays error.
+var RUN_STATUS_PHASE1_SUCCESS = RUN_STATUS_COMPLETE
+var RUN_STATUS_PHASE1_FAILURE = RUN_STATUS_ERROR
+var RUN_STATUS_PHASE2_REVIEW = RUN_STATUS_NEEDS_REVIEW
+var RUN_STATUS_DOCUMENT_UPLOAD = RUN_STATUS_COMPLETE
 
 function validatePolkRunContract(runType, runPayload) {
   var type = runType || 'permit_phase_1'
@@ -1931,7 +1938,7 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
       if (!parcelNumber || parcelNumber.trim() === '') {
         console.log('  Parcel not found — marking needs_review')
         assertSupabaseOk(await supabase.from('automation_runs').update({
-          run_status: 'needs_review',
+          run_status: RUN_STATUS_NEEDS_REVIEW,
           error_message: 'Parcel number not populated. Check address format and dropdown selection.',
           completed_at: new Date().toISOString(),
         }).eq('id', runId), 'Mark automation run needs_review')
@@ -1997,7 +2004,7 @@ async function runAccelaPortal(jobData, runId, runnerOptions, portalConfig, hook
       assertSupabaseOk(await supabase.from('automation_runs').update({
         run_status: RUN_STATUS_PHASE1_SUCCESS,
         completed_at: new Date().toISOString(),
-      }).eq('id', runId), 'Mark automation run needs_review after Phase 1 success')
+      }).eq('id', runId), 'Mark automation run complete after Phase 1 success')
       console.log('  ✓ Automation run status: ' + RUN_STATUS_PHASE1_SUCCESS)
 
       if (!browserOpts.skipPostPhase1Chain) {

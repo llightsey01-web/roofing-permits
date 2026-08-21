@@ -98,7 +98,8 @@ const DEMO_JOBS = [
     job_status: 'submitted',
     noc_status: 'recorded',
     noc_file_path: 'demo/noc/grace-noc-placeholder.pdf',
-    // DB run_status enum: queued | running | error | needs_review (no "complete")
+    // Demo fixture: permit_submit placeholder stays needs_review. Canonical
+    // writer contract also includes complete; this seed does not change that.
     run: { run_type: 'permit_submit', run_status: 'needs_review' },
   },
   {
