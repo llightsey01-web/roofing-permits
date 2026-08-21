@@ -20,6 +20,7 @@ const {
   FAILURE_READ_STATUSES,
   TERMINAL_READ_STATUSES,
   RUN_STATUS_KIND,
+  RUN_OUTCOME,
   isSuccessfulRunStatus,
   isInterventionRunStatus,
   isFailedRunStatus,
@@ -29,6 +30,7 @@ const {
   isHistoricalSuccessAlias,
   isHistoricalFailureAlias,
   classifyRunStatus,
+  classifyRunOutcome,
   getRunStatusPresentation,
   mapRunStatusToWorkflowActivityStatus,
   isTerminalWorkflowActivityStatus,
@@ -224,5 +226,24 @@ describe('automation_runs.run_status reader contract (ZIG-13 PR 4)', function ()
     expect(isTerminalWorkflowActivityStatus('failed')).toBe(true)
     expect(isTerminalWorkflowActivityStatus('cancelled')).toBe(true)
     expect(isTerminalWorkflowActivityStatus('running')).toBe(false)
+  })
+
+  test('classifyRunOutcome maps persisted statuses to the canonical outcome contract', function () {
+    expect(classifyRunOutcome('complete')).toBe(RUN_OUTCOME.SUCCESS)
+    expect(classifyRunOutcome('completed')).toBe(RUN_OUTCOME.SUCCESS)
+    expect(classifyRunOutcome('needs_review')).toBe(RUN_OUTCOME.INTERVENTION)
+    expect(classifyRunOutcome('error')).toBe(RUN_OUTCOME.FAILURE)
+    expect(classifyRunOutcome('failed')).toBe(RUN_OUTCOME.FAILURE)
+    expect(classifyRunOutcome('queued')).toBe(RUN_OUTCOME.ACTIVE)
+    expect(classifyRunOutcome('running')).toBe(RUN_OUTCOME.ACTIVE)
+    expect(classifyRunOutcome('cancelled')).toBe(RUN_OUTCOME.CANCELLED)
+  })
+
+  test('classifyRunOutcome fails closed on unknown statuses', function () {
+    expect(classifyRunOutcome('submitted')).toBe(RUN_OUTCOME.UNKNOWN)
+    expect(classifyRunOutcome('bogus')).toBe(RUN_OUTCOME.UNKNOWN)
+    expect(classifyRunOutcome(null)).toBe(RUN_OUTCOME.UNKNOWN)
+    expect(classifyRunOutcome(undefined)).toBe(RUN_OUTCOME.UNKNOWN)
+    expect(classifyRunOutcome('')).toBe(RUN_OUTCOME.UNKNOWN)
   })
 })

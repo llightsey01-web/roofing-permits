@@ -75,7 +75,6 @@ async function handleErecordPrepare(job, run, deps) {
         await epnMigration.onLegacyErecordActivityComplete({
           legacyRun: run,
           job: job,
-          success: true,
           result: prepResult || {},
         })
       }
@@ -96,13 +95,18 @@ async function handleErecordPrepare(job, run, deps) {
       page: deps.page || null,
     })
 
+    // Persist error before workflow sync so run_status is authoritative.
+    await markRunComplete(run.id, {
+      run_status: 'error',
+      error_message: err.message,
+    })
+
     try {
       var epnMigrationFail = requireLib('lib/workflow/epn-migration.js')
       if (run.payload && run.payload.workflow_run_id) {
         await epnMigrationFail.onLegacyErecordActivityComplete({
           legacyRun: run,
           job: job,
-          success: false,
           errorMessage: err.message,
         })
       }
@@ -116,7 +120,10 @@ async function handleErecordPrepare(job, run, deps) {
 
 async function handleErecordSubmit(job, run, deps) {
   var markRunComplete = deps.markRunComplete
-  await logRunAction({
+  var logAction = deps.logRunAction || logRunAction
+  // run_actions.status has no intervention value (success/retry/failure only).
+  // Keep the existing field; metadata records that this is not a legal e-record.
+  await logAction({
     runId: run.id,
     jobId: job.id,
     companyId: job.company_id,
@@ -124,26 +131,46 @@ async function handleErecordSubmit(job, run, deps) {
     status: 'success',
     stepNumber: 1,
     stepName: 'erecord_submit',
-    metadata: { skipped: true, reason: 'not_implemented' },
+    metadata: {
+      skipped: true,
+      reason: 'not_implemented',
+      outcome: 'intervention',
+      legal_submission: false,
+    },
   })
   await markRunComplete(run.id, { run_status: 'needs_review' })
 
-  // Bridged workflow: treat needs_review as a soft pause after submit stub
   try {
-    var epnMigrationSubmit = requireLib('lib/workflow/epn-migration.js')
+    var onComplete = deps.onLegacyErecordActivityComplete
+    if (!onComplete) {
+      var epnMigrationSubmit = requireLib('lib/workflow/epn-migration.js')
+      onComplete = function (input) {
+        return epnMigrationSubmit.onLegacyErecordActivityComplete(input)
+      }
+    }
     if (run.payload && run.payload.workflow_run_id) {
-      await epnMigrationSubmit.onLegacyErecordActivityComplete({
-        legacyRun: Object.assign({}, run, { run_status: 'complete' }),
+      await onComplete({
+        legacyRun: run,
         job: job,
-        success: true,
-        result: { skipped: true, reason: 'erecord_submit not implemented', needsReview: true },
+        result: {
+          skipped: true,
+          reason: 'erecord_submit not implemented',
+          needsReview: true,
+          outcome: 'intervention',
+          legal_submission: false,
+        },
       })
     }
   } catch (wfErr3) {
     console.warn('[epn-handler] submit workflow sync failed:', wfErr3.message)
   }
 
-  return { skipped: true, reason: 'erecord_submit not implemented' }
+  return {
+    skipped: true,
+    reason: 'erecord_submit not implemented',
+    outcome: 'intervention',
+    legal_submission: false,
+  }
 }
 
 module.exports = {
